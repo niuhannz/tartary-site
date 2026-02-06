@@ -16,7 +16,7 @@ export default function Footer() {
               Tartary
             </span>
             <p className="text-ash text-lg max-w-sm leading-relaxed mb-8" style={{ fontFamily: 'var(--font-display)' }}>
-              Building worlds across cinema, games, and publishing. Original IP creation and cinematic storytelling for a new era.
+              Building worlds across cinema, anime, games, and publishing. Original IP creation and cinematic storytelling for a new era.
             </p>
             <div className="flex gap-6">
               {['Vimeo', 'Instagram', 'IMDb'].map((s) => (
@@ -44,6 +44,7 @@ export default function Footer() {
               {[
                 { href: '/worlds', label: 'Worlds' },
                 { href: '/cinema', label: 'Cinema' },
+                { href: '/anime', label: 'Anime' },
                 { href: '/games', label: 'Games' },
                 { href: '/publishing', label: 'Publishing' },
                 { href: '/contact', label: 'Contact' },
@@ -97,7 +98,7 @@ export default function Footer() {
             className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            Worlds &middot; Cinema &middot; Games &middot; Publishing
+            Worlds &middot; Cinema &middot; Anime &middot; Games &middot; Publishing
           </span>
         </div>
       </div>

@@ -89,6 +89,18 @@ const divisions = [
     icon: 'cinema',
   },
   {
+    id: 'anime',
+    title: 'ANIME',
+    subtitle: 'Animation & Anime Production',
+    description: 'Cinematic anime spanning hand-drawn, CG, and mixed-media. Original series, features, and transmedia adaptations that bridge Eastern craft with Western ambition.',
+    href: '/anime',
+    color: 'from-rose-900/40 to-rose-950/40',
+    accentColor: '#e11d48',
+    borderAccent: 'group-hover:border-rose-500',
+    bgAccent: 'group-hover:from-rose-900/60 group-hover:to-rose-950/60',
+    icon: 'anime',
+  },
+  {
     id: 'games',
     title: 'GAMES',
     subtitle: 'Interactive Entertainment',
@@ -172,6 +184,18 @@ const IconGames = () => (
   </svg>
 );
 
+const IconAnime = () => (
+  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+    <circle cx="50" cy="40" r="20" strokeWidth="2" />
+    <circle cx="43" cy="36" r="4" fill="currentColor" opacity="0.7" />
+    <circle cx="57" cy="36" r="4" fill="currentColor" opacity="0.7" />
+    <path d="M 42 46 Q 50 52 58 46" strokeWidth="1.5" opacity="0.5" />
+    <path d="M 30 25 L 35 18 L 40 28" strokeWidth="1.5" opacity="0.4" />
+    <path d="M 70 25 L 65 18 L 60 28" strokeWidth="1.5" opacity="0.4" />
+    <path d="M 35 60 L 50 85 L 65 60" strokeWidth="1.5" opacity="0.3" />
+  </svg>
+);
+
 const IconPublishing = () => (
   <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
     <path d="M 25 20 L 25 80 Q 25 85 30 85 L 75 85 Q 80 85 80 80 L 80 20" strokeWidth="2" />
@@ -189,6 +213,8 @@ const getIcon = (iconType: string) => {
       return <IconWorlds />;
     case 'cinema':
       return <IconCinema />;
+    case 'anime':
+      return <IconAnime />;
     case 'games':
       return <IconGames />;
     case 'publishing':
@@ -255,7 +281,7 @@ export default function Home() {
               className="text-sm sm:text-base tracking-widest uppercase mb-8 text-gold"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              Creative Storytelling Across Four Dimensions
+              Creative Storytelling Across Five Dimensions
             </motion.p>
 
             {/* Main heading */}
@@ -273,7 +299,7 @@ export default function Home() {
               className="text-lg sm:text-xl text-mist leading-relaxed max-w-3xl mx-auto mb-10"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              Original universes. Cinematic stories. Interactive experiences. Beautifully crafted media. TARTARY operates across four divisions to bring visionary projects to life.
+              Original universes. Cinematic stories. Anime. Interactive experiences. Beautifully crafted media. TARTARY operates across five divisions to bring visionary projects to life.
             </motion.p>
 
             {/* CTA Button */}
@@ -331,14 +357,14 @@ export default function Home() {
                 className="text-4xl sm:text-5xl lg:text-6xl font-light mb-6 text-foreground"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
-                Four Divisions of Excellence
+                Five Divisions of Excellence
               </h2>
               <div className="separator w-16 h-0.5 bg-gold mx-auto mb-8 opacity-60" />
               <p
                 className="text-lg text-mist max-w-2xl mx-auto"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                Each division operates as its own creative powerhouse, unified by a singular vision: transformative storytelling across every medium.
+                Each division operates as its own creative powerhouse, unified by a singular vision — transformative storytelling across every medium.
               </p>
             </motion.div>
           </SectionReveal>
@@ -475,7 +501,7 @@ export default function Home() {
                 className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-10 text-gold-light"
                 style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 300 }}
               >
-                One studio. Four dimensions of storytelling.
+                One studio. Five dimensions of storytelling.
               </motion.h2>
 
               {/* Separator */}
@@ -490,7 +516,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 viewport={{ once: true }}
               >
-                TARTARY is built on the principle that great stories transcend single mediums. Our four divisions work in concert to create unified creative visions that span original intellectual properties, cinematic productions, interactive experiences, and beautifully crafted publications. Based in California and Tennessee, we collaborate with visionary creators and forward-thinking brands to bring impossible ideas to life.
+                TARTARY is built on the principle that great stories transcend single mediums. Our five divisions work in concert to create unified creative visions that span original intellectual properties, cinematic productions, anime, interactive experiences, and beautifully crafted publications. Based in California and Tennessee, we collaborate with visionary creators and forward-thinking brands to bring impossible ideas to life.
               </motion.p>
             </motion.div>
           </SectionReveal>
@@ -608,7 +634,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.15 }}
               viewport={{ once: true }}
             >
-              Whether you're ready to collaborate on an ambitious project or explore what's possible at the intersection of cinema, games, publishing, and original IP — let's talk.
+              Whether you're ready to collaborate on an ambitious project or explore what's possible at the intersection of cinema, anime, games, publishing, and original IP — let's talk.
             </motion.p>
 
             <motion.div
