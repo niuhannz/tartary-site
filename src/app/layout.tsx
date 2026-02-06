@@ -3,6 +3,7 @@ import './globals.css';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import CursorGlow from '@/components/CursorGlow';
+import PasswordGate from '@/components/PasswordGate';
 
 export const metadata: Metadata = {
   title: {
@@ -43,10 +44,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="grain antialiased">
-        <CursorGlow />
-        <Navigation />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+        <PasswordGate>
+          <CursorGlow />
+          <Navigation />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+        </PasswordGate>
       </body>
     </html>
   );
