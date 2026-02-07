@@ -501,16 +501,21 @@ function CameraRig({ target }: { target: [number, number, number] | null }) {
     const ox = Math.sin(time.current * orbitSpeed) * orbitRadius;
     const oz = Math.cos(time.current * orbitSpeed) * orbitRadius;
 
+    // On hover: shift camera slightly toward district, mainly adjust look-at
     const targetPos = target
-      ? new THREE.Vector3(target[0] + 10, 12, target[2] + 10)
+      ? new THREE.Vector3(
+          defaultPos.x + ox + (target[0] - defaultPos.x) * 0.15,
+          defaultPos.y,
+          defaultPos.z + oz + (target[2] - defaultPos.z) * 0.15
+        )
       : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
 
     const targetLook = target
-      ? new THREE.Vector3(target[0], 1, target[2])
+      ? new THREE.Vector3(target[0] * 0.6, 0.5, target[2] * 0.6 + 1)
       : defaultLookAt;
 
-    camera.position.lerp(targetPos, delta * 1.5);
-    currentLookAt.current.lerp(targetLook, delta * 1.5);
+    camera.position.lerp(targetPos, delta * 2);
+    currentLookAt.current.lerp(targetLook, delta * 2);
     camera.lookAt(currentLookAt.current);
   });
 
@@ -594,7 +599,7 @@ function HUDOverlay({
   const district = hoveredDistrict ? districts.find((d) => d.id === hoveredDistrict) : null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-10">
+    <div className="absolute inset-0 pointer-events-none z-30">
       {/* Top-left title */}
       <div className="absolute top-28 left-8 md:left-12">
         <motion.p
@@ -841,18 +846,18 @@ export default function TartaryWorld() {
 
       {/* Vignette */}
       <div
-        className="absolute inset-0 pointer-events-none z-20"
+        className="absolute inset-0 pointer-events-none z-[5]"
         style={{
           background:
-            'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)',
+            'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%)',
         }}
       />
 
       {/* Top fade for nav blending */}
       <div
-        className="absolute top-0 left-0 right-0 h-32 pointer-events-none z-20"
+        className="absolute top-0 left-0 right-0 h-24 pointer-events-none z-[5]"
         style={{
-          background: 'linear-gradient(to bottom, rgba(5,5,5,0.7) 0%, transparent 100%)',
+          background: 'linear-gradient(to bottom, rgba(5,5,5,0.5) 0%, transparent 100%)',
         }}
       />
     </div>
