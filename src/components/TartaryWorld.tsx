@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
-import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
-import { OrthographicCamera, Float, Text, Sparkles } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrthographicCamera, Float, Text, Sparkles, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -219,7 +219,7 @@ function MegaBuilding({
 
   useFrame((_, delta) => {
     if (!ref.current) return;
-    const target = hovered ? 1.5 : 0.2;
+    const target = hovered ? 1.8 : 0.4;
     emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, target, delta * 5);
     const mat = ref.current.material as THREE.MeshPhysicalMaterial;
     mat.emissiveIntensity = emissiveTarget.current;
@@ -237,13 +237,13 @@ function MegaBuilding({
     >
       <meshPhysicalMaterial
         color={baseColor}
-        metalness={0.92}
-        roughness={0.08}
+        metalness={0.7}
+        roughness={0.15}
         emissive={neonColor}
-        emissiveIntensity={0.2}
+        emissiveIntensity={0.4}
         clearcoat={0.4}
         clearcoatRoughness={0.15}
-        envMapIntensity={0.5}
+        envMapIntensity={1.0}
       />
     </mesh>
   );
@@ -675,7 +675,6 @@ function DataDrone({
   offset: number;
 }) {
   const ref = useRef<THREE.Mesh>(null!);
-  const trailRef = useRef<THREE.Mesh>(null!);
 
   const curve = useMemo(() => {
     const a = new THREE.Vector3(...from);
@@ -822,17 +821,17 @@ function CameraRig({ target }: { target: [number, number, number] | null }) {
     const ox = Math.sin(time.current * 0.06) * 0.6;
     const oz = Math.cos(time.current * 0.06) * 0.6;
 
-    // Lazy lean toward hovered district
+    // Subtle lean toward hovered district (very gentle shift)
     const targetPos = target
       ? new THREE.Vector3(
-          defaultPos.x + ox + (target[0] - defaultPos.x) * 0.12,
+          defaultPos.x + ox + (target[0]) * 0.06,
           defaultPos.y,
-          defaultPos.z + oz + (target[2] - defaultPos.z) * 0.12
+          defaultPos.z + oz + (target[2]) * 0.06
         )
       : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
 
     const targetLook = target
-      ? new THREE.Vector3(target[0] * 0.5, 0.8, target[2] * 0.5 + 1.5)
+      ? new THREE.Vector3(target[0] * 0.3, 0.5, target[2] * 0.3 + 1.5)
       : defaultLookAt;
 
     // Smooth damping (lazy follow)
@@ -858,11 +857,14 @@ function Scene({
 }) {
   return (
     <>
+      {/* Environment map for metallic reflections */}
+      <Environment preset="night" environmentIntensity={0.4} />
+
       {/* Lighting rig */}
-      <ambientLight intensity={0.08} color="#8a9ab8" />
+      <ambientLight intensity={0.35} color="#8a9ab8" />
       <directionalLight
         position={[15, 25, 12]}
-        intensity={0.6}
+        intensity={1.0}
         color="#fff8e8"
         castShadow
         shadow-mapSize-width={2048}
@@ -873,8 +875,8 @@ function Scene({
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      <directionalLight position={[-12, 18, -12]} intensity={0.15} color="#4a6fa5" />
-      <pointLight position={[0, 10, 0]} intensity={1.5} color="#c9a96e" distance={30} decay={2} />
+      <directionalLight position={[-12, 18, -12]} intensity={0.3} color="#4a6fa5" />
+      <pointLight position={[0, 10, 0]} intensity={2.0} color="#c9a96e" distance={30} decay={2} />
 
       {/* Per-district colored lights */}
       {districts.map((d) => (
@@ -889,7 +891,7 @@ function Scene({
       ))}
 
       {/* Atmospheric fog */}
-      <fog attach="fog" args={['#020204', 28, 60]} />
+      <fog attach="fog" args={['#020204', 40, 75]} />
 
       {/* Scanline ground */}
       <ScanlineGround />
