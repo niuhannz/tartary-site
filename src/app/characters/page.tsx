@@ -303,7 +303,7 @@ export default function CharactersPage() {
       <PageHeader
         label="Characters"
         title="The Roster"
-        description="The heroes, outlaws, scholars, and enigmas who inhabit the worlds of TARTARY. Each one forged by their world\u2019s fire."
+        description={"The heroes, outlaws, scholars, and enigmas who inhabit the worlds of TARTARY. Each one forged by their world\u2019s fire."}
       />
 
       {/* ──────────── WORLD SECTIONS ──────────── */}
