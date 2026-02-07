@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrthographicCamera, Float, Text, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -1138,11 +1138,13 @@ export default function TartaryWorld() {
             near={0.1}
             far={120}
           />
-          <Scene
-            hoveredDistrict={hoveredDistrict}
-            setHoveredDistrict={setHoveredDistrict}
-            onDistrictClick={handleDistrictClick}
-          />
+          <Suspense fallback={null}>
+            <Scene
+              hoveredDistrict={hoveredDistrict}
+              setHoveredDistrict={setHoveredDistrict}
+              onDistrictClick={handleDistrictClick}
+            />
+          </Suspense>
         </Canvas>
 
       {/* HUD Overlay */}
