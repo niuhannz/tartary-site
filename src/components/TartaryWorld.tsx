@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Float, Text, Sparkles, Environment } from '@react-three/drei';
+import { OrthographicCamera, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
-// framer-motion removed — CSS transitions used for loading/HUD
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -195,7 +194,7 @@ function ScanlineGround() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// MEGA BUILDING — Physical material megastructure element
+// MEGA BUILDING — Standard material megastructure element
 // ═══════════════════════════════════════════════════════════════════════
 function MegaBuilding({
   geometry,
@@ -221,7 +220,7 @@ function MegaBuilding({
     if (!ref.current) return;
     const target = hovered ? 1.8 : 0.4;
     emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, target, delta * 5);
-    const mat = ref.current.material as THREE.MeshPhysicalMaterial;
+    const mat = ref.current.material as THREE.MeshStandardMaterial;
     mat.emissiveIntensity = emissiveTarget.current;
   });
 
@@ -235,15 +234,12 @@ function MegaBuilding({
       castShadow
       receiveShadow
     >
-      <meshPhysicalMaterial
+      <meshStandardMaterial
         color={baseColor}
-        metalness={0.6}
-        roughness={0.2}
+        metalness={0.7}
+        roughness={0.3}
         emissive={neonColor}
         emissiveIntensity={0.5}
-        clearcoat={0.3}
-        clearcoatRoughness={0.2}
-        envMapIntensity={0.3}
       />
     </mesh>
   );
@@ -309,23 +305,17 @@ function UniverseDistrict({ hovered }: { hovered: boolean }) {
   const c = districts[0];
   return (
     <group>
-      {/* Main observatory dome */}
       <MegaBuilding geometry={geoCache.dome} position={[0, 0, 0]} scale={[3.2, 2.2, 3.2]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      {/* Antenna spire */}
       <MegaBuilding geometry={geoCache.cylinder} position={[0, 2.8, 0]} scale={[0.15, 1.8, 0.15]} baseColor="#0a1628" neonColor={c.neonColor} hovered={hovered} />
-      {/* Orbiting holographic ring */}
       <mesh ref={ringRef} position={[0, 1.8, 0]}>
         <torusGeometry args={[2.0, 0.03, 8, 64]} />
         <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.7 : 0.25} />
       </mesh>
-      {/* Crystal spires */}
       <MegaBuilding geometry={geoCache.octahedron} position={[1.8, 1.2, -1.0]} scale={[0.4, 2.6, 0.4]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.octahedron} position={[-1.6, 0.9, 0.8]} scale={[0.35, 2.0, 0.35]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.octahedron} position={[0.9, 0.8, 1.5]} scale={[0.3, 1.6, 0.3]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
-      {/* Neon accent strips */}
       <NeonStrip position={[0, 0.5, 1.6]} scale={[1.5, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 0.8, -1.5]} scale={[1.2, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
-      {/* Ground glow ring */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.5, 1.65, 64]} />
         <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.5 : 0.08} side={THREE.DoubleSide} />
@@ -349,25 +339,19 @@ function CinemaDistrict({ hovered }: { hovered: boolean }) {
   const c = districts[1];
   return (
     <group>
-      {/* Main screen tower */}
       <MegaBuilding geometry={geoCache.box} position={[0, 1.0, 0]} scale={[3.0, 2.0, 0.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      {/* Screen surface (bright emissive face) */}
       <mesh position={[0, 1.0, 0.32]}>
         <planeGeometry args={[2.6, 1.6]} />
         <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.6 : 0.15} />
       </mesh>
-      {/* Twin projection towers */}
       <MegaBuilding geometry={geoCache.box} position={[-1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      {/* Tower caps */}
       <MegaBuilding geometry={geoCache.cone} position={[-1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.cone} position={[1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      {/* Projection beam */}
       <mesh ref={beamRef} position={[0, 2.2, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
         <coneGeometry args={[1.5, 4, 16, 1, true]} />
         <meshBasicMaterial color={c.neonColor} transparent opacity={0.05} side={THREE.DoubleSide} />
       </mesh>
-      {/* Horizontal neon strips */}
       <NeonStrip position={[0, 0.2, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 1.8, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[-1.8, 0.3, -0.2]} scale={[0.06, 0.06, 0.6]} color={c.neonColor} hovered={hovered} />
@@ -381,24 +365,17 @@ function GamesDistrict({ hovered }: { hovered: boolean }) {
   const c = districts[2];
   return (
     <group>
-      {/* Main circuit tower */}
       <MegaBuilding geometry={geoCache.box} position={[0, 1.8, 0]} scale={[1.4, 3.6, 1.4]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      {/* Tower crown */}
       <MegaBuilding geometry={geoCache.box} position={[0, 3.8, 0]} scale={[1.8, 0.3, 1.8]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
-      {/* Antenna array */}
       <MegaBuilding geometry={geoCache.cylinder} position={[0.4, 4.3, 0.4]} scale={[0.08, 1.0, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.cylinder} position={[-0.4, 4.1, -0.4]} scale={[0.08, 0.7, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
-      {/* Satellite pylons */}
       <MegaBuilding geometry={geoCache.box} position={[2.0, 0.8, 0.6]} scale={[0.8, 1.6, 0.8]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[-1.6, 0.6, -0.8]} scale={[0.9, 1.2, 0.7]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
-      {/* Hexagonal base */}
       <MegaBuilding geometry={geoCache.cylinder} position={[0, 0.08, 0]} scale={[2.8, 0.16, 2.8]} baseColor="#060e0a" neonColor={c.neonColor} hovered={hovered} />
-      {/* Data veins (vertical neon strips on main tower) */}
       <NeonStrip position={[0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[-0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 1.8, 0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 1.8, -0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
-      {/* Horizontal circuit lines */}
       <NeonStrip position={[0, 1.0, 0.72]} scale={[1.3, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 2.5, -0.72]} scale={[1.3, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
     </group>
@@ -410,23 +387,18 @@ function PublishingDistrict({ hovered }: { hovered: boolean }) {
   const c = districts[3];
   return (
     <group>
-      {/* Stacked book slabs */}
       <MegaBuilding geometry={geoCache.box} position={[0, 0.4, 0]} scale={[2.8, 0.8, 1.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[0.2, 1.1, -0.1]} scale={[2.4, 0.6, 1.4]} baseColor="#1a0e35" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[-0.15, 1.7, 0.1]} scale={[2.6, 0.5, 1.3]} baseColor="#1f1040" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[0.1, 2.2, 0]} scale={[2.2, 0.4, 1.1]} baseColor="#240f45" neonColor={c.neonColor} hovered={hovered} />
-      {/* Bookmark tower (tall thin slab) */}
       <MegaBuilding geometry={geoCache.box} position={[1.7, 1.5, 0]} scale={[0.15, 3.0, 0.8]} baseColor="#2a1350" neonColor={c.neonColor} hovered={hovered} />
-      {/* Reading light */}
       <mesh position={[1.7, 3.2, 0]}>
         <sphereGeometry args={[0.15, 16, 8]} />
         <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.9 : 0.3} />
       </mesh>
-      {/* Page glow strips between slabs */}
       <NeonStrip position={[-1.3, 0.82, 0]} scale={[0.06, 0.04, 1.4]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[-1.1, 1.42, 0]} scale={[0.06, 0.04, 1.2]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[-1.2, 1.96, 0]} scale={[0.06, 0.04, 1.1]} color={c.neonColor} hovered={hovered} />
-      {/* Spine lines */}
       <NeonStrip position={[0, 0.4, 0.82]} scale={[2.6, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
     </group>
   );
@@ -437,20 +409,15 @@ function ShopDistrict({ hovered }: { hovered: boolean }) {
   const c = districts[4];
   return (
     <group>
-      {/* Grand arch */}
       <mesh position={[0, 1.6, 0]} rotation={[0, 0, 0]}>
         <torusGeometry args={[1.5, 0.2, 12, 24, Math.PI]} />
-        <meshPhysicalMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} clearcoat={0.4} clearcoatRoughness={0.15} />
+        <meshStandardMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} />
       </mesh>
-      {/* Arch pillars */}
       <MegaBuilding geometry={geoCache.box} position={[-1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.box} position={[1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      {/* Market dome behind */}
       <MegaBuilding geometry={geoCache.dome} position={[0, 0, -1.2]} scale={[2.2, 1.4, 2.2]} baseColor="#15100a" neonColor={c.neonColor} hovered={hovered} />
-      {/* Display towers */}
       <MegaBuilding geometry={geoCache.cylinder} position={[1.8, 0.9, -0.8]} scale={[0.4, 1.8, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
       <MegaBuilding geometry={geoCache.cylinder} position={[-1.8, 0.7, -0.8]} scale={[0.4, 1.4, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      {/* Golden lanterns (glowing spheres) */}
       <mesh position={[-1.5, 1.8, 0]}>
         <sphereGeometry args={[0.12, 12, 8]} />
         <meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} />
@@ -459,7 +426,6 @@ function ShopDistrict({ hovered }: { hovered: boolean }) {
         <sphereGeometry args={[0.12, 12, 8]} />
         <meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} />
       </mesh>
-      {/* Arch neon trim */}
       <NeonStrip position={[0, 0.05, 0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
       <NeonStrip position={[0, 0.05, -0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
     </group>
@@ -477,6 +443,7 @@ const DISTRICT_COMPONENTS: Record<string, React.FC<{ hovered: boolean }>> = {
 
 // ═══════════════════════════════════════════════════════════════════════
 // DISTRICT GROUP — Wrapper with platform, label, pulse, hit area
+// (Labels rendered via HTML overlay — no drei Text / no Suspense needed)
 // ═══════════════════════════════════════════════════════════════════════
 function DistrictGroup({
   district,
@@ -499,11 +466,9 @@ function DistrictGroup({
   useFrame((state, delta) => {
     time.current += delta;
     if (groupRef.current) {
-      // Gentle float
       const float = Math.sin(time.current * 0.6) * 0.06;
       groupRef.current.position.y = district.position[1] + float;
     }
-    // Neon pulse ring
     if (pulseRef.current) {
       const mat = pulseRef.current.material as THREE.MeshBasicMaterial;
       const pulse = Math.sin(state.clock.elapsedTime * district.pulseSpeed * 2) * 0.15 + 0.35;
@@ -532,7 +497,7 @@ function DistrictGroup({
       {/* Base platform */}
       <mesh position={[0, -0.04, 0]} receiveShadow>
         <cylinderGeometry args={[3.2, 3.4, 0.08, 6]} />
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#080808"
           metalness={0.95}
           roughness={0.2}
@@ -552,36 +517,7 @@ function DistrictGroup({
         <pointLight position={[0, 5, 0]} color={district.neonColor} intensity={10} distance={14} decay={2} />
       )}
 
-      {/* Floating label */}
-      <Float speed={1.2} rotationIntensity={0} floatIntensity={0.2} floatingRange={[0, 0.1]}>
-        <Text
-          position={[0, 4.6, 0]}
-          fontSize={0.55}
-          color={isHovered ? '#ffffff' : '#c9a96e'}
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.22}
-          outlineWidth={0.025}
-          outlineColor="#000000"
-          fillOpacity={isHovered ? 1 : 0.6}
-        >
-          {district.label}
-        </Text>
-        <Text
-          position={[0, 4.0, 0]}
-          fontSize={0.22}
-          color={isHovered ? district.neonColor : '#555555'}
-          anchorX="center"
-          anchorY="middle"
-          letterSpacing={0.15}
-          outlineWidth={0.01}
-          outlineColor="#000000"
-        >
-          {district.subtitle}
-        </Text>
-      </Float>
-
-      {/* District sparkles */}
+      {/* Sparkles */}
       <Sparkles
         count={isHovered ? 50 : 10}
         scale={[6, 5, 6]}
@@ -616,7 +552,7 @@ function DataStream({
     const a = new THREE.Vector3(...from);
     const b = new THREE.Vector3(...to);
     const mid = a.clone().add(b).multiplyScalar(0.5);
-    mid.y = 2.0; // Arc height
+    mid.y = 2.0;
     return new THREE.QuadraticBezierCurve3(
       new THREE.Vector3(a.x, 0.3, a.z),
       mid,
@@ -701,7 +637,7 @@ function DataDrone({
   return (
     <mesh ref={ref}>
       <icosahedronGeometry args={[0.07, 0]} />
-      <meshPhysicalMaterial
+      <meshStandardMaterial
         color={color}
         emissive={color}
         emissiveIntensity={3}
@@ -821,7 +757,7 @@ function CameraRig({ target }: { target: [number, number, number] | null }) {
     const ox = Math.sin(time.current * 0.06) * 0.6;
     const oz = Math.cos(time.current * 0.06) * 0.6;
 
-    // Subtle lean toward hovered district (very gentle shift)
+    // Subtle lean toward hovered district
     const targetPos = target
       ? new THREE.Vector3(
           defaultPos.x + ox + (target[0]) * 0.06,
@@ -834,7 +770,7 @@ function CameraRig({ target }: { target: [number, number, number] | null }) {
       ? new THREE.Vector3(target[0] * 0.3, 0.5, target[2] * 0.3 + 1.5)
       : defaultLookAt;
 
-    // Smooth damping (lazy follow)
+    // Smooth damping
     camera.position.lerp(targetPos, delta * 1.8);
     currentLookAt.current.lerp(targetLook, delta * 1.8);
     camera.lookAt(currentLookAt.current);
@@ -845,6 +781,8 @@ function CameraRig({ target }: { target: [number, number, number] | null }) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // SCENE — Full megacity assembly
+// CRITICAL: No Environment or Text — no Suspense triggers.
+// Lighting is entirely explicit (ambient + directional + point lights)
 // ═══════════════════════════════════════════════════════════════════════
 function Scene({
   hoveredDistrict,
@@ -857,14 +795,11 @@ function Scene({
 }) {
   return (
     <>
-      {/* Environment map for metallic reflections (no visible background) */}
-      <Environment preset="night" environmentIntensity={0.25} background={false} />
-
-      {/* Lighting rig */}
-      <ambientLight intensity={0.35} color="#8a9ab8" />
+      {/* Lighting rig — no Environment HDR, pure explicit lights */}
+      <ambientLight intensity={0.4} color="#8a9ab8" />
       <directionalLight
         position={[15, 25, 12]}
-        intensity={1.0}
+        intensity={1.2}
         color="#fff8e8"
         castShadow
         shadow-mapSize-width={2048}
@@ -875,7 +810,9 @@ function Scene({
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      <directionalLight position={[-12, 18, -12]} intensity={0.3} color="#4a6fa5" />
+      <directionalLight position={[-12, 18, -12]} intensity={0.4} color="#4a6fa5" />
+      {/* Warm fill from below-front */}
+      <directionalLight position={[0, 5, 20]} intensity={0.3} color="#c9a96e" />
       <pointLight position={[0, 10, 0]} intensity={2.0} color="#c9a96e" distance={30} decay={2} />
 
       {/* Per-district colored lights */}
@@ -951,7 +888,7 @@ function Scene({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// HUD OVERLAY
+// HUD OVERLAY — Pure CSS, no Three.js dependencies
 // ═══════════════════════════════════════════════════════════════════════
 function HUDOverlay({
   hoveredDistrict,
@@ -962,92 +899,86 @@ function HUDOverlay({
   onDistrictClick: (href: string) => void;
   isReady: boolean;
 }) {
-  const district = hoveredDistrict ? districts.find((d) => d.id === hoveredDistrict) : null;
+  const active = districts.find((d) => d.id === hoveredDistrict);
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30">
-      {/* Top-left title */}
-      <div className="absolute top-28 left-8 md:left-12">
-        <p
-          className="text-[11px] tracking-[0.25em] uppercase text-gold/70 mb-3 transition-all duration-[800ms] ease-out"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            opacity: isReady ? 1 : 0,
-            transform: isReady ? 'translateY(0)' : 'translateY(10px)',
-            transitionDelay: '300ms',
-          }}
-        >
-          Interactive Roadmap
+    <div className="absolute inset-0 pointer-events-none z-10">
+      {/* Corner brackets */}
+      <div className="absolute top-6 left-6 w-6 h-6 border-l border-t border-gold/20 transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }} />
+      <div className="absolute top-6 right-6 w-6 h-6 border-r border-t border-gold/20 transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }} />
+      <div className="absolute bottom-6 left-6 w-6 h-6 border-l border-b border-gold/20 transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }} />
+      <div className="absolute bottom-6 right-6 w-6 h-6 border-r border-b border-gold/20 transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }} />
+
+      {/* Top-left system tag */}
+      <div
+        className="absolute top-10 left-10 transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}
+      >
+        <p className="text-[9px] tracking-[0.25em] uppercase text-ash/40" style={{ fontFamily: 'var(--font-mono)' }}>
+          TARTARY CREATIVE STUDIO
         </p>
-        <h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-light text-foreground leading-tight transition-all duration-[900ms] ease-out"
-          style={{
-            fontFamily: 'var(--font-heading)',
-            opacity: isReady ? 1 : 0,
-            transform: isReady ? 'translateY(0)' : 'translateY(20px)',
-            transitionDelay: '500ms',
-          }}
-        >
-          We Build
-          <br />
-          <span className="logo-sheen">Worlds</span>
-        </h1>
+        <p className="text-[9px] tracking-[0.15em] uppercase text-ash/25 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>
+          SYSTEM ONLINE
+        </p>
       </div>
 
-      {/* Bottom info bar */}
-      <div className="absolute bottom-8 left-8 right-8 md:left-12 md:right-12 flex justify-between items-end">
-        <div
-          className="transition-opacity duration-[800ms] ease-out"
-          style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }}
-        >
-          {district ? (
-            <div className="pointer-events-auto">
-              <p
-                className="text-[10px] tracking-[0.2em] uppercase mb-1"
-                style={{ fontFamily: 'var(--font-mono)', color: district.neonColor }}
-              >
-                {district.subtitle}
-              </p>
-              <p
-                className="text-2xl sm:text-3xl font-light text-foreground mb-2"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {district.label}
-              </p>
-              <button
-                onClick={() => onDistrictClick(district.href)}
-                className="text-[11px] tracking-[0.15em] uppercase text-gold hover:text-gold-light transition-colors duration-200 flex items-center gap-2"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Enter District
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-            </div>
-          ) : (
+      {/* Bottom-left: hovered district info */}
+      <div
+        className="absolute bottom-10 left-10 transition-all duration-300 ease-out"
+        style={{
+          opacity: active ? 1 : 0,
+          transform: active ? 'translateY(0)' : 'translateY(8px)',
+        }}
+      >
+        {active && (
+          <>
             <p
-              className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-[10px] tracking-[0.2em] uppercase mb-1"
+              style={{ fontFamily: 'var(--font-mono)', color: active.neonColor }}
             >
-              Hover a district to explore
+              {active.subtitle}
             </p>
-          )}
-        </div>
+            <h2
+              className="text-4xl sm:text-5xl font-bold text-foreground mb-3"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {active.label}
+            </h2>
+            <button
+              className="pointer-events-auto text-xs tracking-[0.15em] uppercase border px-4 py-2 transition-colors duration-200 hover:bg-white/10"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: active.neonColor,
+                borderColor: active.neonColor,
+              }}
+              onClick={() => onDistrictClick(active.href)}
+            >
+              Enter District →
+            </button>
+          </>
+        )}
+      </div>
 
-        {/* District navigation dots */}
-        <div
-          className="hidden md:flex items-center gap-6 transition-opacity duration-[800ms] ease-out"
-          style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}
-        >
+      {/* Bottom-right: district list */}
+      <div
+        className="absolute bottom-10 right-10 text-right transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '1200ms' }}
+      >
+        <div className="flex flex-col gap-1.5 items-end">
           {districts.map((d) => (
             <button
               key={d.id}
+              className="pointer-events-auto flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase transition-all duration-200 hover:opacity-100"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: hoveredDistrict === d.id ? d.neonColor : 'rgba(255,255,255,0.25)',
+                opacity: hoveredDistrict === d.id ? 1 : 0.5,
+              }}
               onClick={() => onDistrictClick(d.href)}
-              className={`pointer-events-auto text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
-                hoveredDistrict === d.id ? 'text-foreground scale-110' : 'text-ash/50 hover:text-ash'
-              }`}
-              style={{ fontFamily: 'var(--font-mono)' }}
             >
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 transition-all duration-300"
@@ -1081,7 +1012,7 @@ function HUDOverlay({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// LOADING SCREEN
+// LOADING SCREEN — CSS transition fade-out (no Framer Motion)
 // ═══════════════════════════════════════════════════════════════════════
 function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
   const [barWidth, setBarWidth] = useState(0);
@@ -1140,35 +1071,33 @@ export default function TartaryWorld() {
 
   return (
     <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
-      {/* Three.js Canvas */}
-      <Suspense fallback={null}>
-        <Canvas
-          shadows
-          dpr={[1, 1.5]}
-          gl={{
-            antialias: true,
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
-            powerPreference: 'high-performance',
-          }}
-          onCreated={({ gl }) => {
-            gl.setClearColor('#020204');
-          }}
-        >
-          <OrthographicCamera
-            makeDefault
-            position={[20, 18, 20]}
-            zoom={36}
-            near={0.1}
-            far={120}
-          />
-          <Scene
-            hoveredDistrict={hoveredDistrict}
-            setHoveredDistrict={setHoveredDistrict}
-            onDistrictClick={handleDistrictClick}
-          />
-        </Canvas>
-      </Suspense>
+      {/* Three.js Canvas — NO outer Suspense wrapping. Canvas must never unmount. */}
+      <Canvas
+        shadows
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.2,
+          powerPreference: 'high-performance',
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#020204');
+        }}
+      >
+        <OrthographicCamera
+          makeDefault
+          position={[20, 18, 20]}
+          zoom={36}
+          near={0.1}
+          far={120}
+        />
+        <Scene
+          hoveredDistrict={hoveredDistrict}
+          setHoveredDistrict={setHoveredDistrict}
+          onDistrictClick={handleDistrictClick}
+        />
+      </Canvas>
 
       {/* HUD Overlay */}
       <HUDOverlay
