@@ -1,37 +1,29 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import {
-  OrthographicCamera,
-  Float,
-  Text,
-  Sparkles,
-} from '@react-three/drei';
+import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
+import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
+import { OrthographicCamera, Float, Text, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// ─────────────────────────── TYPES ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════
 interface District {
   id: string;
   label: string;
   subtitle: string;
   href: string;
   position: [number, number, number];
-  color: string;
-  emissive: string;
-  buildings: BuildingConfig[];
+  baseColor: string;
+  neonColor: string;
+  pulseSpeed: number;
 }
 
-interface BuildingConfig {
-  type: 'tower' | 'dome' | 'slab' | 'pyramid' | 'cylinder' | 'crystal' | 'arch';
-  pos: [number, number, number];
-  scale: [number, number, number];
-  color?: string;
-}
-
-// ─────────────────────────── DISTRICT DATA ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// DISTRICT DATA — Five pillars of the TARTARY megacity
+// ═══════════════════════════════════════════════════════════════════════
 const districts: District[] = [
   {
     id: 'universe',
@@ -39,203 +31,453 @@ const districts: District[] = [
     subtitle: 'Worlds & Characters',
     href: '/worlds',
     position: [0, 0, 0],
-    color: '#1a3a5c',
-    emissive: '#3b82f6',
-    buildings: [
-      { type: 'dome', pos: [0, 0, 0], scale: [1.8, 1.4, 1.8] },
-      { type: 'crystal', pos: [1.6, 0, -0.8], scale: [0.4, 2.2, 0.4] },
-      { type: 'crystal', pos: [-1.4, 0, 0.6], scale: [0.35, 1.8, 0.35] },
-      { type: 'crystal', pos: [0.8, 0, 1.4], scale: [0.3, 1.5, 0.3] },
-      { type: 'cylinder', pos: [-0.6, 0, -1.6], scale: [0.5, 0.8, 0.5] },
-    ],
+    baseColor: '#0d1b2a',
+    neonColor: '#3b82f6',
+    pulseSpeed: 1.0,
   },
   {
     id: 'cinema',
     label: 'CINEMA',
     subtitle: 'Film & Anime',
     href: '/cinema',
-    position: [7, 0, -2],
-    color: '#3d2200',
-    emissive: '#d97706',
-    buildings: [
-      { type: 'slab', pos: [0, 0, 0], scale: [2.5, 1.6, 1.2] },
-      { type: 'tower', pos: [-1.5, 0, -0.8], scale: [0.6, 2.8, 0.6] },
-      { type: 'tower', pos: [1.5, 0, -0.8], scale: [0.6, 2.8, 0.6] },
-      { type: 'slab', pos: [0, 1.6, 0], scale: [1.8, 0.3, 0.8] },
-      { type: 'cylinder', pos: [0, 0, 1.2], scale: [0.4, 0.6, 0.4] },
-    ],
+    position: [7.5, 0, -2.5],
+    baseColor: '#1a0f00',
+    neonColor: '#f59e0b',
+    pulseSpeed: 0.8,
   },
   {
     id: 'games',
     label: 'GAMES',
     subtitle: 'Interactive & Systems',
     href: '/games',
-    position: [-7, 0, -2],
-    color: '#0a2e1f',
-    emissive: '#10b981',
-    buildings: [
-      { type: 'tower', pos: [0, 0, 0], scale: [1.2, 3.0, 1.2] },
-      { type: 'pyramid', pos: [1.8, 0, 0.5], scale: [1.2, 1.5, 1.2] },
-      { type: 'slab', pos: [-1.5, 0, -0.5], scale: [1.0, 0.8, 1.4] },
-      { type: 'crystal', pos: [0.6, 0, -1.6], scale: [0.3, 2.0, 0.3] },
-      { type: 'cylinder', pos: [-0.8, 0, 1.4], scale: [0.6, 1.2, 0.6] },
-    ],
+    position: [-7.5, 0, -2.5],
+    baseColor: '#0a1f15',
+    neonColor: '#10b981',
+    pulseSpeed: 1.2,
   },
   {
     id: 'publishing',
     label: 'PUBLISHING',
     subtitle: 'Books & Print',
     href: '/publishing',
-    position: [4, 0, 5],
-    color: '#1f0a3d',
-    emissive: '#8b5cf6',
-    buildings: [
-      { type: 'slab', pos: [0, 0, 0], scale: [2.0, 2.0, 0.5] },
-      { type: 'slab', pos: [0.3, 0, 0.4], scale: [1.6, 1.7, 0.4] },
-      { type: 'slab', pos: [-0.3, 0, -0.4], scale: [1.8, 2.3, 0.4] },
-      { type: 'tower', pos: [1.6, 0, 0.8], scale: [0.5, 1.4, 0.5] },
-      { type: 'dome', pos: [-1.4, 0, 0.6], scale: [0.8, 0.6, 0.8] },
-    ],
+    position: [4.5, 0, 6],
+    baseColor: '#140a2e',
+    neonColor: '#8b5cf6',
+    pulseSpeed: 0.7,
   },
   {
     id: 'shop',
     label: 'SHOP',
     subtitle: 'Store & Membership',
     href: '/shop',
-    position: [-4, 0, 5],
-    color: '#2a1a0a',
-    emissive: '#c9a96e',
-    buildings: [
-      { type: 'arch', pos: [0, 0, 0], scale: [2.0, 2.0, 1.0] },
-      { type: 'tower', pos: [1.4, 0, -0.6], scale: [0.5, 1.8, 0.5] },
-      { type: 'tower', pos: [-1.4, 0, -0.6], scale: [0.5, 1.5, 0.5] },
-      { type: 'dome', pos: [0, 0, 1.2], scale: [0.7, 0.5, 0.7] },
-      { type: 'cylinder', pos: [0.8, 0, 1.0], scale: [0.3, 0.9, 0.3] },
-    ],
+    position: [-4.5, 0, 6],
+    baseColor: '#1a1208',
+    neonColor: '#c9a96e',
+    pulseSpeed: 0.9,
   },
 ];
 
-// ─────────────────────────── GROUND ───────────────────────────
-function Ground() {
-  const meshRef = useRef<THREE.Mesh>(null!);
+// Connection topology
+const CONNECTIONS: [number, number][] = [
+  [0, 1], [0, 2], [0, 3], [0, 4], [1, 3], [2, 4],
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+// SHADERS — Custom ground with scanning line
+// ═══════════════════════════════════════════════════════════════════════
+const groundVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const groundFragmentShader = /* glsl */ `
+  precision highp float;
+  uniform float uTime;
+  varying vec2 vUv;
+
+  void main() {
+    vec2 cUv = vUv - 0.5;
+    float dist = length(cUv);
+
+    // Grid pattern
+    float gridSize = 40.0;
+    vec2 grid = abs(fract(vUv * gridSize) - 0.5);
+    float gridLine = min(grid.x, grid.y);
+    float gridAlpha = 1.0 - smoothstep(0.0, 0.04, gridLine);
+
+    // Major grid overlay (every 5th line)
+    vec2 majorGrid = abs(fract(vUv * 8.0) - 0.5);
+    float majorLine = min(majorGrid.x, majorGrid.y);
+    float majorAlpha = 1.0 - smoothstep(0.0, 0.02, majorLine);
+
+    // Primary scanning line (horizontal sweep)
+    float scanY = fract(uTime * 0.06);
+    float scan1 = 1.0 - smoothstep(0.0, 0.008, abs(vUv.y - scanY));
+    // Echo trails
+    float echo1 = 1.0 - smoothstep(0.0, 0.004, abs(vUv.y - scanY + 0.015));
+    float echo2 = 1.0 - smoothstep(0.0, 0.003, abs(vUv.y - scanY + 0.030));
+
+    // Secondary scanning line (vertical, slower)
+    float scanX = fract(uTime * 0.04 + 0.3);
+    float scan2 = 1.0 - smoothstep(0.0, 0.006, abs(vUv.x - scanX));
+
+    // Radial fade
+    float fade = 1.0 - smoothstep(0.15, 0.5, dist);
+    float outerGlow = smoothstep(0.48, 0.5, dist) * 0.02;
+
+    // Colors
+    vec3 goldDim = vec3(0.788, 0.663, 0.431) * 0.08;
+    vec3 goldBright = vec3(0.788, 0.663, 0.431);
+
+    vec3 color = goldDim * gridAlpha * fade;
+    color += goldDim * majorAlpha * fade * 2.0;
+    color += goldBright * scan1 * fade * 0.6;
+    color += goldBright * echo1 * fade * 0.2;
+    color += goldBright * echo2 * fade * 0.1;
+    color += goldBright * scan2 * fade * 0.25;
+
+    float alpha = gridAlpha * 0.05 * fade
+                + majorAlpha * 0.08 * fade
+                + scan1 * 0.25 * fade
+                + echo1 * 0.08 * fade
+                + echo2 * 0.04 * fade
+                + scan2 * 0.12 * fade
+                + outerGlow;
+
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCANLINE GROUND
+// ═══════════════════════════════════════════════════════════════════════
+function ScanlineGround() {
+  const matRef = useRef<THREE.ShaderMaterial>(null!);
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+    }),
+    []
+  );
+
+  useFrame((state) => {
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+    }
+  });
 
   return (
     <group>
-      {/* Main ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-        <planeGeometry args={[60, 60, 80, 80]} />
-        <meshStandardMaterial
-          color="#080808"
-          metalness={0.8}
-          roughness={0.6}
-          transparent
-          opacity={0.95}
-        />
+      {/* Black floor base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#030303" metalness={0.95} roughness={0.4} />
       </mesh>
-
-      {/* Grid lines */}
-      <gridHelper
-        args={[60, 60, '#c9a96e', '#1a1a1a']}
-        position={[0, 0.01, 0]}
-        material-transparent
-        material-opacity={0.08}
-      />
-
-      {/* Inner glow circle */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 1]}>
-        <circleGeometry args={[14, 64]} />
-        <meshStandardMaterial
-          color="#c9a96e"
+      {/* Scanline overlay */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[80, 80]} />
+        <shaderMaterial
+          ref={matRef}
+          vertexShader={groundVertexShader}
+          fragmentShader={groundFragmentShader}
+          uniforms={uniforms}
           transparent
-          opacity={0.03}
-          emissive="#c9a96e"
-          emissiveIntensity={0.15}
+          depthWrite={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
     </group>
   );
 }
 
-// ─────────────────────────── BUILDING MESH ───────────────────────────
-function Building({
-  config,
-  districtColor,
-  districtEmissive,
+// ═══════════════════════════════════════════════════════════════════════
+// MEGA BUILDING — Physical material megastructure element
+// ═══════════════════════════════════════════════════════════════════════
+function MegaBuilding({
+  geometry,
+  position,
+  scale,
+  baseColor,
+  neonColor,
   hovered,
+  rotation,
 }: {
-  config: BuildingConfig;
-  districtColor: string;
-  districtEmissive: string;
+  geometry: THREE.BufferGeometry;
+  position: [number, number, number];
+  scale: [number, number, number];
+  baseColor: string;
+  neonColor: string;
   hovered: boolean;
+  rotation?: [number, number, number];
 }) {
   const ref = useRef<THREE.Mesh>(null!);
-  const baseColor = config.color || districtColor;
-  const targetEmissiveIntensity = hovered ? 1.2 : 0.15;
-  const currentEmissive = useRef(0.15);
+  const emissiveTarget = useRef(0.2);
 
   useFrame((_, delta) => {
-    if (ref.current) {
-      currentEmissive.current = THREE.MathUtils.lerp(
-        currentEmissive.current,
-        targetEmissiveIntensity,
-        delta * 4
-      );
-      (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
-        currentEmissive.current;
-    }
+    if (!ref.current) return;
+    const target = hovered ? 1.5 : 0.2;
+    emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, target, delta * 5);
+    const mat = ref.current.material as THREE.MeshPhysicalMaterial;
+    mat.emissiveIntensity = emissiveTarget.current;
   });
-
-  const geometry = useMemo(() => {
-    switch (config.type) {
-      case 'tower':
-        return new THREE.BoxGeometry(1, 1, 1);
-      case 'dome':
-        return new THREE.SphereGeometry(0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-      case 'slab':
-        return new THREE.BoxGeometry(1, 1, 1);
-      case 'pyramid':
-        return new THREE.ConeGeometry(0.5, 1, 4);
-      case 'cylinder':
-        return new THREE.CylinderGeometry(0.5, 0.5, 1, 16);
-      case 'crystal':
-        return new THREE.OctahedronGeometry(0.5, 0);
-      case 'arch':
-        return new THREE.TorusGeometry(0.5, 0.15, 8, 16, Math.PI);
-      default:
-        return new THREE.BoxGeometry(1, 1, 1);
-    }
-  }, [config.type]);
-
-  const yOffset =
-    config.type === 'dome'
-      ? 0
-      : config.type === 'arch'
-      ? config.scale[1] * 0.5
-      : config.type === 'crystal'
-      ? config.scale[1] * 0.5
-      : config.scale[1] * 0.5;
 
   return (
     <mesh
       ref={ref}
       geometry={geometry}
-      position={[config.pos[0], yOffset + config.pos[1], config.pos[2]]}
-      scale={config.scale}
+      position={position}
+      scale={scale}
+      rotation={rotation || [0, 0, 0]}
       castShadow
       receiveShadow
     >
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={baseColor}
-        metalness={0.6}
-        roughness={0.25}
-        emissive={districtEmissive}
-        emissiveIntensity={0.15}
+        metalness={0.92}
+        roughness={0.08}
+        emissive={neonColor}
+        emissiveIntensity={0.2}
+        clearcoat={0.4}
+        clearcoatRoughness={0.15}
+        envMapIntensity={0.5}
       />
     </mesh>
   );
 }
 
-// ─────────────────────────── DISTRICT GROUP ───────────────────────────
+// Neon strip — thin glowing accent line on a building
+function NeonStrip({
+  position,
+  scale,
+  color,
+  hovered,
+}: {
+  position: [number, number, number];
+  scale: [number, number, number];
+  color: string;
+  hovered: boolean;
+}) {
+  const ref = useRef<THREE.Mesh>(null!);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const mat = ref.current.material as THREE.MeshBasicMaterial;
+    const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.3 + 0.7;
+    mat.opacity = hovered ? pulse : 0.4;
+  });
+
+  return (
+    <mesh ref={ref} position={position} scale={scale}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial color={color} transparent opacity={0.4} />
+    </mesh>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DISTRICT ARCHITECTURES — Unique megastructures per district
+// ═══════════════════════════════════════════════════════════════════════
+
+// Shared geometry cache
+const geoCache = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 24),
+  cone: new THREE.ConeGeometry(0.5, 1, 6),
+  sphere: new THREE.SphereGeometry(0.5, 24, 16),
+  dome: new THREE.SphereGeometry(0.5, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+  octahedron: new THREE.OctahedronGeometry(0.5, 0),
+  icosahedron: new THREE.IcosahedronGeometry(0.5, 0),
+  torus: new THREE.TorusGeometry(0.5, 0.08, 8, 32),
+  ring: new THREE.RingGeometry(0.4, 0.5, 32),
+};
+
+// UNIVERSE — Observatory dome with orbiting crystal spires
+function UniverseDistrict({ hovered }: { hovered: boolean }) {
+  const ringRef = useRef<THREE.Mesh>(null!);
+
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.y = state.clock.elapsedTime * 0.3;
+      ringRef.current.rotation.x = Math.PI / 3 + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
+    }
+  });
+
+  const c = districts[0];
+  return (
+    <group>
+      {/* Main observatory dome */}
+      <MegaBuilding geometry={geoCache.dome} position={[0, 0, 0]} scale={[3.2, 2.2, 3.2]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
+      {/* Antenna spire */}
+      <MegaBuilding geometry={geoCache.cylinder} position={[0, 2.8, 0]} scale={[0.15, 1.8, 0.15]} baseColor="#0a1628" neonColor={c.neonColor} hovered={hovered} />
+      {/* Orbiting holographic ring */}
+      <mesh ref={ringRef} position={[0, 1.8, 0]}>
+        <torusGeometry args={[2.0, 0.03, 8, 64]} />
+        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.7 : 0.25} />
+      </mesh>
+      {/* Crystal spires */}
+      <MegaBuilding geometry={geoCache.octahedron} position={[1.8, 1.2, -1.0]} scale={[0.4, 2.6, 0.4]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.octahedron} position={[-1.6, 0.9, 0.8]} scale={[0.35, 2.0, 0.35]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.octahedron} position={[0.9, 0.8, 1.5]} scale={[0.3, 1.6, 0.3]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
+      {/* Neon accent strips */}
+      <NeonStrip position={[0, 0.5, 1.6]} scale={[1.5, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 0.8, -1.5]} scale={[1.2, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
+      {/* Ground glow ring */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.5, 1.65, 64]} />
+        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.5 : 0.08} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  );
+}
+
+// CINEMA — Screen towers with projection beam
+function CinemaDistrict({ hovered }: { hovered: boolean }) {
+  const beamRef = useRef<THREE.Mesh>(null!);
+
+  useFrame((state) => {
+    if (beamRef.current) {
+      const mat = beamRef.current.material as THREE.MeshBasicMaterial;
+      const flicker = Math.sin(state.clock.elapsedTime * 8) * 0.15 + 0.35;
+      mat.opacity = hovered ? flicker : 0.05;
+    }
+  });
+
+  const c = districts[1];
+  return (
+    <group>
+      {/* Main screen tower */}
+      <MegaBuilding geometry={geoCache.box} position={[0, 1.0, 0]} scale={[3.0, 2.0, 0.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
+      {/* Screen surface (bright emissive face) */}
+      <mesh position={[0, 1.0, 0.32]}>
+        <planeGeometry args={[2.6, 1.6]} />
+        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.6 : 0.15} />
+      </mesh>
+      {/* Twin projection towers */}
+      <MegaBuilding geometry={geoCache.box} position={[-1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
+      {/* Tower caps */}
+      <MegaBuilding geometry={geoCache.cone} position={[-1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.cone} position={[1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
+      {/* Projection beam */}
+      <mesh ref={beamRef} position={[0, 2.2, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[1.5, 4, 16, 1, true]} />
+        <meshBasicMaterial color={c.neonColor} transparent opacity={0.05} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Horizontal neon strips */}
+      <NeonStrip position={[0, 0.2, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 1.8, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[-1.8, 0.3, -0.2]} scale={[0.06, 0.06, 0.6]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[1.8, 0.3, -0.2]} scale={[0.06, 0.06, 0.6]} color={c.neonColor} hovered={hovered} />
+    </group>
+  );
+}
+
+// GAMES — Circuit tower with data veins
+function GamesDistrict({ hovered }: { hovered: boolean }) {
+  const c = districts[2];
+  return (
+    <group>
+      {/* Main circuit tower */}
+      <MegaBuilding geometry={geoCache.box} position={[0, 1.8, 0]} scale={[1.4, 3.6, 1.4]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
+      {/* Tower crown */}
+      <MegaBuilding geometry={geoCache.box} position={[0, 3.8, 0]} scale={[1.8, 0.3, 1.8]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
+      {/* Antenna array */}
+      <MegaBuilding geometry={geoCache.cylinder} position={[0.4, 4.3, 0.4]} scale={[0.08, 1.0, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.cylinder} position={[-0.4, 4.1, -0.4]} scale={[0.08, 0.7, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
+      {/* Satellite pylons */}
+      <MegaBuilding geometry={geoCache.box} position={[2.0, 0.8, 0.6]} scale={[0.8, 1.6, 0.8]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[-1.6, 0.6, -0.8]} scale={[0.9, 1.2, 0.7]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
+      {/* Hexagonal base */}
+      <MegaBuilding geometry={geoCache.cylinder} position={[0, 0.08, 0]} scale={[2.8, 0.16, 2.8]} baseColor="#060e0a" neonColor={c.neonColor} hovered={hovered} />
+      {/* Data veins (vertical neon strips on main tower) */}
+      <NeonStrip position={[0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[-0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 1.8, 0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 1.8, -0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
+      {/* Horizontal circuit lines */}
+      <NeonStrip position={[0, 1.0, 0.72]} scale={[1.3, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 2.5, -0.72]} scale={[1.3, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
+    </group>
+  );
+}
+
+// PUBLISHING — Stacked library with bookmark tower
+function PublishingDistrict({ hovered }: { hovered: boolean }) {
+  const c = districts[3];
+  return (
+    <group>
+      {/* Stacked book slabs */}
+      <MegaBuilding geometry={geoCache.box} position={[0, 0.4, 0]} scale={[2.8, 0.8, 1.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[0.2, 1.1, -0.1]} scale={[2.4, 0.6, 1.4]} baseColor="#1a0e35" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[-0.15, 1.7, 0.1]} scale={[2.6, 0.5, 1.3]} baseColor="#1f1040" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[0.1, 2.2, 0]} scale={[2.2, 0.4, 1.1]} baseColor="#240f45" neonColor={c.neonColor} hovered={hovered} />
+      {/* Bookmark tower (tall thin slab) */}
+      <MegaBuilding geometry={geoCache.box} position={[1.7, 1.5, 0]} scale={[0.15, 3.0, 0.8]} baseColor="#2a1350" neonColor={c.neonColor} hovered={hovered} />
+      {/* Reading light */}
+      <mesh position={[1.7, 3.2, 0]}>
+        <sphereGeometry args={[0.15, 16, 8]} />
+        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.9 : 0.3} />
+      </mesh>
+      {/* Page glow strips between slabs */}
+      <NeonStrip position={[-1.3, 0.82, 0]} scale={[0.06, 0.04, 1.4]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[-1.1, 1.42, 0]} scale={[0.06, 0.04, 1.2]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[-1.2, 1.96, 0]} scale={[0.06, 0.04, 1.1]} color={c.neonColor} hovered={hovered} />
+      {/* Spine lines */}
+      <NeonStrip position={[0, 0.4, 0.82]} scale={[2.6, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
+    </group>
+  );
+}
+
+// SHOP — Grand marketplace arch with golden lanterns
+function ShopDistrict({ hovered }: { hovered: boolean }) {
+  const c = districts[4];
+  return (
+    <group>
+      {/* Grand arch */}
+      <mesh position={[0, 1.6, 0]} rotation={[0, 0, 0]}>
+        <torusGeometry args={[1.5, 0.2, 12, 24, Math.PI]} />
+        <meshPhysicalMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} clearcoat={0.4} clearcoatRoughness={0.15} />
+      </mesh>
+      {/* Arch pillars */}
+      <MegaBuilding geometry={geoCache.box} position={[-1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.box} position={[1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
+      {/* Market dome behind */}
+      <MegaBuilding geometry={geoCache.dome} position={[0, 0, -1.2]} scale={[2.2, 1.4, 2.2]} baseColor="#15100a" neonColor={c.neonColor} hovered={hovered} />
+      {/* Display towers */}
+      <MegaBuilding geometry={geoCache.cylinder} position={[1.8, 0.9, -0.8]} scale={[0.4, 1.8, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
+      <MegaBuilding geometry={geoCache.cylinder} position={[-1.8, 0.7, -0.8]} scale={[0.4, 1.4, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
+      {/* Golden lanterns (glowing spheres) */}
+      <mesh position={[-1.5, 1.8, 0]}>
+        <sphereGeometry args={[0.12, 12, 8]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} />
+      </mesh>
+      <mesh position={[1.5, 1.8, 0]}>
+        <sphereGeometry args={[0.12, 12, 8]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} />
+      </mesh>
+      {/* Arch neon trim */}
+      <NeonStrip position={[0, 0.05, 0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
+      <NeonStrip position={[0, 0.05, -0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
+    </group>
+  );
+}
+
+// District renderer
+const DISTRICT_COMPONENTS: Record<string, React.FC<{ hovered: boolean }>> = {
+  universe: UniverseDistrict,
+  cinema: CinemaDistrict,
+  games: GamesDistrict,
+  publishing: PublishingDistrict,
+  shop: ShopDistrict,
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// DISTRICT GROUP — Wrapper with platform, label, pulse, hit area
+// ═══════════════════════════════════════════════════════════════════════
 function DistrictGroup({
   district,
   isHovered,
@@ -250,23 +492,23 @@ function DistrictGroup({
   onClick: () => void;
 }) {
   const groupRef = useRef<THREE.Group>(null!);
-  const baseY = useRef(0);
+  const pulseRef = useRef<THREE.Mesh>(null!);
   const time = useRef(Math.random() * 100);
+  const Arch = DISTRICT_COMPONENTS[district.id];
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     time.current += delta;
     if (groupRef.current) {
-      // Gentle floating
-      const float = Math.sin(time.current * 0.8) * 0.08;
+      // Gentle float
+      const float = Math.sin(time.current * 0.6) * 0.06;
       groupRef.current.position.y = district.position[1] + float;
-
-      // Subtle rotation on hover
-      const targetRotY = isHovered ? 0.04 : 0;
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        targetRotY,
-        delta * 3
-      );
+    }
+    // Neon pulse ring
+    if (pulseRef.current) {
+      const mat = pulseRef.current.material as THREE.MeshBasicMaterial;
+      const pulse = Math.sin(state.clock.elapsedTime * district.pulseSpeed * 2) * 0.15 + 0.35;
+      mat.opacity = isHovered ? pulse * 1.5 : pulse * 0.3;
+      pulseRef.current.rotation.z = state.clock.elapsedTime * 0.2;
     }
   });
 
@@ -274,90 +516,61 @@ function DistrictGroup({
     <group
       ref={groupRef}
       position={district.position}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        onHover();
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        onUnhover();
-        document.body.style.cursor = 'default';
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
+      onPointerOver={(e) => { e.stopPropagation(); onHover(); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={(e) => { e.stopPropagation(); onUnhover(); document.body.style.cursor = 'default'; }}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
     >
       {/* Invisible hit area */}
       <mesh visible={false}>
-        <cylinderGeometry args={[3, 3, 4, 16]} />
+        <cylinderGeometry args={[3.2, 3.2, 5, 16]} />
         <meshBasicMaterial />
       </mesh>
 
-      {/* Buildings */}
-      {district.buildings.map((building, idx) => (
-        <Building
-          key={idx}
-          config={building}
-          districtColor={district.color}
-          districtEmissive={district.emissive}
-          hovered={isHovered}
-        />
-      ))}
+      {/* District architecture */}
+      <Arch hovered={isHovered} />
 
       {/* Base platform */}
-      <mesh position={[0, -0.02, 0]} receiveShadow>
-        <cylinderGeometry args={[3, 3.2, 0.08, 32]} />
-        <meshStandardMaterial
-          color="#111"
-          metalness={0.9}
-          roughness={0.3}
-          emissive={district.emissive}
-          emissiveIntensity={isHovered ? 0.4 : 0.05}
+      <mesh position={[0, -0.04, 0]} receiveShadow>
+        <cylinderGeometry args={[3.2, 3.4, 0.08, 6]} />
+        <meshPhysicalMaterial
+          color="#080808"
+          metalness={0.95}
+          roughness={0.2}
+          emissive={district.neonColor}
+          emissiveIntensity={isHovered ? 0.35 : 0.04}
         />
       </mesh>
 
-      {/* Glow ring under platform */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.8, 3.3, 64]} />
-        <meshBasicMaterial
-          color={district.emissive}
-          transparent
-          opacity={isHovered ? 0.6 : 0.1}
-        />
+      {/* Neon pulse ring */}
+      <mesh ref={pulseRef} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[3.0, 3.35, 6]} />
+        <meshBasicMaterial color={district.neonColor} transparent opacity={0.1} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Hover spotlight beam */}
+      {/* Hover spotlight */}
       {isHovered && (
-        <pointLight
-          position={[0, 4, 0]}
-          color={district.emissive}
-          intensity={8}
-          distance={12}
-          decay={2}
-        />
+        <pointLight position={[0, 5, 0]} color={district.neonColor} intensity={10} distance={14} decay={2} />
       )}
 
       {/* Floating label */}
-      <Float speed={1.5} rotationIntensity={0} floatIntensity={0.3} floatingRange={[0, 0.15]}>
+      <Float speed={1.2} rotationIntensity={0} floatIntensity={0.2} floatingRange={[0, 0.1]}>
         <Text
-          position={[0, 4.2, 0]}
+          position={[0, 4.6, 0]}
           fontSize={0.55}
           color={isHovered ? '#ffffff' : '#c9a96e'}
           anchorX="center"
           anchorY="middle"
-          letterSpacing={0.2}
-          outlineWidth={0.02}
+          letterSpacing={0.22}
+          outlineWidth={0.025}
           outlineColor="#000000"
-          fillOpacity={isHovered ? 1 : 0.7}
+          fillOpacity={isHovered ? 1 : 0.6}
         >
           {district.label}
         </Text>
         <Text
-          position={[0, 3.6, 0]}
-          fontSize={0.25}
-          color={isHovered ? district.emissive : '#666666'}
+          position={[0, 4.0, 0]}
+          fontSize={0.22}
+          color={isHovered ? district.neonColor : '#555555'}
           anchorX="center"
           anchorY="middle"
           letterSpacing={0.15}
@@ -370,159 +583,270 @@ function DistrictGroup({
 
       {/* District sparkles */}
       <Sparkles
-        count={isHovered ? 40 : 12}
-        scale={[5, 4, 5]}
-        size={isHovered ? 3 : 1.5}
-        speed={0.4}
-        color={district.emissive}
-        opacity={isHovered ? 0.8 : 0.3}
+        count={isHovered ? 50 : 10}
+        scale={[6, 5, 6]}
+        size={isHovered ? 3.5 : 1.2}
+        speed={0.5}
+        color={district.neonColor}
+        opacity={isHovered ? 0.9 : 0.25}
       />
     </group>
   );
 }
 
-// ─────────────────────────── CONNECTING PATHS ───────────────────────────
-function PathLine({ geometry }: { geometry: THREE.BufferGeometry }) {
-  const ref = useRef<THREE.Line>(null!);
-
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.geometry = geometry;
-    }
-  }, [geometry]);
-
-  return (
-    <primitive
-      ref={ref}
-      object={new THREE.Line(
-        geometry,
-        new THREE.LineBasicMaterial({ color: '#c9a96e', transparent: true, opacity: 0.06 })
-      )}
-    />
-  );
-}
-
-function Paths() {
-  const geometries = useMemo(() => {
-    const connections: [number, number][] = [
-      [0, 1], // Universe -> Cinema
-      [0, 2], // Universe -> Games
-      [0, 3], // Universe -> Publishing
-      [0, 4], // Universe -> Shop
-      [1, 3], // Cinema -> Publishing
-      [2, 4], // Games -> Shop
-    ];
-
-    return connections.map(([from, to]) => {
-      const a = new THREE.Vector3(...districts[from].position);
-      const b = new THREE.Vector3(...districts[to].position);
-      const mid = a.clone().add(b).multiplyScalar(0.5);
-      mid.y = -0.01;
-
-      const curve = new THREE.QuadraticBezierCurve3(
-        new THREE.Vector3(a.x, 0.02, a.z),
-        new THREE.Vector3(mid.x, 0.02, mid.z),
-        new THREE.Vector3(b.x, 0.02, b.z)
-      );
-
-      return new THREE.BufferGeometry().setFromPoints(curve.getPoints(30));
-    });
-  }, []);
-
-  return (
-    <group>
-      {geometries.map((geo, i) => (
-        <PathLine key={i} geometry={geo} />
-      ))}
-    </group>
-  );
-}
-
-// ─────────────────────────── AMBIENT PARTICLES ───────────────────────────
-function AmbientParticles() {
-  const count = 200;
+// ═══════════════════════════════════════════════════════════════════════
+// DATA STREAMS — Animated particles flowing along paths
+// ═══════════════════════════════════════════════════════════════════════
+function DataStream({
+  from,
+  to,
+  color,
+  speed,
+  count,
+}: {
+  from: [number, number, number];
+  to: [number, number, number];
+  color: string;
+  speed: number;
+  count: number;
+}) {
   const ref = useRef<THREE.Points>(null!);
 
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 40;
-      arr[i * 3 + 1] = Math.random() * 8 + 0.5;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 40;
-    }
-    return arr;
-  }, []);
+  const curve = useMemo(() => {
+    const a = new THREE.Vector3(...from);
+    const b = new THREE.Vector3(...to);
+    const mid = a.clone().add(b).multiplyScalar(0.5);
+    mid.y = 2.0; // Arc height
+    return new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(a.x, 0.3, a.z),
+      mid,
+      new THREE.Vector3(b.x, 0.3, b.z)
+    );
+  }, [from, to]);
+
+  const positions = useMemo(() => new Float32Array(count * 3), [count]);
 
   useFrame((state) => {
-    if (ref.current) {
-      const positions = ref.current.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < count; i++) {
-        positions[i * 3 + 1] += Math.sin(state.clock.elapsedTime * 0.3 + i) * 0.002;
-        // Wrap around
-        if (positions[i * 3 + 1] > 10) positions[i * 3 + 1] = 0.5;
-      }
-      ref.current.geometry.attributes.position.needsUpdate = true;
+    if (!ref.current) return;
+    const arr = ref.current.geometry.attributes.position.array as Float32Array;
+    const t = state.clock.elapsedTime * speed;
+    for (let i = 0; i < count; i++) {
+      const progress = ((t * 0.15 + i / count) % 1 + 1) % 1;
+      const pt = curve.getPointAt(progress);
+      arr[i * 3] = pt.x;
+      arr[i * 3 + 1] = pt.y;
+      arr[i * 3 + 2] = pt.z;
     }
+    ref.current.geometry.attributes.position.needsUpdate = true;
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.06}
-        color="#c9a96e"
+        size={0.12}
+        color={color}
         transparent
-        opacity={0.4}
+        opacity={0.85}
         sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
       />
     </points>
   );
 }
 
-// ─────────────────────────── CAMERA RIG ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// DATA DRONES — Small floating objects traversing paths
+// ═══════════════════════════════════════════════════════════════════════
+function DataDrone({
+  from,
+  to,
+  color,
+  speed,
+  offset,
+}: {
+  from: [number, number, number];
+  to: [number, number, number];
+  color: string;
+  speed: number;
+  offset: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null!);
+  const trailRef = useRef<THREE.Mesh>(null!);
+
+  const curve = useMemo(() => {
+    const a = new THREE.Vector3(...from);
+    const b = new THREE.Vector3(...to);
+    const mid = a.clone().add(b).multiplyScalar(0.5);
+    mid.y = 1.8;
+    return new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(a.x, 0.5, a.z),
+      mid,
+      new THREE.Vector3(b.x, 0.5, b.z)
+    );
+  }, [from, to]);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = ((state.clock.elapsedTime * speed * 0.12 + offset) % 1 + 1) % 1;
+    const pt = curve.getPointAt(t);
+    ref.current.position.copy(pt);
+    ref.current.position.y += Math.sin(state.clock.elapsedTime * 4 + offset * 20) * 0.08;
+    ref.current.rotation.y = state.clock.elapsedTime * 3;
+    ref.current.rotation.x = state.clock.elapsedTime * 2;
+  });
+
+  return (
+    <mesh ref={ref}>
+      <icosahedronGeometry args={[0.07, 0]} />
+      <meshPhysicalMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={3}
+        metalness={0.9}
+        roughness={0.1}
+        transparent
+        opacity={0.9}
+      />
+    </mesh>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DIGITAL SMOG — Low-lying atmospheric particle cloud
+// ═══════════════════════════════════════════════════════════════════════
+function DigitalSmog() {
+  const count = 250;
+  const ref = useRef<THREE.Points>(null!);
+
+  const positions = useMemo(() => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 50;
+      arr[i * 3 + 1] = Math.random() * 1.2;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 50;
+    }
+    return arr;
+  }, []);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const arr = ref.current.geometry.attributes.position.array as Float32Array;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] += Math.sin(t * 0.08 + i * 0.5) * 0.003;
+      arr[i * 3 + 2] += Math.cos(t * 0.06 + i * 0.3) * 0.003;
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.5}
+        color="#0a0a1a"
+        transparent
+        opacity={0.12}
+        sizeAttenuation
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AMBIENT MOTES — High-altitude floating particles
+// ═══════════════════════════════════════════════════════════════════════
+function AmbientMotes() {
+  const count = 150;
+  const ref = useRef<THREE.Points>(null!);
+
+  const positions = useMemo(() => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 45;
+      arr[i * 3 + 1] = Math.random() * 10 + 1;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 45;
+    }
+    return arr;
+  }, []);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const arr = ref.current.geometry.attributes.position.array as Float32Array;
+    for (let i = 0; i < count; i++) {
+      arr[i * 3 + 1] += Math.sin(state.clock.elapsedTime * 0.2 + i) * 0.002;
+      if (arr[i * 3 + 1] > 12) arr[i * 3 + 1] = 1;
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.05}
+        color="#c9a96e"
+        transparent
+        opacity={0.5}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CAMERA RIG — Lazy follow with smooth damping
+// ═══════════════════════════════════════════════════════════════════════
 function CameraRig({ target }: { target: [number, number, number] | null }) {
   const { camera } = useThree();
-  const defaultPos = useMemo(() => new THREE.Vector3(18, 16, 18), []);
-  const defaultLookAt = useMemo(() => new THREE.Vector3(0, 0, 1), []);
-  const currentLookAt = useRef(new THREE.Vector3(0, 0, 1));
+  const defaultPos = useMemo(() => new THREE.Vector3(20, 18, 20), []);
+  const defaultLookAt = useMemo(() => new THREE.Vector3(0, 0, 1.5), []);
+  const currentLookAt = useRef(new THREE.Vector3(0, 0, 1.5));
   const time = useRef(0);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     time.current += delta;
 
-    // Gentle orbit
-    const orbitRadius = 0.8;
-    const orbitSpeed = 0.08;
-    const ox = Math.sin(time.current * orbitSpeed) * orbitRadius;
-    const oz = Math.cos(time.current * orbitSpeed) * orbitRadius;
+    // Very gentle orbit
+    const ox = Math.sin(time.current * 0.06) * 0.6;
+    const oz = Math.cos(time.current * 0.06) * 0.6;
 
-    // On hover: shift camera slightly toward district, mainly adjust look-at
+    // Lazy lean toward hovered district
     const targetPos = target
       ? new THREE.Vector3(
-          defaultPos.x + ox + (target[0] - defaultPos.x) * 0.15,
+          defaultPos.x + ox + (target[0] - defaultPos.x) * 0.12,
           defaultPos.y,
-          defaultPos.z + oz + (target[2] - defaultPos.z) * 0.15
+          defaultPos.z + oz + (target[2] - defaultPos.z) * 0.12
         )
       : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
 
     const targetLook = target
-      ? new THREE.Vector3(target[0] * 0.6, 0.5, target[2] * 0.6 + 1)
+      ? new THREE.Vector3(target[0] * 0.5, 0.8, target[2] * 0.5 + 1.5)
       : defaultLookAt;
 
-    camera.position.lerp(targetPos, delta * 2);
-    currentLookAt.current.lerp(targetLook, delta * 2);
+    // Smooth damping (lazy follow)
+    camera.position.lerp(targetPos, delta * 1.8);
+    currentLookAt.current.lerp(targetLook, delta * 1.8);
     camera.lookAt(currentLookAt.current);
   });
 
   return null;
 }
 
-// ─────────────────────────── SCENE ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SCENE — Full megacity assembly
+// ═══════════════════════════════════════════════════════════════════════
 function Scene({
   hoveredDistrict,
   setHoveredDistrict,
@@ -534,32 +858,41 @@ function Scene({
 }) {
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.15} color="#b8a88a" />
+      {/* Lighting rig */}
+      <ambientLight intensity={0.08} color="#8a9ab8" />
       <directionalLight
-        position={[15, 20, 10]}
-        intensity={0.8}
-        color="#fff5e0"
+        position={[15, 25, 12]}
+        intensity={0.6}
+        color="#fff8e8"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-far={60}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
+        shadow-camera-far={70}
+        shadow-camera-left={-25}
+        shadow-camera-right={25}
+        shadow-camera-top={25}
+        shadow-camera-bottom={-25}
       />
-      <directionalLight position={[-10, 15, -10]} intensity={0.2} color="#6b8cce" />
-      <pointLight position={[0, 8, 0]} intensity={2} color="#c9a96e" distance={25} decay={2} />
+      <directionalLight position={[-12, 18, -12]} intensity={0.15} color="#4a6fa5" />
+      <pointLight position={[0, 10, 0]} intensity={1.5} color="#c9a96e" distance={30} decay={2} />
 
-      {/* Fog */}
-      <fog attach="fog" args={['#050505', 25, 55]} />
+      {/* Per-district colored lights */}
+      {districts.map((d) => (
+        <pointLight
+          key={`light-${d.id}`}
+          position={[d.position[0], 3, d.position[2]]}
+          intensity={hoveredDistrict === d.id ? 4 : 0.6}
+          color={d.neonColor}
+          distance={10}
+          decay={2}
+        />
+      ))}
 
-      {/* Ground */}
-      <Ground />
+      {/* Atmospheric fog */}
+      <fog attach="fog" args={['#020204', 28, 60]} />
 
-      {/* Paths between districts */}
-      <Paths />
+      {/* Scanline ground */}
+      <ScanlineGround />
 
       {/* Districts */}
       {districts.map((d) => (
@@ -573,10 +906,37 @@ function Scene({
         />
       ))}
 
-      {/* Ambient particles */}
-      <AmbientParticles />
+      {/* Data streams between districts */}
+      {CONNECTIONS.map(([from, to], i) => (
+        <DataStream
+          key={`stream-${i}`}
+          from={districts[from].position}
+          to={districts[to].position}
+          color={districts[from].neonColor}
+          speed={0.8 + i * 0.15}
+          count={6}
+        />
+      ))}
 
-      {/* Camera rig */}
+      {/* Data drones */}
+      {CONNECTIONS.map(([from, to], i) => (
+        <DataDrone
+          key={`drone-${i}`}
+          from={districts[from].position}
+          to={districts[to].position}
+          color={districts[to].neonColor}
+          speed={0.6 + i * 0.1}
+          offset={i * 0.17}
+        />
+      ))}
+
+      {/* Digital smog */}
+      <DigitalSmog />
+
+      {/* Ambient motes */}
+      <AmbientMotes />
+
+      {/* Camera */}
       <CameraRig
         target={
           hoveredDistrict
@@ -588,7 +948,9 @@ function Scene({
   );
 }
 
-// ─────────────────────────── HUD OVERLAY ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// HUD OVERLAY
+// ═══════════════════════════════════════════════════════════════════════
 function HUDOverlay({
   hoveredDistrict,
   onDistrictClick,
@@ -640,7 +1002,7 @@ function HUDOverlay({
             <div className="pointer-events-auto">
               <p
                 className="text-[10px] tracking-[0.2em] uppercase mb-1"
-                style={{ fontFamily: 'var(--font-mono)', color: district.emissive }}
+                style={{ fontFamily: 'var(--font-mono)', color: district.neonColor }}
               >
                 {district.subtitle}
               </p>
@@ -655,19 +1017,9 @@ function HUDOverlay({
                 className="text-[11px] tracking-[0.15em] uppercase text-gold hover:text-gold-light transition-colors duration-200 flex items-center gap-2"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Enter
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
+                Enter District
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
             </div>
@@ -681,6 +1033,7 @@ function HUDOverlay({
           )}
         </div>
 
+        {/* District navigation dots */}
         <div
           className="hidden md:flex items-center gap-6 transition-opacity duration-[800ms] ease-out"
           style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}
@@ -697,9 +1050,8 @@ function HUDOverlay({
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 transition-all duration-300"
                 style={{
-                  backgroundColor: hoveredDistrict === d.id ? d.emissive : 'rgba(255,255,255,0.15)',
-                  boxShadow:
-                    hoveredDistrict === d.id ? `0 0 8px ${d.emissive}` : 'none',
+                  backgroundColor: hoveredDistrict === d.id ? d.neonColor : 'rgba(255,255,255,0.15)',
+                  boxShadow: hoveredDistrict === d.id ? `0 0 10px ${d.neonColor}` : 'none',
                 }}
               />
               {d.id}
@@ -708,16 +1060,13 @@ function HUDOverlay({
         </div>
       </div>
 
-      {/* Scroll indicator (mobile) */}
+      {/* Mobile scroll indicator */}
       <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 md:hidden transition-opacity duration-1000"
         style={{ opacity: isReady ? 1 : 0, transitionDelay: '1500ms' }}
       >
         <div className="flex flex-col items-center gap-2 animate-bounce">
-          <span
-            className="text-[9px] tracking-[0.2em] uppercase text-ash/40"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
+          <span className="text-[9px] tracking-[0.2em] uppercase text-ash/40" style={{ fontFamily: 'var(--font-mono)' }}>
             Scroll
           </span>
           <svg width="12" height="20" viewBox="0 0 12 20" fill="none" className="text-gold/40">
@@ -729,22 +1078,19 @@ function HUDOverlay({
   );
 }
 
-// ─────────────────────────── LOADING SCREEN ───────────────────────────
-function LoadingScreen({ progress }: { progress: number }) {
+// ═══════════════════════════════════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════════════════════════════════
+function LoadingScreen() {
   return (
     <motion.div
-      className="absolute inset-0 z-30 bg-carbon flex flex-col items-center justify-center"
+      className="absolute inset-0 z-40 bg-[#020204] flex flex-col items-center justify-center"
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: 1.0, ease: 'easeInOut' }}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center"
-      >
+      <div className="text-center">
         <p
-          className="text-2xl tracking-[0.3em] uppercase mb-8 logo-sheen"
+          className="text-2xl tracking-[0.4em] uppercase mb-8 logo-sheen"
           style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
         >
           Tartary
@@ -754,68 +1100,66 @@ function LoadingScreen({ progress }: { progress: number }) {
             className="absolute top-0 left-0 h-full bg-gold"
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
-            transition={{ duration: 2, ease: 'easeInOut' }}
+            transition={{ duration: 2.2, ease: 'easeInOut' }}
           />
         </div>
-        <p
-          className="text-[10px] tracking-[0.2em] uppercase text-ash/50 mt-4"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          Building world
+        <p className="text-[10px] tracking-[0.25em] uppercase text-ash/40 mt-4" style={{ fontFamily: 'var(--font-mono)' }}>
+          Initializing megacity
         </p>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
 
-// ─────────────────────────── MAIN COMPONENT ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════
 export default function TartaryWorld() {
   const router = useRouter();
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [loadProgress, setLoadProgress] = useState(0);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoaded(true), 2200);
+    const timer = setTimeout(() => setIsLoaded(true), 2500);
     return () => clearTimeout(timer);
   }, []);
 
   const handleDistrictClick = useCallback(
-    (href: string) => {
-      router.push(href);
-    },
+    (href: string) => { router.push(href); },
     [router]
   );
 
   return (
-    <div className="relative w-full h-screen bg-carbon overflow-hidden">
+    <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
       {/* Three.js Canvas */}
-      <Canvas
-        shadows
-        dpr={[1, 1.5]}
-        gl={{
-          antialias: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
-        }}
-        onCreated={({ gl }) => {
-          gl.setClearColor('#050505');
-        }}
-      >
-        <OrthographicCamera
-          makeDefault
-          position={[18, 16, 18]}
-          zoom={38}
-          near={0.1}
-          far={100}
-        />
-        <Scene
-          hoveredDistrict={hoveredDistrict}
-          setHoveredDistrict={setHoveredDistrict}
-          onDistrictClick={handleDistrictClick}
-        />
-      </Canvas>
+      <Suspense fallback={null}>
+        <Canvas
+          shadows
+          dpr={[1, 1.5]}
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.2,
+            powerPreference: 'high-performance',
+          }}
+          onCreated={({ gl }) => {
+            gl.setClearColor('#020204');
+          }}
+        >
+          <OrthographicCamera
+            makeDefault
+            position={[20, 18, 20]}
+            zoom={36}
+            near={0.1}
+            far={120}
+          />
+          <Scene
+            hoveredDistrict={hoveredDistrict}
+            setHoveredDistrict={setHoveredDistrict}
+            onDistrictClick={handleDistrictClick}
+          />
+        </Canvas>
+      </Suspense>
 
       {/* HUD Overlay */}
       <HUDOverlay
@@ -826,23 +1170,22 @@ export default function TartaryWorld() {
 
       {/* Loading screen */}
       <AnimatePresence>
-        {!isLoaded && <LoadingScreen progress={loadProgress} />}
+        {!isLoaded && <LoadingScreen />}
       </AnimatePresence>
 
       {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none z-[5]"
         style={{
-          background:
-            'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%)',
+          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(2,2,4,0.6) 100%)',
         }}
       />
 
-      {/* Top fade for nav blending */}
+      {/* Top fade for nav blend */}
       <div
-        className="absolute top-0 left-0 right-0 h-24 pointer-events-none z-[5]"
+        className="absolute top-0 left-0 right-0 h-28 pointer-events-none z-[5]"
         style={{
-          background: 'linear-gradient(to bottom, rgba(5,5,5,0.5) 0%, transparent 100%)',
+          background: 'linear-gradient(to bottom, rgba(2,2,4,0.6) 0%, transparent 100%)',
         }}
       />
     </div>
