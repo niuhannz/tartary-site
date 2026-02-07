@@ -70,6 +70,15 @@ const navLinks: NavLink[] = [
     ],
   },
   {
+    href: '/systems',
+    label: 'Systems',
+    subs: [
+      { href: '/systems', label: 'Overview' },
+      { href: '/systems#mudflood', label: 'MUDFLOOD', accent: '#d97706' },
+      { href: '/systems#capabilities', label: 'Engineering' },
+    ],
+  },
+  {
     href: '/publishing',
     label: 'Publishing',
     subs: [
@@ -469,7 +478,7 @@ export default function Navigation() {
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Worlds &middot; Characters &middot; Cinema &middot; Games &middot; Shop
+                Worlds &middot; Characters &middot; Cinema &middot; Games &middot; Systems &middot; Shop
               </span>
               <span
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
