@@ -237,13 +237,13 @@ function MegaBuilding({
     >
       <meshPhysicalMaterial
         color={baseColor}
-        metalness={0.7}
-        roughness={0.15}
+        metalness={0.6}
+        roughness={0.2}
         emissive={neonColor}
-        emissiveIntensity={0.4}
-        clearcoat={0.4}
-        clearcoatRoughness={0.15}
-        envMapIntensity={1.0}
+        emissiveIntensity={0.5}
+        clearcoat={0.3}
+        clearcoatRoughness={0.2}
+        envMapIntensity={0.3}
       />
     </mesh>
   );
@@ -857,8 +857,8 @@ function Scene({
 }) {
   return (
     <>
-      {/* Environment map for metallic reflections */}
-      <Environment preset="night" environmentIntensity={0.4} />
+      {/* Environment map for metallic reflections (no visible background) */}
+      <Environment preset="night" environmentIntensity={0.25} background={false} />
 
       {/* Lighting rig */}
       <ambientLight intensity={0.35} color="#8a9ab8" />
