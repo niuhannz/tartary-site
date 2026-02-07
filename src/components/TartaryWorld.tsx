@@ -1,14 +1,9 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Sparkles } from '@react-three/drei';
+import { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useRouter } from 'next/navigation';
 
-// ═══════════════════════════════════════════════════════════════════════
-// MINIMAL TEST: Spinning box to verify R3F renders at all
-// ═══════════════════════════════════════════════════════════════════════
 function SpinningBox() {
   const ref = useRef<THREE.Mesh>(null!);
   useFrame((_, delta) => {
@@ -20,47 +15,52 @@ function SpinningBox() {
   return (
     <mesh ref={ref}>
       <boxGeometry args={[2, 2, 2]} />
-      <meshStandardMaterial color="#c9a96e" emissive="#c9a96e" emissiveIntensity={0.3} metalness={0.5} roughness={0.3} />
+      <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.5} />
     </mesh>
   );
 }
 
+function DebugScene() {
+  useFrame(({ gl, scene, camera }) => {
+    // Force render every frame and log once
+    gl.render(scene, camera);
+  });
+  return null;
+}
+
 export default function TartaryWorld() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    console.log('[TartaryWorld] Component mounted');
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="relative w-full h-screen bg-[#020204] flex items-center justify-center">
-        <p className="text-white">Loading...</p>
-      </div>
-    );
-  }
+  const [info, setInfo] = useState('waiting...');
 
   return (
-    <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
+    <div className="relative w-full h-screen bg-red-900 overflow-hidden">
       <Canvas
         gl={{
           antialias: true,
+          alpha: false,
+          preserveDrawingBuffer: true,
           powerPreference: 'high-performance',
         }}
+        camera={{ position: [0, 0, 5], fov: 75 }}
         onCreated={({ gl, scene, camera }) => {
-          console.log('[R3F] Canvas created', { renderer: gl.info.render, sceneChildren: scene.children.length });
-          gl.setClearColor('#1a0a2e');
+          gl.setClearColor('#ff0000', 1);
+          setInfo(`Created! Renderer: ${gl.getContext().getParameter(gl.getContext().RENDERER)}, Scene children: ${scene.children.length}`);
+          console.log('[R3F] Created', gl, scene, camera);
+          console.log('[R3F] Canvas size:', gl.domElement.width, gl.domElement.height);
+          console.log('[R3F] Is WebGL context lost?', gl.getContext().isContextLost());
         }}
       >
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
+        <color attach="background" args={['#0000ff']} />
+        <ambientLight intensity={1} />
+        <directionalLight position={[5, 5, 5]} intensity={2} />
         <SpinningBox />
+        <DebugScene />
       </Canvas>
 
-      {/* Debug overlay */}
-      <div className="absolute top-4 left-4 z-50 text-white text-xs font-mono bg-black/50 p-2 rounded">
-        R3F Minimal Test — should see spinning gold cube
+      <div className="absolute top-4 left-4 z-50 text-white text-sm font-mono bg-black/80 p-3 rounded max-w-lg">
+        <p>R3F Test v3</p>
+        <p>Background should be BLUE, box should be ORANGE</p>
+        <p>If you see RED, canvas is transparent</p>
+        <p>Info: {info}</p>
       </div>
     </div>
   );
