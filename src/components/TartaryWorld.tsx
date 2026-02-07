@@ -592,9 +592,11 @@ function Scene({
 function HUDOverlay({
   hoveredDistrict,
   onDistrictClick,
+  isReady,
 }: {
   hoveredDistrict: string | null;
   onDistrictClick: (href: string) => void;
+  isReady: boolean;
 }) {
   const district = hoveredDistrict ? districts.find((d) => d.id === hoveredDistrict) : null;
 
@@ -602,98 +604,86 @@ function HUDOverlay({
     <div className="absolute inset-0 pointer-events-none z-30">
       {/* Top-left title */}
       <div className="absolute top-28 left-8 md:left-12">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          className="text-[11px] tracking-[0.25em] uppercase text-gold/70 mb-3"
-          style={{ fontFamily: 'var(--font-mono)' }}
+        <p
+          className="text-[11px] tracking-[0.25em] uppercase text-gold/70 mb-3 transition-all duration-[800ms] ease-out"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            opacity: isReady ? 1 : 0,
+            transform: isReady ? 'translateY(0)' : 'translateY(10px)',
+            transitionDelay: '300ms',
+          }}
         >
           Interactive Roadmap
-        </motion.p>
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.9 }}
-          className="text-4xl sm:text-5xl lg:text-6xl font-light text-foreground leading-tight"
-          style={{ fontFamily: 'var(--font-heading)' }}
+        </p>
+        <h1
+          className="text-4xl sm:text-5xl lg:text-6xl font-light text-foreground leading-tight transition-all duration-[900ms] ease-out"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            opacity: isReady ? 1 : 0,
+            transform: isReady ? 'translateY(0)' : 'translateY(20px)',
+            transitionDelay: '500ms',
+          }}
         >
           We Build
           <br />
           <span className="logo-sheen">Worlds</span>
-        </motion.h1>
+        </h1>
       </div>
 
       {/* Bottom info bar */}
       <div className="absolute bottom-8 left-8 right-8 md:left-12 md:right-12 flex justify-between items-end">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.8 }}
+        <div
+          className="transition-opacity duration-[800ms] ease-out"
+          style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }}
         >
-          <AnimatePresence mode="wait">
-            {district ? (
-              <motion.div
-                key={district.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.25 }}
-                className="pointer-events-auto"
+          {district ? (
+            <div className="pointer-events-auto">
+              <p
+                className="text-[10px] tracking-[0.2em] uppercase mb-1"
+                style={{ fontFamily: 'var(--font-mono)', color: district.emissive }}
               >
-                <p
-                  className="text-[10px] tracking-[0.2em] uppercase mb-1"
-                  style={{ fontFamily: 'var(--font-mono)', color: district.emissive }}
-                >
-                  {district.subtitle}
-                </p>
-                <p
-                  className="text-2xl sm:text-3xl font-light text-foreground mb-2"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {district.label}
-                </p>
-                <button
-                  onClick={() => onDistrictClick(district.href)}
-                  className="text-[11px] tracking-[0.15em] uppercase text-gold hover:text-gold-light transition-colors duration-200 flex items-center gap-2"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Enter
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
-                </button>
-              </motion.div>
-            ) : (
-              <motion.p
-                key="default"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
+                {district.subtitle}
+              </p>
+              <p
+                className="text-2xl sm:text-3xl font-light text-foreground mb-2"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {district.label}
+              </p>
+              <button
+                onClick={() => onDistrictClick(district.href)}
+                className="text-[11px] tracking-[0.15em] uppercase text-gold hover:text-gold-light transition-colors duration-200 flex items-center gap-2"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Hover a district to explore
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                Enter
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <p
+              className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              Hover a district to explore
+            </p>
+          )}
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.8 }}
-          className="hidden md:flex items-center gap-6"
+        <div
+          className="hidden md:flex items-center gap-6 transition-opacity duration-[800ms] ease-out"
+          style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}
         >
           {districts.map((d) => (
             <button
@@ -715,21 +705,15 @@ function HUDOverlay({
               {d.id}
             </button>
           ))}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 md:hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 1 }}
+      {/* Scroll indicator (mobile) */}
+      <div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 md:hidden transition-opacity duration-1000"
+        style={{ opacity: isReady ? 1 : 0, transitionDelay: '1500ms' }}
       >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex flex-col items-center gap-2"
-        >
+        <div className="flex flex-col items-center gap-2 animate-bounce">
           <span
             className="text-[9px] tracking-[0.2em] uppercase text-ash/40"
             style={{ fontFamily: 'var(--font-mono)' }}
@@ -739,8 +723,8 @@ function HUDOverlay({
           <svg width="12" height="20" viewBox="0 0 12 20" fill="none" className="text-gold/40">
             <path d="M6 2v12M2 11l4 5 4-5" stroke="currentColor" strokeWidth="1" />
           </svg>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -837,6 +821,7 @@ export default function TartaryWorld() {
       <HUDOverlay
         hoveredDistrict={hoveredDistrict}
         onDistrictClick={handleDistrictClick}
+        isReady={isLoaded}
       />
 
       {/* Loading screen */}
