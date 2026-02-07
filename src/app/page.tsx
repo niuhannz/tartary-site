@@ -1,8 +1,29 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import SectionReveal from '@/components/SectionReveal';
+
+// Dynamic import for Three.js world — no SSR, code-split
+const TartaryWorld = dynamic(() => import('@/components/TartaryWorld'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-screen bg-carbon flex items-center justify-center">
+      <div className="text-center">
+        <p
+          className="text-2xl tracking-[0.3em] uppercase mb-8 logo-sheen"
+          style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
+        >
+          Tartary
+        </p>
+        <div className="w-48 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
+          <div className="absolute top-0 left-0 h-full bg-gold animate-pulse w-1/3" />
+        </div>
+      </div>
+    </div>
+  ),
+});
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,27 +44,6 @@ const itemVariants = {
     transition: {
       duration: 0.8,
       ease: 'easeOut' as const,
-    },
-  },
-};
-
-const heroScrollIndicator = {
-  hidden: { opacity: 0, y: -10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 1,
-      ease: 'easeOut' as const,
-      delay: 1.2,
-    },
-  },
-  animate: {
-    y: [0, 8, 0],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
     },
   },
 };
@@ -227,119 +227,8 @@ const getIcon = (iconType: string) => {
 export default function Home() {
   return (
     <main className="bg-background text-foreground">
-      {/* ──────────────────────────────────────────── HERO SECTION ─────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-carbon to-background opacity-70" />
-
-        {/* Radial gold glow */}
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(circle at center, rgba(201, 169, 110, 0.08) 0%, transparent 65%)',
-          }}
-          animate={{
-            opacity: [0.4, 0.8, 0.4],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut' as const,
-          }}
-        />
-
-        {/* Subtle animated accent circle */}
-        <motion.div
-          className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(201, 169, 110, 0.03) 0%, transparent 70%)',
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut' as const,
-          }}
-        />
-
-        {/* Grain texture */}
-        <div className="grain absolute inset-0" />
-
-        {/* Content */}
-        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-          >
-            {/* Tagline */}
-            <motion.p
-              variants={itemVariants}
-              className="text-sm sm:text-base tracking-widest uppercase mb-8 text-gold"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Creative Storytelling Across Five Dimensions
-            </motion.p>
-
-            {/* Main heading */}
-            <motion.h1
-              variants={itemVariants}
-              className="text-6xl sm:text-7xl lg:text-8xl font-bold leading-tight mb-8 text-foreground"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              We Build Worlds
-            </motion.h1>
-
-            {/* Subheading */}
-            <motion.p
-              variants={itemVariants}
-              className="text-lg sm:text-xl text-mist leading-relaxed max-w-3xl mx-auto mb-10"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Original universes. Cinematic stories. Anime. Interactive experiences. Beautifully crafted media. TARTARY operates across five divisions to bring visionary projects to life.
-            </motion.p>
-
-            {/* CTA Button */}
-            <motion.div variants={itemVariants}>
-              <Link
-                href="#divisions"
-                className="inline-block px-8 py-4 border-2 border-gold text-gold hover:bg-gold hover:text-carbon transition-all duration-300 font-light tracking-wider text-lg"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Explore Our Work
-              </Link>
-            </motion.div>
-          </motion.div>
-        </div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-10"
-          variants={heroScrollIndicator}
-          initial="hidden"
-          animate={['visible', 'animate']}
-        >
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-xs tracking-widest uppercase text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
-              Scroll to Explore
-            </p>
-            <svg
-              width="24"
-              height="36"
-              viewBox="0 0 24 36"
-              fill="none"
-              stroke="currentColor"
-              className="text-gold"
-              strokeWidth="1.5"
-            >
-              <path d="M12 2 L12 26 M6 20 L12 28 L18 20" />
-            </svg>
-          </div>
-        </motion.div>
-      </section>
+      {/* ──────────────────────────────────────────── 3D WORLD HERO ─────────────────────────────────────────── */}
+      <TartaryWorld />
 
       {/* ──────────────────────────────────────────── FOUR DIVISIONS GRID ─────────────────────────────────────────── */}
       <section id="divisions" className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-carbon">
