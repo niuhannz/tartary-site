@@ -295,6 +295,10 @@ class MegacityEngine {
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     r.domElement.style.display = 'block';
+    // Force canvas into its own GPU compositing layer so browser repaints
+    // of overlapping DOM elements don't clear the WebGL drawing buffer.
+    r.domElement.style.willChange = 'transform';
+    r.domElement.style.transform = 'translateZ(0)';
     container.appendChild(r.domElement);
     this.renderer = r;
 
