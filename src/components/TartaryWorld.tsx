@@ -286,7 +286,7 @@ class MegacityEngine {
     this.onClickHref = onClickHref;
 
     // Renderer
-    const r = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const r = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
     r.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     r.setSize(container.clientWidth, container.clientHeight);
     r.setClearColor(new THREE.Color('#020204'));
