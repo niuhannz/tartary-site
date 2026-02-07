@@ -23,24 +23,14 @@ interface NavLink {
 const navLinks: NavLink[] = [
   {
     href: '/worlds',
-    label: 'Worlds',
+    label: 'Universe',
     subs: [
       { href: '/worlds/explore', label: 'Explore the Globe' },
       { href: '/worlds#heavenfall', label: 'Heavenfall', accent: '#ff4d00' },
       { href: '/worlds#margin', label: 'Margin', accent: '#d4a574' },
       { href: '/worlds#xt111', label: 'XT111', accent: '#00d4ff' },
       { href: '/worlds#the-unrecorded', label: 'The Unrecorded', accent: '#a0886e' },
-    ],
-  },
-  {
-    href: '/characters',
-    label: 'Characters',
-    subs: [
-      { href: '/characters', label: 'Full Roster' },
-      { href: '/characters#heavenfall', label: 'Heavenfall', accent: '#ff4d00' },
-      { href: '/characters#margin', label: 'Margin', accent: '#d4a574' },
-      { href: '/characters#xt111', label: 'XT111', accent: '#00d4ff' },
-      { href: '/characters#unrecorded', label: 'The Unrecorded', accent: '#a0886e' },
+      { href: '/characters', label: 'Characters' },
     ],
   },
   {
@@ -50,14 +40,7 @@ const navLinks: NavLink[] = [
       { href: '/cinema', label: 'Featured Films' },
       { href: '/cinema#services', label: 'Services' },
       { href: '/cinema#festivals', label: 'Festival Recognition' },
-    ],
-  },
-  {
-    href: '/anime',
-    label: 'Anime',
-    subs: [
-      { href: '/anime', label: 'In Development' },
-      { href: '/anime#capabilities', label: 'What We Create' },
+      { href: '/anime', label: 'Anime', accent: '#c9a96e' },
       { href: 'https://niji.app', label: 'NIJI.app', external: true, accent: '#c9a96e' },
     ],
   },
@@ -67,15 +50,8 @@ const navLinks: NavLink[] = [
     subs: [
       { href: '/games', label: 'Featured Games' },
       { href: '/games#capabilities', label: 'Capabilities' },
-    ],
-  },
-  {
-    href: '/systems',
-    label: 'Systems',
-    subs: [
-      { href: '/systems', label: 'Overview' },
+      { href: '/systems', label: 'Systems', accent: '#d97706' },
       { href: '/systems#mudflood', label: 'MUDFLOOD', accent: '#d97706' },
-      { href: '/systems#capabilities', label: 'Engineering' },
     ],
   },
   {
@@ -94,10 +70,26 @@ const navLinks: NavLink[] = [
       { href: '/shop#apparel', label: 'Apparel' },
       { href: '/shop#prints', label: 'Prints' },
       { href: '/shop#collectibles', label: 'Collectibles' },
+      { href: '/pricing', label: 'Pricing & Membership', accent: '#c9a96e' },
     ],
   },
-  { href: '/pricing', label: 'Pricing' },
 ];
+
+// Collapsed nav groups: map child routes to their parent nav item
+const navActiveRoutes: Record<string, string[]> = {
+  '/worlds': ['/worlds', '/characters'],
+  '/cinema': ['/cinema', '/anime'],
+  '/games': ['/games', '/systems'],
+  '/shop': ['/shop', '/pricing'],
+};
+
+function isNavActive(navHref: string, pathname: string): boolean {
+  const routes = navActiveRoutes[navHref];
+  if (routes) {
+    return routes.some((r) => pathname === r || pathname.startsWith(r + '/'));
+  }
+  return pathname === navHref || pathname.startsWith(navHref + '/');
+}
 
 // ─────────────────────────────── DROPDOWN ───────────────────────────────
 function NavDropdown({
@@ -369,7 +361,7 @@ export default function Navigation() {
                 <NavDropdown
                   key={link.href}
                   link={link}
-                  isActive={pathname === link.href || pathname.startsWith(link.href + '/')}
+                  isActive={isNavActive(link.href, pathname)}
                   isOpen={openDropdown === link.href}
                   onOpen={() => setOpenDropdown(link.href)}
                   onClose={() => setOpenDropdown(null)}
@@ -422,7 +414,7 @@ export default function Navigation() {
                   <Link
                     href={link.href}
                     className={`text-2xl md:text-3xl tracking-[0.2em] uppercase transition-colors duration-300 ${
-                      pathname === link.href
+                      isNavActive(link.href, pathname)
                         ? 'text-gold'
                         : 'text-mist hover:text-foreground'
                     }`}
@@ -478,7 +470,7 @@ export default function Navigation() {
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Worlds &middot; Cinema &middot; Games &middot; Systems &middot; Shop &middot; Pricing
+                Universe &middot; Cinema &middot; Games &middot; Publishing &middot; Shop
               </span>
               <span
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"

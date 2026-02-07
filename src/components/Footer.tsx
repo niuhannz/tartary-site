@@ -100,7 +100,7 @@ export default function Footer() {
             className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            Worlds &middot; Cinema &middot; Anime &middot; Games &middot; Systems &middot; Publishing
+            Universe &middot; Cinema &middot; Games &middot; Publishing &middot; Shop
           </span>
         </div>
       </div>
