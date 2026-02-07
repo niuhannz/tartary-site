@@ -46,7 +46,9 @@ export default function Footer() {
                 { href: '/cinema', label: 'Cinema' },
                 { href: '/anime', label: 'Anime' },
                 { href: '/games', label: 'Games' },
+                { href: '/systems', label: 'Systems' },
                 { href: '/publishing', label: 'Publishing' },
+                { href: '/pricing', label: 'Pricing' },
                 { href: '/contact', label: 'Contact' },
               ].map((link) => (
                 <Link
@@ -98,7 +100,7 @@ export default function Footer() {
             className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            Worlds &middot; Cinema &middot; Anime &middot; Games &middot; Publishing
+            Worlds &middot; Cinema &middot; Anime &middot; Games &middot; Systems &middot; Publishing
           </span>
         </div>
       </div>

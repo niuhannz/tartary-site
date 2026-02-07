@@ -96,7 +96,7 @@ const navLinks: NavLink[] = [
       { href: '/shop#collectibles', label: 'Collectibles' },
     ],
   },
-  { href: '/contact', label: 'Contact' },
+  { href: '/pricing', label: 'Pricing' },
 ];
 
 // ─────────────────────────────── DROPDOWN ───────────────────────────────
@@ -478,7 +478,7 @@ export default function Navigation() {
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Worlds &middot; Characters &middot; Cinema &middot; Games &middot; Systems &middot; Shop
+                Worlds &middot; Cinema &middot; Games &middot; Systems &middot; Shop &middot; Pricing
               </span>
               <span
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
