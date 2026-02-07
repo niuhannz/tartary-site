@@ -2,10 +2,10 @@
 
 import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Float, Text, Sparkles } from '@react-three/drei';
+import { OrthographicCamera, Float, Text, Sparkles, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
-
+// framer-motion removed — CSS transitions used for loading/HUD
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -219,9 +219,9 @@ function MegaBuilding({
 
   useFrame((_, delta) => {
     if (!ref.current) return;
-    const target = hovered ? 1.5 : 0.6;
+    const target = hovered ? 1.8 : 0.4;
     emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, target, delta * 5);
-    const mat = ref.current.material as THREE.MeshStandardMaterial;
+    const mat = ref.current.material as THREE.MeshPhysicalMaterial;
     mat.emissiveIntensity = emissiveTarget.current;
   });
 
@@ -235,12 +235,15 @@ function MegaBuilding({
       castShadow
       receiveShadow
     >
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={baseColor}
-        metalness={0.3}
-        roughness={0.4}
+        metalness={0.6}
+        roughness={0.2}
         emissive={neonColor}
-        emissiveIntensity={0.6}
+        emissiveIntensity={0.5}
+        clearcoat={0.3}
+        clearcoatRoughness={0.2}
+        envMapIntensity={0.3}
       />
     </mesh>
   );
@@ -437,7 +440,7 @@ function ShopDistrict({ hovered }: { hovered: boolean }) {
       {/* Grand arch */}
       <mesh position={[0, 1.6, 0]} rotation={[0, 0, 0]}>
         <torusGeometry args={[1.5, 0.2, 12, 24, Math.PI]} />
-        <meshStandardMaterial color={c.baseColor} metalness={0.3} roughness={0.4} emissive={c.neonColor} emissiveIntensity={hovered ? 1.2 : 0.5} />
+        <meshPhysicalMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} clearcoat={0.4} clearcoatRoughness={0.15} />
       </mesh>
       {/* Arch pillars */}
       <MegaBuilding geometry={geoCache.box} position={[-1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
@@ -529,12 +532,12 @@ function DistrictGroup({
       {/* Base platform */}
       <mesh position={[0, -0.04, 0]} receiveShadow>
         <cylinderGeometry args={[3.2, 3.4, 0.08, 6]} />
-        <meshStandardMaterial
-          color="#0a0a0a"
-          metalness={0.3}
-          roughness={0.5}
+        <meshPhysicalMaterial
+          color="#080808"
+          metalness={0.95}
+          roughness={0.2}
           emissive={district.neonColor}
-          emissiveIntensity={isHovered ? 0.4 : 0.08}
+          emissiveIntensity={isHovered ? 0.35 : 0.04}
         />
       </mesh>
 
@@ -698,10 +701,12 @@ function DataDrone({
   return (
     <mesh ref={ref}>
       <icosahedronGeometry args={[0.07, 0]} />
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={color}
         emissive={color}
         emissiveIntensity={3}
+        metalness={0.9}
+        roughness={0.1}
         transparent
         opacity={0.9}
       />
@@ -802,24 +807,37 @@ function AmbientMotes() {
 // ═══════════════════════════════════════════════════════════════════════
 // CAMERA RIG — Lazy follow with smooth damping
 // ═══════════════════════════════════════════════════════════════════════
-function CameraRig() {
+function CameraRig({ target }: { target: [number, number, number] | null }) {
   const { camera } = useThree();
   const defaultPos = useMemo(() => new THREE.Vector3(20, 18, 20), []);
   const defaultLookAt = useMemo(() => new THREE.Vector3(0, 0, 1.5), []);
+  const currentLookAt = useRef(new THREE.Vector3(0, 0, 1.5));
   const time = useRef(0);
 
   useFrame((_, delta) => {
     time.current += delta;
 
-    // Very gentle orbit — no hover lean, just ambient movement
-    const ox = Math.sin(time.current * 0.06) * 0.5;
-    const oz = Math.cos(time.current * 0.06) * 0.5;
+    // Very gentle orbit
+    const ox = Math.sin(time.current * 0.06) * 0.6;
+    const oz = Math.cos(time.current * 0.06) * 0.6;
 
-    const targetPos = new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
+    // Subtle lean toward hovered district (very gentle shift)
+    const targetPos = target
+      ? new THREE.Vector3(
+          defaultPos.x + ox + (target[0]) * 0.06,
+          defaultPos.y,
+          defaultPos.z + oz + (target[2]) * 0.06
+        )
+      : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
 
-    // Smooth damping
-    camera.position.lerp(targetPos, delta * 1.5);
-    camera.lookAt(defaultLookAt);
+    const targetLook = target
+      ? new THREE.Vector3(target[0] * 0.3, 0.5, target[2] * 0.3 + 1.5)
+      : defaultLookAt;
+
+    // Smooth damping (lazy follow)
+    camera.position.lerp(targetPos, delta * 1.8);
+    currentLookAt.current.lerp(targetLook, delta * 1.8);
+    camera.lookAt(currentLookAt.current);
   });
 
   return null;
@@ -839,6 +857,9 @@ function Scene({
 }) {
   return (
     <>
+      {/* Environment map for metallic reflections (no visible background) */}
+      <Environment preset="night" environmentIntensity={0.25} background={false} />
+
       {/* Lighting rig */}
       <ambientLight intensity={0.35} color="#8a9ab8" />
       <directionalLight
@@ -918,7 +939,13 @@ function Scene({
       <AmbientMotes />
 
       {/* Camera */}
-      <CameraRig />
+      <CameraRig
+        target={
+          hoveredDistrict
+            ? districts.find((d) => d.id === hoveredDistrict)?.position || null
+            : null
+        }
+      />
     </>
   );
 }
@@ -1060,7 +1087,6 @@ function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
   const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => {
-    // Start the progress bar animation after mount
     const raf = requestAnimationFrame(() => setBarWidth(100));
     return () => cancelAnimationFrame(raf);
   }, []);
@@ -1083,10 +1109,7 @@ function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
         <div className="w-48 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
           <div
             className="absolute top-0 left-0 h-full bg-gold transition-all ease-in-out"
-            style={{
-              width: `${barWidth}%`,
-              transitionDuration: '2.2s',
-            }}
+            style={{ width: `${barWidth}%`, transitionDuration: '2.2s' }}
           />
         </div>
         <p className="text-[10px] tracking-[0.25em] uppercase text-ash/40 mt-4" style={{ fontFamily: 'var(--font-mono)' }}>
