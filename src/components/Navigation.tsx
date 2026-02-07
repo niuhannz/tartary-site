@@ -7,10 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const navLinks = [
   { href: '/worlds', label: 'Worlds' },
+  { href: '/characters', label: 'Characters' },
   { href: '/cinema', label: 'Cinema' },
   { href: '/anime', label: 'Anime' },
   { href: '/games', label: 'Games' },
   { href: '/publishing', label: 'Publishing' },
+  { href: '/shop', label: 'Shop' },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -129,7 +131,7 @@ export default function Navigation() {
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Worlds &middot; Cinema &middot; Anime &middot; Games &middot; Publishing
+                Worlds &middot; Characters &middot; Cinema &middot; Games &middot; Shop
               </span>
               <span
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
