@@ -96,6 +96,113 @@ export default function WorldsPage() {
         </div>
       </section>
 
+      {/* ──────────────────────────────────────────── EXPLORE THE GLOBE CTA ─────────────────────────────────────────── */}
+      <section className="py-20 sm:py-32 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
+        {/* Cosmic glow */}
+        <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.08) 0%, transparent 60%)' }} />
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <SectionReveal>
+            <Link href="/worlds/explore">
+              <motion.div
+                className="group relative rounded-2xl overflow-hidden cursor-pointer"
+                style={{
+                  background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #0d0d0d 70%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+                whileHover={{ y: -4, scale: 1.005 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
+                <div className="relative py-16 sm:py-24 px-8 sm:px-16 text-center">
+                  {/* Animated star dots */}
+                  {[
+                    { x: 10, y: 20, delay: 0, color: '#ff4d00' },
+                    { x: 85, y: 30, delay: 1.2, color: '#00d4ff' },
+                    { x: 25, y: 75, delay: 0.6, color: '#d4a574' },
+                    { x: 70, y: 70, delay: 1.8, color: '#a0886e' },
+                    { x: 50, y: 15, delay: 0.3, color: '#c9a96e' },
+                    { x: 90, y: 80, delay: 2.1, color: '#ff4d00' },
+                    { x: 15, y: 50, delay: 1.5, color: '#00d4ff' },
+                  ].map((dot, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full"
+                      style={{ left: `${dot.x}%`, top: `${dot.y}%`, backgroundColor: dot.color }}
+                      animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+                      transition={{ duration: 3, repeat: Infinity, delay: dot.delay, ease: 'easeInOut' }}
+                    />
+                  ))}
+
+                  {/* Globe icon */}
+                  <motion.div
+                    className="mx-auto mb-8 w-20 h-20 rounded-full flex items-center justify-center"
+                    style={{ border: '1px solid rgba(201, 169, 110, 0.3)' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="2" y1="12" x2="22" y2="12" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                  </motion.div>
+
+                  <span
+                    className="text-[11px] tracking-[0.3em] uppercase block mb-4"
+                    style={{ fontFamily: 'var(--font-mono)', color: '#c9a96e' }}
+                  >
+                    Interactive Experience
+                  </span>
+                  <h3
+                    className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground group-hover:text-gold transition-colors duration-500"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    Explore the Globe
+                  </h3>
+                  <p
+                    className="text-base sm:text-lg text-ash max-w-xl mx-auto mb-8 leading-relaxed"
+                    style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}
+                  >
+                    Navigate four realities in 3D. Rotate the globe, switch between worlds, and unfold each one into its interactive map.
+                  </p>
+
+                  {/* World indicator pills */}
+                  <div className="flex flex-wrap justify-center gap-3 mb-8">
+                    {[
+                      { name: 'HEAVENFALL', color: '#ff4d00' },
+                      { name: 'MARGIN', color: '#d4a574' },
+                      { name: 'XT111', color: '#00d4ff' },
+                      { name: 'THE UNRECORDED', color: '#a0886e' },
+                    ].map((w) => (
+                      <span
+                        key={w.name}
+                        className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 rounded-full"
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          color: w.color,
+                          border: `1px solid ${w.color}30`,
+                          backgroundColor: `${w.color}08`,
+                        }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: w.color }} />
+                        {w.name}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 px-6 py-3 border border-gold/40 text-gold rounded-full group-hover:bg-gold group-hover:text-carbon transition-all duration-300">
+                    <span className="text-sm tracking-wider uppercase" style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}>Enter the Globe</span>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </div>
+                </div>
+              </motion.div>
+            </Link>
+          </SectionReveal>
+        </div>
+      </section>
+
       {/* ──────────────────────────────────────────── BASEBORN — FEATURED UNIVERSE ─────────────────────────────────────────── */}
       <section className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
         {/* Ember glow */}
@@ -540,11 +647,11 @@ export default function WorldsPage() {
                 Start a World With Us
               </Link>
               <Link
-                href="/worlds/map"
+                href="/worlds/explore"
                 className="px-10 py-4 border-2 border-[#ff4d00] border-opacity-60 text-[#ff4d00] hover:bg-[#ff4d00] hover:text-white transition-all duration-300 font-light tracking-wider text-lg rounded"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                Explore BASEBORN Map
+                Explore the Globe
               </Link>
             </motion.div>
           </SectionReveal>
