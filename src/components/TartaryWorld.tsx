@@ -807,37 +807,24 @@ function AmbientMotes() {
 // ═══════════════════════════════════════════════════════════════════════
 // CAMERA RIG — Lazy follow with smooth damping
 // ═══════════════════════════════════════════════════════════════════════
-function CameraRig({ target }: { target: [number, number, number] | null }) {
+function CameraRig() {
   const { camera } = useThree();
   const defaultPos = useMemo(() => new THREE.Vector3(20, 18, 20), []);
   const defaultLookAt = useMemo(() => new THREE.Vector3(0, 0, 1.5), []);
-  const currentLookAt = useRef(new THREE.Vector3(0, 0, 1.5));
   const time = useRef(0);
 
   useFrame((_, delta) => {
     time.current += delta;
 
-    // Very gentle orbit
-    const ox = Math.sin(time.current * 0.06) * 0.6;
-    const oz = Math.cos(time.current * 0.06) * 0.6;
+    // Very gentle orbit — no hover lean, just ambient movement
+    const ox = Math.sin(time.current * 0.06) * 0.5;
+    const oz = Math.cos(time.current * 0.06) * 0.5;
 
-    // Subtle lean toward hovered district (very gentle shift)
-    const targetPos = target
-      ? new THREE.Vector3(
-          defaultPos.x + ox + (target[0]) * 0.06,
-          defaultPos.y,
-          defaultPos.z + oz + (target[2]) * 0.06
-        )
-      : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
+    const targetPos = new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
 
-    const targetLook = target
-      ? new THREE.Vector3(target[0] * 0.3, 0.5, target[2] * 0.3 + 1.5)
-      : defaultLookAt;
-
-    // Smooth damping (lazy follow)
-    camera.position.lerp(targetPos, delta * 1.8);
-    currentLookAt.current.lerp(targetLook, delta * 1.8);
-    camera.lookAt(currentLookAt.current);
+    // Smooth damping
+    camera.position.lerp(targetPos, delta * 1.5);
+    camera.lookAt(defaultLookAt);
   });
 
   return null;
@@ -857,9 +844,6 @@ function Scene({
 }) {
   return (
     <>
-      {/* Environment map for metallic reflections (no visible background) */}
-      <Environment preset="night" environmentIntensity={0.25} background={false} />
-
       {/* Lighting rig */}
       <ambientLight intensity={0.35} color="#8a9ab8" />
       <directionalLight
@@ -939,13 +923,7 @@ function Scene({
       <AmbientMotes />
 
       {/* Camera */}
-      <CameraRig
-        target={
-          hoveredDistrict
-            ? districts.find((d) => d.id === hoveredDistrict)?.position || null
-            : null
-        }
-      />
+      <CameraRig />
     </>
   );
 }
@@ -1155,6 +1133,10 @@ export default function TartaryWorld() {
             near={0.1}
             far={120}
           />
+          {/* Environment outside Scene to prevent re-suspend on hover state change */}
+          <Suspense fallback={null}>
+            <Environment preset="night" environmentIntensity={0.25} background={false} />
+          </Suspense>
           <Scene
             hoveredDistrict={hoveredDistrict}
             setHoveredDistrict={setHoveredDistrict}
