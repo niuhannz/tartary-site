@@ -542,12 +542,11 @@ class MegacityEngine {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// HUD OVERLAY
+// HUD OVERLAY  (static render — hover updates via direct DOM manipulation)
 // ═══════════════════════════════════════════════════════════════════════
-function HUDOverlay({ hoveredDistrict, onDistrictClick, isReady }: {
-  hoveredDistrict: string | null; onDistrictClick: (href: string) => void; isReady: boolean;
+function HUDOverlay({ onDistrictClick, isReady }: {
+  onDistrictClick: (href: string) => void; isReady: boolean;
 }) {
-  const active = districts.find((d) => d.id === hoveredDistrict);
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
       <div className="absolute top-6 left-6 w-6 h-6 border-l border-t border-gold/20 transition-opacity duration-1000" style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }} />
@@ -558,18 +557,18 @@ function HUDOverlay({ hoveredDistrict, onDistrictClick, isReady }: {
         <p className="text-[9px] tracking-[0.25em] uppercase text-ash/40" style={{ fontFamily: 'var(--font-mono)' }}>TARTARY CREATIVE STUDIO</p>
         <p className="text-[9px] tracking-[0.15em] uppercase text-ash/25 mt-0.5" style={{ fontFamily: 'var(--font-mono)' }}>SYSTEM ONLINE</p>
       </div>
-      <div className="absolute bottom-10 left-10 transition-all duration-300 ease-out" style={{ opacity: active ? 1 : 0, transform: active ? 'translateY(0)' : 'translateY(8px)' }}>
-        {active && (<>
-          <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ fontFamily: 'var(--font-mono)', color: active.neonColor }}>{active.subtitle}</p>
-          <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-3" style={{ fontFamily: 'var(--font-heading)' }}>{active.label}</h2>
-          <button className="pointer-events-auto text-xs tracking-[0.15em] uppercase border px-4 py-2 transition-colors duration-200 hover:bg-white/10" style={{ fontFamily: 'var(--font-mono)', color: active.neonColor, borderColor: active.neonColor }} onClick={() => onDistrictClick(active.href)}>Enter District →</button>
-        </>)}
+      {/* District info panel — updated via DOM by handleHover */}
+      <div id="hud-info" className="absolute bottom-10 left-10 transition-all duration-300 ease-out" style={{ opacity: 0, transform: 'translateY(8px)' }}>
+        <p id="hud-subtitle" className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ fontFamily: 'var(--font-mono)' }} />
+        <h2 id="hud-label" className="text-4xl sm:text-5xl font-bold text-foreground mb-3" style={{ fontFamily: 'var(--font-heading)' }} />
+        <button id="hud-btn" className="pointer-events-auto text-xs tracking-[0.15em] uppercase border px-4 py-2 transition-colors duration-200 hover:bg-white/10" style={{ fontFamily: 'var(--font-mono)' }} onClick={(e) => { const href = e.currentTarget.getAttribute('data-href'); if (href) onDistrictClick(href); }}>Enter District →</button>
       </div>
+      {/* District nav list — dots/colors updated via DOM by handleHover */}
       <div className="absolute bottom-10 right-10 text-right transition-opacity duration-1000" style={{ opacity: isReady ? 1 : 0, transitionDelay: '1200ms' }}>
         <div className="flex flex-col gap-1.5 items-end">
           {districts.map((d) => (
-            <button key={d.id} className="pointer-events-auto flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase transition-all duration-200 hover:opacity-100" style={{ fontFamily: 'var(--font-mono)', color: hoveredDistrict === d.id ? d.neonColor : 'rgba(255,255,255,0.25)', opacity: hoveredDistrict === d.id ? 1 : 0.5 }} onClick={() => onDistrictClick(d.href)}>
-              <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 transition-all duration-300" style={{ backgroundColor: hoveredDistrict === d.id ? d.neonColor : 'rgba(255,255,255,0.15)', boxShadow: hoveredDistrict === d.id ? `0 0 10px ${d.neonColor}` : 'none' }} />
+            <button key={d.id} id={`hnav-${d.id}`} className="pointer-events-auto flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase transition-all duration-200 hover:opacity-100" style={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.25)', opacity: 0.5 }} onClick={() => onDistrictClick(d.href)}>
+              <span id={`hdot-${d.id}`} className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 transition-all duration-300" style={{ backgroundColor: 'rgba(255,255,255,0.15)', boxShadow: 'none' }} />
               {d.id}
             </button>
           ))}
@@ -601,19 +600,43 @@ function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
 // ═══════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// Direct DOM hover handler — avoids React re-renders entirely
+// ═══════════════════════════════════════════════════════════════════════
+function updateHUDForHover(id: string | null) {
+  const active = id ? districts.find(d => d.id === id) : null;
+  // Info panel
+  const info = document.getElementById('hud-info');
+  if (info) { info.style.opacity = active ? '1' : '0'; info.style.transform = active ? 'translateY(0)' : 'translateY(8px)'; }
+  if (active) {
+    const sub = document.getElementById('hud-subtitle');
+    const lbl = document.getElementById('hud-label');
+    const btn = document.getElementById('hud-btn');
+    if (sub) { sub.textContent = active.subtitle; sub.style.color = active.neonColor; }
+    if (lbl) { lbl.textContent = active.label; }
+    if (btn) { btn.style.color = active.neonColor; btn.style.borderColor = active.neonColor; btn.setAttribute('data-href', active.href); }
+  }
+  // Nav dots
+  for (const d of districts) {
+    const nav = document.getElementById(`hnav-${d.id}`);
+    const dot = document.getElementById(`hdot-${d.id}`);
+    if (nav) { nav.style.color = id === d.id ? d.neonColor : 'rgba(255,255,255,0.25)'; nav.style.opacity = id === d.id ? '1' : '0.5'; }
+    if (dot) { dot.style.backgroundColor = id === d.id ? d.neonColor : 'rgba(255,255,255,0.15)'; dot.style.boxShadow = id === d.id ? `0 0 10px ${d.neonColor}` : 'none'; }
+  }
+}
+
 export default function TartaryWorld() {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<MegacityEngine | null>(null);
   const clickRef = useRef<(href: string) => void>(() => {});
   const router = useRouter();
-  const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   clickRef.current = (href: string) => router.push(href);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    engineRef.current = new MegacityEngine(containerRef.current, setHoveredDistrict, (href) => clickRef.current(href));
+    engineRef.current = new MegacityEngine(containerRef.current, updateHUDForHover, (href) => clickRef.current(href));
     return () => { engineRef.current?.dispose(); engineRef.current = null; };
   }, []);
 
@@ -627,7 +650,7 @@ export default function TartaryWorld() {
   return (
     <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
       <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-      <HUDOverlay hoveredDistrict={hoveredDistrict} onDistrictClick={handleDistrictClick} isReady={isLoaded} />
+      <HUDOverlay onDistrictClick={handleDistrictClick} isReady={isLoaded} />
       <LoadingScreen isLoaded={isLoaded} />
       <div className="absolute inset-0 pointer-events-none z-[5]" style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(2,2,4,0.6) 100%)' }} />
       <div className="absolute top-0 left-0 right-0 h-28 pointer-events-none z-[5]" style={{ background: 'linear-gradient(to bottom, rgba(2,2,4,0.6) 0%, transparent 100%)' }} />
