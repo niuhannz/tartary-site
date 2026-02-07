@@ -1,521 +1,544 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Sparkles } from '@react-three/drei';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 
 // ═══════════════════════════════════════════════════════════════════════
-// TYPES
+// TYPES & DATA
 // ═══════════════════════════════════════════════════════════════════════
 interface District {
-  id: string;
-  label: string;
-  subtitle: string;
-  href: string;
-  position: [number, number, number];
-  baseColor: string;
-  neonColor: string;
-  pulseSpeed: number;
+  id: string; label: string; subtitle: string; href: string;
+  position: [number, number, number]; baseColor: string; neonColor: string; pulseSpeed: number;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// DISTRICT DATA — Five pillars of the TARTARY megacity
-// ═══════════════════════════════════════════════════════════════════════
 const districts: District[] = [
-  {
-    id: 'universe',
-    label: 'UNIVERSE',
-    subtitle: 'Worlds & Characters',
-    href: '/worlds',
-    position: [0, 0, 0],
-    baseColor: '#0d1b2a',
-    neonColor: '#3b82f6',
-    pulseSpeed: 1.0,
-  },
-  {
-    id: 'cinema',
-    label: 'CINEMA',
-    subtitle: 'Film & Anime',
-    href: '/cinema',
-    position: [7.5, 0, -2.5],
-    baseColor: '#1a0f00',
-    neonColor: '#f59e0b',
-    pulseSpeed: 0.8,
-  },
-  {
-    id: 'games',
-    label: 'GAMES',
-    subtitle: 'Interactive & Systems',
-    href: '/games',
-    position: [-7.5, 0, -2.5],
-    baseColor: '#0a1f15',
-    neonColor: '#10b981',
-    pulseSpeed: 1.2,
-  },
-  {
-    id: 'publishing',
-    label: 'PUBLISHING',
-    subtitle: 'Books & Print',
-    href: '/publishing',
-    position: [4.5, 0, 6],
-    baseColor: '#140a2e',
-    neonColor: '#8b5cf6',
-    pulseSpeed: 0.7,
-  },
-  {
-    id: 'shop',
-    label: 'SHOP',
-    subtitle: 'Store & Membership',
-    href: '/shop',
-    position: [-4.5, 0, 6],
-    baseColor: '#1a1208',
-    neonColor: '#c9a96e',
-    pulseSpeed: 0.9,
-  },
+  { id: 'universe', label: 'UNIVERSE', subtitle: 'Worlds & Characters', href: '/worlds', position: [0, 0, 0], baseColor: '#0d1b2a', neonColor: '#3b82f6', pulseSpeed: 1.0 },
+  { id: 'cinema', label: 'CINEMA', subtitle: 'Film & Anime', href: '/cinema', position: [7.5, 0, -2.5], baseColor: '#1a0f00', neonColor: '#f59e0b', pulseSpeed: 0.8 },
+  { id: 'games', label: 'GAMES', subtitle: 'Interactive & Systems', href: '/games', position: [-7.5, 0, -2.5], baseColor: '#0a1f15', neonColor: '#10b981', pulseSpeed: 1.2 },
+  { id: 'publishing', label: 'PUBLISHING', subtitle: 'Books & Print', href: '/publishing', position: [4.5, 0, 6], baseColor: '#140a2e', neonColor: '#8b5cf6', pulseSpeed: 0.7 },
+  { id: 'shop', label: 'SHOP', subtitle: 'Store & Membership', href: '/shop', position: [-4.5, 0, 6], baseColor: '#1a1208', neonColor: '#c9a96e', pulseSpeed: 0.9 },
 ];
 
-// Connection topology
-const CONNECTIONS: [number, number][] = [
-  [0, 1], [0, 2], [0, 3], [0, 4], [1, 3], [2, 4],
-];
+const CONNECTIONS: [number, number][] = [[0,1],[0,2],[0,3],[0,4],[1,3],[2,4]];
 
 // ═══════════════════════════════════════════════════════════════════════
-// SHADERS — Custom ground with scanning line
+// SHADERS
 // ═══════════════════════════════════════════════════════════════════════
-const groundVertexShader = /* glsl */ `
+const groundVS = `
   varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
+  void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
 `;
 
-const groundFragmentShader = /* glsl */ `
+const groundFS = `
   precision highp float;
   uniform float uTime;
   varying vec2 vUv;
-
   void main() {
     vec2 cUv = vUv - 0.5;
     float dist = length(cUv);
-
     float gridSize = 40.0;
     vec2 grid = abs(fract(vUv * gridSize) - 0.5);
     float gridLine = min(grid.x, grid.y);
     float gridAlpha = 1.0 - smoothstep(0.0, 0.04, gridLine);
-
     vec2 majorGrid = abs(fract(vUv * 8.0) - 0.5);
     float majorLine = min(majorGrid.x, majorGrid.y);
     float majorAlpha = 1.0 - smoothstep(0.0, 0.02, majorLine);
-
     float scanY = fract(uTime * 0.06);
     float scan1 = 1.0 - smoothstep(0.0, 0.008, abs(vUv.y - scanY));
     float echo1 = 1.0 - smoothstep(0.0, 0.004, abs(vUv.y - scanY + 0.015));
     float echo2 = 1.0 - smoothstep(0.0, 0.003, abs(vUv.y - scanY + 0.030));
-
     float scanX = fract(uTime * 0.04 + 0.3);
     float scan2 = 1.0 - smoothstep(0.0, 0.006, abs(vUv.x - scanX));
-
     float fade = 1.0 - smoothstep(0.15, 0.5, dist);
     float outerGlow = smoothstep(0.48, 0.5, dist) * 0.02;
-
     vec3 goldDim = vec3(0.788, 0.663, 0.431) * 0.08;
     vec3 goldBright = vec3(0.788, 0.663, 0.431);
-
     vec3 color = goldDim * gridAlpha * fade;
     color += goldDim * majorAlpha * fade * 2.0;
     color += goldBright * scan1 * fade * 0.6;
     color += goldBright * echo1 * fade * 0.2;
     color += goldBright * echo2 * fade * 0.1;
     color += goldBright * scan2 * fade * 0.25;
-
-    float alpha = gridAlpha * 0.05 * fade
-                + majorAlpha * 0.08 * fade
-                + scan1 * 0.25 * fade
-                + echo1 * 0.08 * fade
-                + echo2 * 0.04 * fade
-                + scan2 * 0.12 * fade
-                + outerGlow;
-
+    float alpha = gridAlpha * 0.05 * fade + majorAlpha * 0.08 * fade + scan1 * 0.25 * fade
+                + echo1 * 0.08 * fade + echo2 * 0.04 * fade + scan2 * 0.12 * fade + outerGlow;
     gl_FragColor = vec4(color, alpha);
   }
 `;
 
 // ═══════════════════════════════════════════════════════════════════════
-// SCANLINE GROUND
+// SHARED GEOMETRIES
 // ═══════════════════════════════════════════════════════════════════════
-function ScanlineGround() {
-  const matRef = useRef<THREE.ShaderMaterial>(null!);
-  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
-
-  useFrame((state) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-  });
-
-  return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#030303" metalness={0.95} roughness={0.4} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[80, 80]} />
-        <shaderMaterial ref={matRef} vertexShader={groundVertexShader} fragmentShader={groundFragmentShader} uniforms={uniforms} transparent depthWrite={false} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
+let _g: Record<string, THREE.BufferGeometry> | null = null;
+function G() {
+  if (!_g) _g = {
+    box: new THREE.BoxGeometry(1,1,1),
+    cyl: new THREE.CylinderGeometry(0.5,0.5,1,24),
+    cone: new THREE.ConeGeometry(0.5,1,6),
+    dome: new THREE.SphereGeometry(0.5,24,12,0,Math.PI*2,0,Math.PI/2),
+    oct: new THREE.OctahedronGeometry(0.5,0),
+    ico: new THREE.IcosahedronGeometry(0.07,0),
+  };
+  return _g;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// MEGA BUILDING
+// HELPERS
 // ═══════════════════════════════════════════════════════════════════════
-function MegaBuilding({ geometry, position, scale, baseColor, neonColor, hovered, rotation }: {
-  geometry: THREE.BufferGeometry; position: [number, number, number]; scale: [number, number, number];
-  baseColor: string; neonColor: string; hovered: boolean; rotation?: [number, number, number];
-}) {
-  const ref = useRef<THREE.Mesh>(null!);
-  const emissiveTarget = useRef(0.2);
-
-  useFrame((_, delta) => {
-    if (!ref.current) return;
-    emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, hovered ? 1.8 : 0.4, delta * 5);
-    (ref.current.material as THREE.MeshStandardMaterial).emissiveIntensity = emissiveTarget.current;
-  });
-
-  return (
-    <mesh ref={ref} geometry={geometry} position={position} scale={scale} rotation={rotation || [0, 0, 0]} castShadow receiveShadow>
-      <meshStandardMaterial color={baseColor} metalness={0.7} roughness={0.3} emissive={neonColor} emissiveIntensity={0.5} />
-    </mesh>
-  );
+function mkBldg(geo: THREE.BufferGeometry, p: number[], s: number[], base: string, neon: string, r?: number[]): THREE.Mesh {
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color: base, metalness: 0.7, roughness: 0.3, emissive: new THREE.Color(neon), emissiveIntensity: 0.5,
+  }));
+  m.position.set(p[0],p[1],p[2]); m.scale.set(s[0],s[1],s[2]);
+  if (r) m.rotation.set(r[0],r[1],r[2]);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
 }
 
-function NeonStrip({ position, scale, color, hovered }: {
-  position: [number, number, number]; scale: [number, number, number]; color: string; hovered: boolean;
-}) {
-  const ref = useRef<THREE.Mesh>(null!);
-  useFrame((state) => {
-    if (!ref.current) return;
-    const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.3 + 0.7;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = hovered ? pulse : 0.4;
-  });
-  return (
-    <mesh ref={ref} position={position} scale={scale}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial color={color} transparent opacity={0.4} />
-    </mesh>
-  );
+function mkNeon(p: number[], s: number[], color: string): THREE.Mesh {
+  const m = new THREE.Mesh(G().box, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4 }));
+  m.position.set(p[0],p[1],p[2]); m.scale.set(s[0],s[1],s[2]);
+  return m;
+}
+
+function mkSparkles(count: number, box: number[], color: string): THREE.Points {
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pos[i*3]=(Math.random()-0.5)*box[0]; pos[i*3+1]=Math.random()*box[1]; pos[i*3+2]=(Math.random()-0.5)*box[2];
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  return new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 1.2, color: new THREE.Color(color), transparent: true, opacity: 0.25,
+    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// DISTRICT ARCHITECTURES
+// DISTRICT OBJECT COLLECTION
 // ═══════════════════════════════════════════════════════════════════════
-const geoCache = {
-  box: new THREE.BoxGeometry(1, 1, 1),
-  cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 24),
-  cone: new THREE.ConeGeometry(0.5, 1, 6),
-  dome: new THREE.SphereGeometry(0.5, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-  octahedron: new THREE.OctahedronGeometry(0.5, 0),
-};
+interface DObjs {
+  group: THREE.Group; buildings: THREE.Mesh[]; strips: THREE.Mesh[];
+  sparkles: THREE.Points; pulseRing: THREE.Mesh; platform: THREE.Mesh;
+  hoverLight: THREE.PointLight; hitbox: THREE.Mesh;
+  specials: Record<string, THREE.Object3D>; time: number;
+}
 
-function UniverseDistrict({ hovered }: { hovered: boolean }) {
-  const ringRef = useRef<THREE.Mesh>(null!);
-  useFrame((state) => {
-    if (ringRef.current) {
-      ringRef.current.rotation.y = state.clock.elapsedTime * 0.3;
-      ringRef.current.rotation.x = Math.PI / 3 + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
+function buildDistrict(d: District): DObjs {
+  const g = G();
+  const group = new THREE.Group();
+  group.position.set(d.position[0], d.position[1], d.position[2]);
+  const buildings: THREE.Mesh[] = [];
+  const strips: THREE.Mesh[] = [];
+  const specials: Record<string, THREE.Object3D> = {};
+
+  // ── UNIVERSE ──
+  if (d.id === 'universe') {
+    const b = [
+      mkBldg(g.dome,[0,0,0],[3.2,2.2,3.2],d.baseColor,d.neonColor),
+      mkBldg(g.cyl,[0,2.8,0],[0.15,1.8,0.15],'#0a1628',d.neonColor),
+      mkBldg(g.oct,[1.8,1.2,-1.0],[0.4,2.6,0.4],'#0f1d30',d.neonColor),
+      mkBldg(g.oct,[-1.6,0.9,0.8],[0.35,2.0,0.35],'#0f1d30',d.neonColor),
+      mkBldg(g.oct,[0.9,0.8,1.5],[0.3,1.6,0.3],'#0f1d30',d.neonColor),
+    ];
+    b.forEach(m => group.add(m)); buildings.push(...b);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.0,0.03,8,64),
+      new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.25 }));
+    ring.position.set(0,1.8,0); group.add(ring); specials.ring = ring;
+    const gr = new THREE.Mesh(new THREE.RingGeometry(1.5,1.65,64),
+      new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.08, side: THREE.DoubleSide }));
+    gr.position.set(0,0.02,0); gr.rotation.x = -Math.PI/2; group.add(gr); specials.groundRing = gr;
+    const ns = [mkNeon([0,0.5,1.6],[1.5,0.04,0.04],d.neonColor), mkNeon([0,0.8,-1.5],[1.2,0.04,0.04],d.neonColor)];
+    ns.forEach(m => group.add(m)); strips.push(...ns);
+  }
+
+  // ── CINEMA ──
+  if (d.id === 'cinema') {
+    const b = [
+      mkBldg(g.box,[0,1.0,0],[3.0,2.0,0.6],d.baseColor,d.neonColor),
+      mkBldg(g.box,[-1.8,1.5,-0.5],[0.5,3.0,0.5],'#1a0f00',d.neonColor),
+      mkBldg(g.box,[1.8,1.5,-0.5],[0.5,3.0,0.5],'#1a0f00',d.neonColor),
+      mkBldg(g.cone,[-1.8,3.2,-0.5],[0.5,0.6,0.5],'#1a0f00',d.neonColor),
+      mkBldg(g.cone,[1.8,3.2,-0.5],[0.5,0.6,0.5],'#1a0f00',d.neonColor),
+    ];
+    b.forEach(m => group.add(m)); buildings.push(...b);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(2.6,1.6),
+      new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.15 }));
+    face.position.set(0,1.0,0.32); group.add(face); specials.face = face;
+    const beam = new THREE.Mesh(new THREE.ConeGeometry(1.5,4,16,1,true),
+      new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.05, side: THREE.DoubleSide }));
+    beam.position.set(0,2.2,0.6); beam.rotation.x = Math.PI/2; group.add(beam); specials.beam = beam;
+    const ns = [mkNeon([0,0.2,0.32],[2.8,0.06,0.06],d.neonColor), mkNeon([0,1.8,0.32],[2.8,0.06,0.06],d.neonColor)];
+    ns.forEach(m => group.add(m)); strips.push(...ns);
+  }
+
+  // ── GAMES ──
+  if (d.id === 'games') {
+    const b = [
+      mkBldg(g.box,[0,1.8,0],[1.4,3.6,1.4],d.baseColor,d.neonColor),
+      mkBldg(g.box,[0,3.8,0],[1.8,0.3,1.8],'#0a1f15',d.neonColor),
+      mkBldg(g.cyl,[0.4,4.3,0.4],[0.08,1.0,0.08],'#0a1f15',d.neonColor),
+      mkBldg(g.cyl,[-0.4,4.1,-0.4],[0.08,0.7,0.08],'#0a1f15',d.neonColor),
+      mkBldg(g.box,[2.0,0.8,0.6],[0.8,1.6,0.8],'#0d2419',d.neonColor),
+      mkBldg(g.box,[-1.6,0.6,-0.8],[0.9,1.2,0.7],'#0d2419',d.neonColor),
+      mkBldg(g.cyl,[0,0.08,0],[2.8,0.16,2.8],'#060e0a',d.neonColor),
+    ];
+    b.forEach(m => group.add(m)); buildings.push(...b);
+    const ns = [
+      mkNeon([0.72,1.8,0],[0.05,3.4,0.05],d.neonColor), mkNeon([-0.72,1.8,0],[0.05,3.4,0.05],d.neonColor),
+      mkNeon([0,1.8,0.72],[0.05,3.4,0.05],d.neonColor), mkNeon([0,1.8,-0.72],[0.05,3.4,0.05],d.neonColor),
+    ];
+    ns.forEach(m => group.add(m)); strips.push(...ns);
+  }
+
+  // ── PUBLISHING ──
+  if (d.id === 'publishing') {
+    const b = [
+      mkBldg(g.box,[0,0.4,0],[2.8,0.8,1.6],d.baseColor,d.neonColor),
+      mkBldg(g.box,[0.2,1.1,-0.1],[2.4,0.6,1.4],'#1a0e35',d.neonColor),
+      mkBldg(g.box,[-0.15,1.7,0.1],[2.6,0.5,1.3],'#1f1040',d.neonColor),
+      mkBldg(g.box,[0.1,2.2,0],[2.2,0.4,1.1],'#240f45',d.neonColor),
+      mkBldg(g.box,[1.7,1.5,0],[0.15,3.0,0.8],'#2a1350',d.neonColor),
+    ];
+    b.forEach(m => group.add(m)); buildings.push(...b);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.15,16,8),
+      new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.3 }));
+    orb.position.set(1.7,3.2,0); group.add(orb); specials.orb = orb;
+    const ns = [mkNeon([-1.3,0.82,0],[0.06,0.04,1.4],d.neonColor), mkNeon([-1.1,1.42,0],[0.06,0.04,1.2],d.neonColor), mkNeon([0,0.4,0.82],[2.6,0.04,0.04],d.neonColor)];
+    ns.forEach(m => group.add(m)); strips.push(...ns);
+  }
+
+  // ── SHOP ──
+  if (d.id === 'shop') {
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(1.5,0.2,12,24,Math.PI),
+      new THREE.MeshStandardMaterial({ color: d.baseColor, metalness: 0.92, roughness: 0.08, emissive: new THREE.Color(d.neonColor), emissiveIntensity: 0.2 }));
+    arch.position.set(0,1.6,0); group.add(arch); buildings.push(arch); specials.arch = arch;
+    const b = [
+      mkBldg(g.box,[-1.5,0.8,0],[0.35,1.6,0.35],'#1a1208',d.neonColor),
+      mkBldg(g.box,[1.5,0.8,0],[0.35,1.6,0.35],'#1a1208',d.neonColor),
+      mkBldg(g.dome,[0,0,-1.2],[2.2,1.4,2.2],'#15100a',d.neonColor),
+      mkBldg(g.cyl,[1.8,0.9,-0.8],[0.4,1.8,0.4],'#1a1208',d.neonColor),
+      mkBldg(g.cyl,[-1.8,0.7,-0.8],[0.4,1.4,0.4],'#1a1208',d.neonColor),
+    ];
+    b.forEach(m => group.add(m)); buildings.push(...b);
+    const capMat = new THREE.MeshBasicMaterial({ color: '#ffd700', transparent: true, opacity: 0.4 });
+    const capL = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,8), capMat);
+    capL.position.set(-1.5,1.8,0); group.add(capL); specials.capL = capL;
+    const capR = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,8), capMat.clone());
+    capR.position.set(1.5,1.8,0); group.add(capR); specials.capR = capR;
+    const ns = [mkNeon([0,0.05,0.2],[3.0,0.05,0.05],d.neonColor), mkNeon([0,0.05,-0.2],[3.0,0.05,0.05],d.neonColor)];
+    ns.forEach(m => group.add(m)); strips.push(...ns);
+  }
+
+  // ── SHARED: Platform, Pulse Ring, Hover Light, Sparkles, Hitbox ──
+  const platform = new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.4,0.08,6),
+    new THREE.MeshStandardMaterial({ color: '#080808', metalness: 0.95, roughness: 0.2, emissive: new THREE.Color(d.neonColor), emissiveIntensity: 0.04 }));
+  platform.position.y = -0.04; platform.receiveShadow = true; group.add(platform);
+
+  const pulseRing = new THREE.Mesh(new THREE.RingGeometry(3.0,3.35,6),
+    new THREE.MeshBasicMaterial({ color: d.neonColor, transparent: true, opacity: 0.1, side: THREE.DoubleSide }));
+  pulseRing.position.set(0,0.03,0); pulseRing.rotation.x = -Math.PI/2; group.add(pulseRing);
+
+  const hoverLight = new THREE.PointLight(d.neonColor, 0, 14, 2);
+  hoverLight.position.set(0,5,0); group.add(hoverLight);
+
+  const sp = mkSparkles(50, [6,5,6], d.neonColor); group.add(sp);
+
+  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.2,5,16), new THREE.MeshBasicMaterial({ visible: false }));
+  hitbox.position.y = 2.5; group.add(hitbox);
+  (hitbox as any).districtId = d.id;
+
+  return { group, buildings, strips, sparkles: sp, pulseRing, platform, hoverLight, hitbox, specials, time: Math.random()*100 };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MEGACITY ENGINE — Raw Three.js (bypasses R3F fiber root issue)
+// ═══════════════════════════════════════════════════════════════════════
+class MegacityEngine {
+  private renderer: THREE.WebGLRenderer;
+  private scene: THREE.Scene;
+  private camera: THREE.OrthographicCamera;
+  private clock = new THREE.Clock();
+  private raycaster = new THREE.Raycaster();
+  private mouse = new THREE.Vector2(-999, -999);
+  private container: HTMLDivElement;
+  private animId = 0;
+  private onHover: (id: string | null) => void;
+  private onClickHref: (href: string) => void;
+  private hoveredId: string | null = null;
+  private disposed = false;
+  private groundMat!: THREE.ShaderMaterial;
+  private dObjs = new Map<string, DObjs>();
+  private hitboxes: THREE.Mesh[] = [];
+  private dLights = new Map<string, THREE.PointLight>();
+  private streams: { pts: THREE.Points; curve: THREE.QuadraticBezierCurve3; count: number; speed: number }[] = [];
+  private drones: { mesh: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; speed: number; offset: number }[] = [];
+  private smog!: THREE.Points;
+  private motes!: THREE.Points;
+  private camTime = 0;
+  private camLook = new THREE.Vector3(0, 0, 1.5);
+  private camDefPos = new THREE.Vector3(20, 18, 20);
+  private camDefLook = new THREE.Vector3(0, 0, 1.5);
+
+  constructor(container: HTMLDivElement, onHover: (id: string | null) => void, onClickHref: (href: string) => void) {
+    this.container = container;
+    this.onHover = onHover;
+    this.onClickHref = onClickHref;
+
+    // Renderer
+    const r = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    r.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    r.setSize(container.clientWidth, container.clientHeight);
+    r.setClearColor(new THREE.Color('#020204'));
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1.2;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.domElement.style.display = 'block';
+    container.appendChild(r.domElement);
+    this.renderer = r;
+
+    // Scene
+    this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.Fog('#020204', 40, 75);
+
+    // Camera (replicates R3F OrthographicCamera with zoom=36)
+    const w = container.clientWidth, h = container.clientHeight;
+    this.camera = new THREE.OrthographicCamera(-w/2, w/2, h/2, -h/2, 0.1, 120);
+    this.camera.zoom = 36;
+    this.camera.position.set(20, 18, 20);
+    this.camera.lookAt(0, 0, 1.5);
+    this.camera.updateProjectionMatrix();
+
+    this.build();
+
+    container.addEventListener('pointermove', this.onPointerMove);
+    container.addEventListener('click', this.onClick);
+    window.addEventListener('resize', this.onResize);
+    this.animate();
+  }
+
+  private build() {
+    // Lights
+    this.scene.add(new THREE.AmbientLight('#8a9ab8', 0.4));
+    const dir1 = new THREE.DirectionalLight('#fff8e8', 1.2);
+    dir1.position.set(15,25,12); dir1.castShadow = true;
+    dir1.shadow.mapSize.set(2048,2048); dir1.shadow.camera.far = 70;
+    dir1.shadow.camera.left = -25; dir1.shadow.camera.right = 25;
+    dir1.shadow.camera.top = 25; dir1.shadow.camera.bottom = -25;
+    this.scene.add(dir1);
+    const dir2 = new THREE.DirectionalLight('#4a6fa5', 0.4); dir2.position.set(-12,18,-12); this.scene.add(dir2);
+    const dir3 = new THREE.DirectionalLight('#c9a96e', 0.3); dir3.position.set(0,5,20); this.scene.add(dir3);
+    const cLight = new THREE.PointLight('#c9a96e', 2.0, 30, 2); cLight.position.set(0,10,0); this.scene.add(cLight);
+
+    for (const d of districts) {
+      const pl = new THREE.PointLight(d.neonColor, 0.6, 10, 2);
+      pl.position.set(d.position[0], 3, d.position[2]);
+      this.scene.add(pl); this.dLights.set(d.id, pl);
     }
-  });
-  const c = districts[0];
-  return (
-    <group>
-      <MegaBuilding geometry={geoCache.dome} position={[0, 0, 0]} scale={[3.2, 2.2, 3.2]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[0, 2.8, 0]} scale={[0.15, 1.8, 0.15]} baseColor="#0a1628" neonColor={c.neonColor} hovered={hovered} />
-      <mesh ref={ringRef} position={[0, 1.8, 0]}>
-        <torusGeometry args={[2.0, 0.03, 8, 64]} />
-        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.7 : 0.25} />
-      </mesh>
-      <MegaBuilding geometry={geoCache.octahedron} position={[1.8, 1.2, -1.0]} scale={[0.4, 2.6, 0.4]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.octahedron} position={[-1.6, 0.9, 0.8]} scale={[0.35, 2.0, 0.35]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.octahedron} position={[0.9, 0.8, 1.5]} scale={[0.3, 1.6, 0.3]} baseColor="#0f1d30" neonColor={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 0.5, 1.6]} scale={[1.5, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 0.8, -1.5]} scale={[1.2, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.5, 1.65, 64]} />
-        <meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.5 : 0.08} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
-}
 
-function CinemaDistrict({ hovered }: { hovered: boolean }) {
-  const beamRef = useRef<THREE.Mesh>(null!);
-  useFrame((state) => {
-    if (beamRef.current) {
-      (beamRef.current.material as THREE.MeshBasicMaterial).opacity = hovered ? Math.sin(state.clock.elapsedTime * 8) * 0.15 + 0.35 : 0.05;
+    // Ground
+    const gnd = new THREE.Mesh(new THREE.PlaneGeometry(80,80),
+      new THREE.MeshStandardMaterial({ color: '#030303', metalness: 0.95, roughness: 0.4 }));
+    gnd.rotation.x = -Math.PI/2; gnd.position.y = -0.08; gnd.receiveShadow = true; this.scene.add(gnd);
+    this.groundMat = new THREE.ShaderMaterial({ vertexShader: groundVS, fragmentShader: groundFS,
+      uniforms: { uTime: { value: 0 } }, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    const overlay = new THREE.Mesh(new THREE.PlaneGeometry(80,80), this.groundMat);
+    overlay.rotation.x = -Math.PI/2; overlay.position.y = -0.01; this.scene.add(overlay);
+
+    // Districts
+    for (const d of districts) {
+      const objs = buildDistrict(d);
+      this.scene.add(objs.group);
+      this.dObjs.set(d.id, objs);
+      this.hitboxes.push(objs.hitbox);
     }
-  });
-  const c = districts[1];
-  return (
-    <group>
-      <MegaBuilding geometry={geoCache.box} position={[0, 1.0, 0]} scale={[3.0, 2.0, 0.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      <mesh position={[0, 1.0, 0.32]}><planeGeometry args={[2.6, 1.6]} /><meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.6 : 0.15} /></mesh>
-      <MegaBuilding geometry={geoCache.box} position={[-1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[1.8, 1.5, -0.5]} scale={[0.5, 3.0, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cone} position={[-1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cone} position={[1.8, 3.2, -0.5]} scale={[0.5, 0.6, 0.5]} baseColor="#1a0f00" neonColor={c.neonColor} hovered={hovered} />
-      <mesh ref={beamRef} position={[0, 2.2, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[1.5, 4, 16, 1, true]} /><meshBasicMaterial color={c.neonColor} transparent opacity={0.05} side={THREE.DoubleSide} />
-      </mesh>
-      <NeonStrip position={[0, 0.2, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 1.8, 0.32]} scale={[2.8, 0.06, 0.06]} color={c.neonColor} hovered={hovered} />
-    </group>
-  );
-}
 
-function GamesDistrict({ hovered }: { hovered: boolean }) {
-  const c = districts[2];
-  return (
-    <group>
-      <MegaBuilding geometry={geoCache.box} position={[0, 1.8, 0]} scale={[1.4, 3.6, 1.4]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[0, 3.8, 0]} scale={[1.8, 0.3, 1.8]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[0.4, 4.3, 0.4]} scale={[0.08, 1.0, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[-0.4, 4.1, -0.4]} scale={[0.08, 0.7, 0.08]} baseColor="#0a1f15" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[2.0, 0.8, 0.6]} scale={[0.8, 1.6, 0.8]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[-1.6, 0.6, -0.8]} scale={[0.9, 1.2, 0.7]} baseColor="#0d2419" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[0, 0.08, 0]} scale={[2.8, 0.16, 2.8]} baseColor="#060e0a" neonColor={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[-0.72, 1.8, 0]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 1.8, 0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 1.8, -0.72]} scale={[0.05, 3.4, 0.05]} color={c.neonColor} hovered={hovered} />
-    </group>
-  );
-}
-
-function PublishingDistrict({ hovered }: { hovered: boolean }) {
-  const c = districts[3];
-  return (
-    <group>
-      <MegaBuilding geometry={geoCache.box} position={[0, 0.4, 0]} scale={[2.8, 0.8, 1.6]} baseColor={c.baseColor} neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[0.2, 1.1, -0.1]} scale={[2.4, 0.6, 1.4]} baseColor="#1a0e35" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[-0.15, 1.7, 0.1]} scale={[2.6, 0.5, 1.3]} baseColor="#1f1040" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[0.1, 2.2, 0]} scale={[2.2, 0.4, 1.1]} baseColor="#240f45" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[1.7, 1.5, 0]} scale={[0.15, 3.0, 0.8]} baseColor="#2a1350" neonColor={c.neonColor} hovered={hovered} />
-      <mesh position={[1.7, 3.2, 0]}><sphereGeometry args={[0.15, 16, 8]} /><meshBasicMaterial color={c.neonColor} transparent opacity={hovered ? 0.9 : 0.3} /></mesh>
-      <NeonStrip position={[-1.3, 0.82, 0]} scale={[0.06, 0.04, 1.4]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[-1.1, 1.42, 0]} scale={[0.06, 0.04, 1.2]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 0.4, 0.82]} scale={[2.6, 0.04, 0.04]} color={c.neonColor} hovered={hovered} />
-    </group>
-  );
-}
-
-function ShopDistrict({ hovered }: { hovered: boolean }) {
-  const c = districts[4];
-  return (
-    <group>
-      <mesh position={[0, 1.6, 0]}>
-        <torusGeometry args={[1.5, 0.2, 12, 24, Math.PI]} />
-        <meshStandardMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} />
-      </mesh>
-      <MegaBuilding geometry={geoCache.box} position={[-1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.box} position={[1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.dome} position={[0, 0, -1.2]} scale={[2.2, 1.4, 2.2]} baseColor="#15100a" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[1.8, 0.9, -0.8]} scale={[0.4, 1.8, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      <MegaBuilding geometry={geoCache.cylinder} position={[-1.8, 0.7, -0.8]} scale={[0.4, 1.4, 0.4]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
-      <mesh position={[-1.5, 1.8, 0]}><sphereGeometry args={[0.12, 12, 8]} /><meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} /></mesh>
-      <mesh position={[1.5, 1.8, 0]}><sphereGeometry args={[0.12, 12, 8]} /><meshBasicMaterial color="#ffd700" transparent opacity={hovered ? 0.9 : 0.4} /></mesh>
-      <NeonStrip position={[0, 0.05, 0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
-      <NeonStrip position={[0, 0.05, -0.2]} scale={[3.0, 0.05, 0.05]} color={c.neonColor} hovered={hovered} />
-    </group>
-  );
-}
-
-const DISTRICT_COMPONENTS: Record<string, React.FC<{ hovered: boolean }>> = {
-  universe: UniverseDistrict, cinema: CinemaDistrict, games: GamesDistrict,
-  publishing: PublishingDistrict, shop: ShopDistrict,
-};
-
-// ═══════════════════════════════════════════════════════════════════════
-// DISTRICT GROUP
-// ═══════════════════════════════════════════════════════════════════════
-function DistrictGroup({ district, isHovered, onHover, onUnhover, onClick }: {
-  district: District; isHovered: boolean; onHover: () => void; onUnhover: () => void; onClick: () => void;
-}) {
-  const groupRef = useRef<THREE.Group>(null!);
-  const pulseRef = useRef<THREE.Mesh>(null!);
-  const time = useRef(Math.random() * 100);
-  const Arch = DISTRICT_COMPONENTS[district.id];
-
-  useFrame((state, delta) => {
-    time.current += delta;
-    if (groupRef.current) groupRef.current.position.y = district.position[1] + Math.sin(time.current * 0.6) * 0.06;
-    if (pulseRef.current) {
-      const pulse = Math.sin(state.clock.elapsedTime * district.pulseSpeed * 2) * 0.15 + 0.35;
-      (pulseRef.current.material as THREE.MeshBasicMaterial).opacity = isHovered ? pulse * 1.5 : pulse * 0.3;
-      pulseRef.current.rotation.z = state.clock.elapsedTime * 0.2;
+    // Data streams
+    for (let i = 0; i < CONNECTIONS.length; i++) {
+      const [fi, ti] = CONNECTIONS[i];
+      const fp = districts[fi].position, tp = districts[ti].position;
+      const a = new THREE.Vector3(fp[0],0.3,fp[2]), b = new THREE.Vector3(tp[0],0.3,tp[2]);
+      const mid = a.clone().add(b).multiplyScalar(0.5); mid.y = 2.0;
+      const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+      const count = 6;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count*3), 3));
+      const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+        size: 0.12, color: new THREE.Color(districts[fi].neonColor), transparent: true, opacity: 0.85,
+        sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      this.scene.add(pts);
+      this.streams.push({ pts, curve, count, speed: 0.8 + i * 0.15 });
     }
-  });
 
-  return (
-    <group ref={groupRef} position={district.position}
-      onPointerOver={(e) => { e.stopPropagation(); onHover(); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={(e) => { e.stopPropagation(); onUnhover(); document.body.style.cursor = 'default'; }}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-    >
-      <mesh visible={false}><cylinderGeometry args={[3.2, 3.2, 5, 16]} /><meshBasicMaterial /></mesh>
-      <Arch hovered={isHovered} />
-      <mesh position={[0, -0.04, 0]} receiveShadow>
-        <cylinderGeometry args={[3.2, 3.4, 0.08, 6]} />
-        <meshStandardMaterial color="#080808" metalness={0.95} roughness={0.2} emissive={district.neonColor} emissiveIntensity={isHovered ? 0.35 : 0.04} />
-      </mesh>
-      <mesh ref={pulseRef} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[3.0, 3.35, 6]} />
-        <meshBasicMaterial color={district.neonColor} transparent opacity={0.1} side={THREE.DoubleSide} />
-      </mesh>
-      {isHovered && <pointLight position={[0, 5, 0]} color={district.neonColor} intensity={10} distance={14} decay={2} />}
-      <Sparkles count={isHovered ? 50 : 10} scale={[6, 5, 6]} size={isHovered ? 3.5 : 1.2} speed={0.5} color={district.neonColor} opacity={isHovered ? 0.9 : 0.25} />
-    </group>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// DATA STREAMS
-// ═══════════════════════════════════════════════════════════════════════
-function DataStream({ from, to, color, speed, count }: {
-  from: [number, number, number]; to: [number, number, number]; color: string; speed: number; count: number;
-}) {
-  const ref = useRef<THREE.Points>(null!);
-  const curve = useMemo(() => {
-    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
-    const mid = a.clone().add(b).multiplyScalar(0.5); mid.y = 2.0;
-    return new THREE.QuadraticBezierCurve3(new THREE.Vector3(a.x, 0.3, a.z), mid, new THREE.Vector3(b.x, 0.3, b.z));
-  }, [from, to]);
-  const positions = useMemo(() => new Float32Array(count * 3), [count]);
-  useFrame((state) => {
-    if (!ref.current) return;
-    const arr = ref.current.geometry.attributes.position.array as Float32Array;
-    const t = state.clock.elapsedTime * speed;
-    for (let i = 0; i < count; i++) {
-      const pt = curve.getPointAt(((t * 0.15 + i / count) % 1 + 1) % 1);
-      arr[i * 3] = pt.x; arr[i * 3 + 1] = pt.y; arr[i * 3 + 2] = pt.z;
+    // Drones
+    for (let i = 0; i < CONNECTIONS.length; i++) {
+      const [fi, ti] = CONNECTIONS[i];
+      const fp = districts[fi].position, tp = districts[ti].position;
+      const a = new THREE.Vector3(fp[0],0.5,fp[2]), b = new THREE.Vector3(tp[0],0.5,tp[2]);
+      const mid = a.clone().add(b).multiplyScalar(0.5); mid.y = 1.8;
+      const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+      const mesh = new THREE.Mesh(G().ico, new THREE.MeshStandardMaterial({
+        color: districts[ti].neonColor, emissive: new THREE.Color(districts[ti].neonColor),
+        emissiveIntensity: 3, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.9,
+      }));
+      this.scene.add(mesh);
+      this.drones.push({ mesh, curve, speed: 0.6 + i * 0.1, offset: i * 0.17 });
     }
-    ref.current.geometry.attributes.position.needsUpdate = true;
-  });
-  return (
-    <points ref={ref}>
-      <bufferGeometry><bufferAttribute attach="attributes-position" args={[positions, 3]} /></bufferGeometry>
-      <pointsMaterial size={0.12} color={color} transparent opacity={0.85} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} />
-    </points>
-  );
-}
 
-// ═══════════════════════════════════════════════════════════════════════
-// DATA DRONES
-// ═══════════════════════════════════════════════════════════════════════
-function DataDrone({ from, to, color, speed, offset }: {
-  from: [number, number, number]; to: [number, number, number]; color: string; speed: number; offset: number;
-}) {
-  const ref = useRef<THREE.Mesh>(null!);
-  const curve = useMemo(() => {
-    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
-    const mid = a.clone().add(b).multiplyScalar(0.5); mid.y = 1.8;
-    return new THREE.QuadraticBezierCurve3(new THREE.Vector3(a.x, 0.5, a.z), mid, new THREE.Vector3(b.x, 0.5, b.z));
-  }, [from, to]);
-  useFrame((state) => {
-    if (!ref.current) return;
-    const pt = curve.getPointAt(((state.clock.elapsedTime * speed * 0.12 + offset) % 1 + 1) % 1);
-    ref.current.position.copy(pt);
-    ref.current.position.y += Math.sin(state.clock.elapsedTime * 4 + offset * 20) * 0.08;
-    ref.current.rotation.y = state.clock.elapsedTime * 3;
-    ref.current.rotation.x = state.clock.elapsedTime * 2;
-  });
-  return (
-    <mesh ref={ref}>
-      <icosahedronGeometry args={[0.07, 0]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} metalness={0.9} roughness={0.1} transparent opacity={0.9} />
-    </mesh>
-  );
-}
+    // Particles
+    const smogPos = new Float32Array(250*3);
+    for (let i = 0; i < 250; i++) { smogPos[i*3]=(Math.random()-0.5)*50; smogPos[i*3+1]=Math.random()*1.2; smogPos[i*3+2]=(Math.random()-0.5)*50; }
+    const smogGeo = new THREE.BufferGeometry(); smogGeo.setAttribute('position', new THREE.BufferAttribute(smogPos, 3));
+    this.smog = new THREE.Points(smogGeo, new THREE.PointsMaterial({ size: 0.5, color: '#0a0a1a', transparent: true, opacity: 0.12, sizeAttenuation: true, depthWrite: false }));
+    this.scene.add(this.smog);
 
-// ═══════════════════════════════════════════════════════════════════════
-// PARTICLES
-// ═══════════════════════════════════════════════════════════════════════
-function DigitalSmog() {
-  const count = 250;
-  const ref = useRef<THREE.Points>(null!);
-  const positions = useMemo(() => { const arr = new Float32Array(count * 3); for (let i = 0; i < count; i++) { arr[i*3]=(Math.random()-0.5)*50; arr[i*3+1]=Math.random()*1.2; arr[i*3+2]=(Math.random()-0.5)*50; } return arr; }, []);
-  useFrame((state) => {
-    if (!ref.current) return;
-    const arr = ref.current.geometry.attributes.position.array as Float32Array;
-    const t = state.clock.elapsedTime;
-    for (let i = 0; i < count; i++) { arr[i*3] += Math.sin(t*0.08+i*0.5)*0.003; arr[i*3+2] += Math.cos(t*0.06+i*0.3)*0.003; }
-    ref.current.geometry.attributes.position.needsUpdate = true;
-  });
-  return (<points ref={ref}><bufferGeometry><bufferAttribute attach="attributes-position" args={[positions, 3]} /></bufferGeometry><pointsMaterial size={0.5} color="#0a0a1a" transparent opacity={0.12} sizeAttenuation depthWrite={false} /></points>);
-}
+    const motePos = new Float32Array(150*3);
+    for (let i = 0; i < 150; i++) { motePos[i*3]=(Math.random()-0.5)*45; motePos[i*3+1]=Math.random()*10+1; motePos[i*3+2]=(Math.random()-0.5)*45; }
+    const moteGeo = new THREE.BufferGeometry(); moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+    this.motes = new THREE.Points(moteGeo, new THREE.PointsMaterial({ size: 0.05, color: '#c9a96e', transparent: true, opacity: 0.5, sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    this.scene.add(this.motes);
+  }
 
-function AmbientMotes() {
-  const count = 150;
-  const ref = useRef<THREE.Points>(null!);
-  const positions = useMemo(() => { const arr = new Float32Array(count * 3); for (let i = 0; i < count; i++) { arr[i*3]=(Math.random()-0.5)*45; arr[i*3+1]=Math.random()*10+1; arr[i*3+2]=(Math.random()-0.5)*45; } return arr; }, []);
-  useFrame((state) => {
-    if (!ref.current) return;
-    const arr = ref.current.geometry.attributes.position.array as Float32Array;
-    for (let i = 0; i < count; i++) { arr[i*3+1] += Math.sin(state.clock.elapsedTime*0.2+i)*0.002; if (arr[i*3+1]>12) arr[i*3+1]=1; }
-    ref.current.geometry.attributes.position.needsUpdate = true;
-  });
-  return (<points ref={ref}><bufferGeometry><bufferAttribute attach="attributes-position" args={[positions, 3]} /></bufferGeometry><pointsMaterial size={0.05} color="#c9a96e" transparent opacity={0.5} sizeAttenuation blending={THREE.AdditiveBlending} depthWrite={false} /></points>);
-}
+  private animate = () => {
+    if (this.disposed) return;
+    this.animId = requestAnimationFrame(this.animate);
+    const dt = this.clock.getDelta();
+    const t = this.clock.getElapsedTime();
 
-// ═══════════════════════════════════════════════════════════════════════
-// CAMERA RIG
-// ═══════════════════════════════════════════════════════════════════════
-function CameraRig({ target }: { target: [number, number, number] | null }) {
-  const { camera } = useThree();
-  const defaultPos = useMemo(() => new THREE.Vector3(20, 18, 20), []);
-  const defaultLookAt = useMemo(() => new THREE.Vector3(0, 0, 1.5), []);
-  const currentLookAt = useRef(new THREE.Vector3(0, 0, 1.5));
-  const time = useRef(0);
+    this.groundMat.uniforms.uTime.value = t;
 
-  useFrame((_, delta) => {
-    time.current += delta;
-    const ox = Math.sin(time.current * 0.06) * 0.6, oz = Math.cos(time.current * 0.06) * 0.6;
-    const tPos = target
-      ? new THREE.Vector3(defaultPos.x + ox + target[0] * 0.06, defaultPos.y, defaultPos.z + oz + target[2] * 0.06)
-      : new THREE.Vector3(defaultPos.x + ox, defaultPos.y, defaultPos.z + oz);
-    const tLook = target ? new THREE.Vector3(target[0] * 0.3, 0.5, target[2] * 0.3 + 1.5) : defaultLookAt;
-    camera.position.lerp(tPos, delta * 1.8);
-    currentLookAt.current.lerp(tLook, delta * 1.8);
-    camera.lookAt(currentLookAt.current);
-  });
-  return null;
-}
+    // Raycast
+    this.scene.updateMatrixWorld();
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const hits = this.raycaster.intersectObjects(this.hitboxes);
+    const newId = hits.length > 0 ? (hits[0].object as any).districtId : null;
+    if (newId !== this.hoveredId) {
+      this.hoveredId = newId;
+      this.onHover(newId);
+      document.body.style.cursor = newId ? 'pointer' : 'default';
+    }
 
-// ═══════════════════════════════════════════════════════════════════════
-// SCENE
-// ═══════════════════════════════════════════════════════════════════════
-function Scene({ hoveredDistrict, setHoveredDistrict, onDistrictClick }: {
-  hoveredDistrict: string | null; setHoveredDistrict: (id: string | null) => void; onDistrictClick: (href: string) => void;
-}) {
-  return (
-    <>
-      <ambientLight intensity={0.4} color="#8a9ab8" />
-      <directionalLight position={[15, 25, 12]} intensity={1.2} color="#fff8e8" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={70} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} />
-      <directionalLight position={[-12, 18, -12]} intensity={0.4} color="#4a6fa5" />
-      <directionalLight position={[0, 5, 20]} intensity={0.3} color="#c9a96e" />
-      <pointLight position={[0, 10, 0]} intensity={2.0} color="#c9a96e" distance={30} decay={2} />
-      {districts.map((d) => <pointLight key={`light-${d.id}`} position={[d.position[0], 3, d.position[2]]} intensity={hoveredDistrict === d.id ? 4 : 0.6} color={d.neonColor} distance={10} decay={2} />)}
-      <fog attach="fog" args={['#020204', 40, 75]} />
-      <ScanlineGround />
-      {districts.map((d) => <DistrictGroup key={d.id} district={d} isHovered={hoveredDistrict === d.id} onHover={() => setHoveredDistrict(d.id)} onUnhover={() => setHoveredDistrict(null)} onClick={() => onDistrictClick(d.href)} />)}
-      {CONNECTIONS.map(([from, to], i) => <DataStream key={`stream-${i}`} from={districts[from].position} to={districts[to].position} color={districts[from].neonColor} speed={0.8 + i * 0.15} count={6} />)}
-      {CONNECTIONS.map(([from, to], i) => <DataDrone key={`drone-${i}`} from={districts[from].position} to={districts[to].position} color={districts[to].neonColor} speed={0.6 + i * 0.1} offset={i * 0.17} />)}
-      <DigitalSmog />
-      <AmbientMotes />
-      <CameraRig target={hoveredDistrict ? districts.find((d) => d.id === hoveredDistrict)?.position || null : null} />
-    </>
-  );
+    // Districts
+    for (const d of districts) {
+      const o = this.dObjs.get(d.id)!;
+      const h = this.hoveredId === d.id;
+      o.time += dt;
+      o.group.position.y = d.position[1] + Math.sin(o.time * 0.6) * 0.06;
+
+      for (const b of o.buildings) {
+        const m = b.material as THREE.MeshStandardMaterial;
+        m.emissiveIntensity = THREE.MathUtils.lerp(m.emissiveIntensity, h ? 1.8 : 0.4, dt * 5);
+      }
+      for (const s of o.strips) {
+        (s.material as THREE.MeshBasicMaterial).opacity = h ? (Math.sin(t*3)*0.3+0.7) : 0.4;
+      }
+      (o.platform.material as THREE.MeshStandardMaterial).emissiveIntensity =
+        THREE.MathUtils.lerp((o.platform.material as THREE.MeshStandardMaterial).emissiveIntensity, h ? 0.35 : 0.04, dt*5);
+      const pv = Math.sin(t * d.pulseSpeed * 2) * 0.15 + 0.35;
+      (o.pulseRing.material as THREE.MeshBasicMaterial).opacity = h ? pv*1.5 : pv*0.3;
+      o.pulseRing.rotation.z = t * 0.2;
+      o.hoverLight.intensity = h ? 10 : 0;
+      (o.sparkles.material as THREE.PointsMaterial).opacity = h ? 0.9 : 0.25;
+      (o.sparkles.material as THREE.PointsMaterial).size = h ? 3.5 : 1.2;
+      this.dLights.get(d.id)!.intensity = h ? 4 : 0.6;
+
+      // Per-district specials
+      if (d.id === 'universe') {
+        const ring = o.specials.ring as THREE.Mesh;
+        ring.rotation.y = t*0.3; ring.rotation.x = Math.PI/3 + Math.sin(t*0.5)*0.1;
+        (ring.material as THREE.MeshBasicMaterial).opacity = h ? 0.7 : 0.25;
+        (o.specials.groundRing as THREE.Mesh).material && ((o.specials.groundRing as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity !== undefined &&
+          ((o.specials.groundRing as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity;
+        ((o.specials.groundRing as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? 0.5 : 0.08;
+      } else if (d.id === 'cinema') {
+        ((o.specials.beam as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? Math.sin(t*8)*0.15+0.35 : 0.05;
+        ((o.specials.face as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? 0.6 : 0.15;
+      } else if (d.id === 'publishing') {
+        ((o.specials.orb as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? 0.9 : 0.3;
+      } else if (d.id === 'shop') {
+        ((o.specials.arch as THREE.Mesh).material as THREE.MeshStandardMaterial).emissiveIntensity = h ? 1.0 : 0.2;
+        ((o.specials.capL as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? 0.9 : 0.4;
+        ((o.specials.capR as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = h ? 0.9 : 0.4;
+      }
+    }
+
+    // Data streams
+    for (const s of this.streams) {
+      const arr = s.pts.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < s.count; i++) {
+        const pt = s.curve.getPointAt(((t * s.speed * 0.15 + i / s.count) % 1 + 1) % 1);
+        arr[i*3]=pt.x; arr[i*3+1]=pt.y; arr[i*3+2]=pt.z;
+      }
+      s.pts.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Drones
+    for (const dr of this.drones) {
+      const pt = dr.curve.getPointAt(((t * dr.speed * 0.12 + dr.offset) % 1 + 1) % 1);
+      dr.mesh.position.copy(pt);
+      dr.mesh.position.y += Math.sin(t*4 + dr.offset*20) * 0.08;
+      dr.mesh.rotation.y = t*3; dr.mesh.rotation.x = t*2;
+    }
+
+    // Smog
+    { const a = this.smog.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < 250; i++) { a[i*3]+=Math.sin(t*0.08+i*0.5)*0.003; a[i*3+2]+=Math.cos(t*0.06+i*0.3)*0.003; }
+      this.smog.geometry.attributes.position.needsUpdate = true; }
+
+    // Motes
+    { const a = this.motes.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < 150; i++) { a[i*3+1]+=Math.sin(t*0.2+i)*0.002; if(a[i*3+1]>12) a[i*3+1]=1; }
+      this.motes.geometry.attributes.position.needsUpdate = true; }
+
+    // Camera
+    this.camTime += dt;
+    const ox = Math.sin(this.camTime*0.06)*0.6, oz = Math.cos(this.camTime*0.06)*0.6;
+    const hd = this.hoveredId ? districts.find(d => d.id === this.hoveredId) : null;
+    const tp = hd?.position;
+    const tPos = tp
+      ? new THREE.Vector3(this.camDefPos.x+ox+tp[0]*0.06, this.camDefPos.y, this.camDefPos.z+oz+tp[2]*0.06)
+      : new THREE.Vector3(this.camDefPos.x+ox, this.camDefPos.y, this.camDefPos.z+oz);
+    const tLook = tp ? new THREE.Vector3(tp[0]*0.3, 0.5, tp[2]*0.3+1.5) : this.camDefLook;
+    this.camera.position.lerp(tPos, dt*1.8);
+    this.camLook.lerp(tLook, dt*1.8);
+    this.camera.lookAt(this.camLook);
+
+    this.renderer.render(this.scene, this.camera);
+  };
+
+  private onPointerMove = (e: PointerEvent) => {
+    const r = this.container.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+  };
+
+  private onClick = () => {
+    if (this.hoveredId) {
+      const d = districts.find(x => x.id === this.hoveredId);
+      if (d) this.onClickHref(d.href);
+    }
+  };
+
+  private onResize = () => {
+    const w = this.container.clientWidth, h = this.container.clientHeight;
+    this.renderer.setSize(w, h);
+    this.camera.left = -w/2; this.camera.right = w/2;
+    this.camera.top = h/2; this.camera.bottom = -h/2;
+    this.camera.updateProjectionMatrix();
+  };
+
+  dispose() {
+    this.disposed = true;
+    cancelAnimationFrame(this.animId);
+    this.container.removeEventListener('pointermove', this.onPointerMove);
+    this.container.removeEventListener('click', this.onClick);
+    window.removeEventListener('resize', this.onResize);
+    this.renderer.dispose();
+    document.body.style.cursor = 'default';
+    this.renderer.domElement.remove();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -577,14 +600,22 @@ function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
-// KEY FIX: Canvas style uses position:absolute to ensure visibility.
-// R3F's default wrapper uses position:relative which fails to composite
-// the WebGL canvas visually in this Tailwind v4 / Next.js 16 context.
 // ═══════════════════════════════════════════════════════════════════════
 export default function TartaryWorld() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const engineRef = useRef<MegacityEngine | null>(null);
+  const clickRef = useRef<(href: string) => void>(() => {});
   const router = useRouter();
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  clickRef.current = (href: string) => router.push(href);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    engineRef.current = new MegacityEngine(containerRef.current, setHoveredDistrict, (href) => clickRef.current(href));
+    return () => { engineRef.current?.dispose(); engineRef.current = null; };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 2500);
@@ -595,16 +626,7 @@ export default function TartaryWorld() {
 
   return (
     <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
-      <Canvas
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        shadows
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
-        onCreated={({ gl }) => { gl.setClearColor('#020204'); }}
-      >
-        <OrthographicCamera makeDefault position={[20, 18, 20]} zoom={36} near={0.1} far={120} />
-        <Scene hoveredDistrict={hoveredDistrict} setHoveredDistrict={setHoveredDistrict} onDistrictClick={handleDistrictClick} />
-      </Canvas>
+      <div ref={containerRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
       <HUDOverlay hoveredDistrict={hoveredDistrict} onDistrictClick={handleDistrictClick} isReady={isLoaded} />
       <LoadingScreen isLoaded={isLoaded} />
       <div className="absolute inset-0 pointer-events-none z-[5]" style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(2,2,4,0.6) 100%)' }} />
