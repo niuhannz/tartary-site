@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo, Suspense } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera, Float, Text, Sparkles, Environment } from '@react-three/drei';
+import { OrthographicCamera, Float, Text, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
 
@@ -219,9 +219,9 @@ function MegaBuilding({
 
   useFrame((_, delta) => {
     if (!ref.current) return;
-    const target = hovered ? 1.8 : 0.4;
+    const target = hovered ? 1.5 : 0.6;
     emissiveTarget.current = THREE.MathUtils.lerp(emissiveTarget.current, target, delta * 5);
-    const mat = ref.current.material as THREE.MeshPhysicalMaterial;
+    const mat = ref.current.material as THREE.MeshStandardMaterial;
     mat.emissiveIntensity = emissiveTarget.current;
   });
 
@@ -235,15 +235,12 @@ function MegaBuilding({
       castShadow
       receiveShadow
     >
-      <meshPhysicalMaterial
+      <meshStandardMaterial
         color={baseColor}
-        metalness={0.6}
-        roughness={0.2}
+        metalness={0.3}
+        roughness={0.4}
         emissive={neonColor}
-        emissiveIntensity={0.5}
-        clearcoat={0.3}
-        clearcoatRoughness={0.2}
-        envMapIntensity={0.3}
+        emissiveIntensity={0.6}
       />
     </mesh>
   );
@@ -440,7 +437,7 @@ function ShopDistrict({ hovered }: { hovered: boolean }) {
       {/* Grand arch */}
       <mesh position={[0, 1.6, 0]} rotation={[0, 0, 0]}>
         <torusGeometry args={[1.5, 0.2, 12, 24, Math.PI]} />
-        <meshPhysicalMaterial color={c.baseColor} metalness={0.92} roughness={0.08} emissive={c.neonColor} emissiveIntensity={hovered ? 1.0 : 0.2} clearcoat={0.4} clearcoatRoughness={0.15} />
+        <meshStandardMaterial color={c.baseColor} metalness={0.3} roughness={0.4} emissive={c.neonColor} emissiveIntensity={hovered ? 1.2 : 0.5} />
       </mesh>
       {/* Arch pillars */}
       <MegaBuilding geometry={geoCache.box} position={[-1.5, 0.8, 0]} scale={[0.35, 1.6, 0.35]} baseColor="#1a1208" neonColor={c.neonColor} hovered={hovered} />
@@ -532,12 +529,12 @@ function DistrictGroup({
       {/* Base platform */}
       <mesh position={[0, -0.04, 0]} receiveShadow>
         <cylinderGeometry args={[3.2, 3.4, 0.08, 6]} />
-        <meshPhysicalMaterial
-          color="#080808"
-          metalness={0.95}
-          roughness={0.2}
+        <meshStandardMaterial
+          color="#0a0a0a"
+          metalness={0.3}
+          roughness={0.5}
           emissive={district.neonColor}
-          emissiveIntensity={isHovered ? 0.35 : 0.04}
+          emissiveIntensity={isHovered ? 0.4 : 0.08}
         />
       </mesh>
 
@@ -701,12 +698,10 @@ function DataDrone({
   return (
     <mesh ref={ref}>
       <icosahedronGeometry args={[0.07, 0]} />
-      <meshPhysicalMaterial
+      <meshStandardMaterial
         color={color}
         emissive={color}
         emissiveIntensity={3}
-        metalness={0.9}
-        roughness={0.1}
         transparent
         opacity={0.9}
       />
@@ -1123,7 +1118,6 @@ export default function TartaryWorld() {
   return (
     <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
       {/* Three.js Canvas */}
-      <Suspense fallback={null}>
         <Canvas
           shadows
           dpr={[1, 1.5]}
@@ -1144,17 +1138,12 @@ export default function TartaryWorld() {
             near={0.1}
             far={120}
           />
-          {/* Environment outside Scene to prevent re-suspend on hover state change */}
-          <Suspense fallback={null}>
-            <Environment preset="night" environmentIntensity={0.25} background={false} />
-          </Suspense>
           <Scene
             hoveredDistrict={hoveredDistrict}
             setHoveredDistrict={setHoveredDistrict}
             onDistrictClick={handleDistrictClick}
           />
         </Canvas>
-      </Suspense>
 
       {/* HUD Overlay */}
       <HUDOverlay
