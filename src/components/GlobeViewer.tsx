@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Sphere, useTexture, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,10 +8,8 @@ import type { WorldDefinition } from '@/data/worlds';
 
 // ─── Atmosphere Shader ────────────────────────────────
 function Atmosphere({ color }: { color: string }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-
   return (
-    <Sphere ref={meshRef} args={[2.08, 64, 64]}>
+    <Sphere args={[2.08, 64, 64]}>
       <shaderMaterial
         transparent
         side={THREE.BackSide}
@@ -38,17 +36,19 @@ function Atmosphere({ color }: { color: string }) {
   );
 }
 
-// ─── Globe Mesh ───────────────────────────────────────
+// ─── Globe Mesh (clickable) ──────────────────────────
 interface GlobeMeshProps {
   texturePath: string;
   accentColor: string;
   opacity: number;
   isTransitioning: boolean;
+  onGlobeClick: () => void;
 }
 
-function GlobeMesh({ texturePath, accentColor, opacity, isTransitioning }: GlobeMeshProps) {
+function GlobeMesh({ texturePath, accentColor, opacity, isTransitioning, onGlobeClick }: GlobeMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const texture = useTexture(texturePath);
+  const pointerDown = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (texture) {
@@ -63,9 +63,33 @@ function GlobeMesh({ texturePath, accentColor, opacity, isTransitioning }: Globe
     }
   });
 
+  // Distinguish click from drag: only fire onClick if pointer barely moved
+  const handlePointerDown = useCallback((e: any) => {
+    pointerDown.current = { x: e.clientX ?? e.point?.x ?? 0, y: e.clientY ?? e.point?.y ?? 0 };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: any) => {
+      if (!pointerDown.current) return;
+      const dx = (e.clientX ?? e.point?.x ?? 0) - pointerDown.current.x;
+      const dy = (e.clientY ?? e.point?.y ?? 0) - pointerDown.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 5) {
+        onGlobeClick();
+      }
+      pointerDown.current = null;
+    },
+    [onGlobeClick]
+  );
+
   return (
     <group>
-      <Sphere ref={meshRef} args={[2, 64, 64]}>
+      <Sphere
+        ref={meshRef}
+        args={[2, 64, 64]}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+      >
         <meshStandardMaterial
           map={texture}
           transparent
@@ -84,10 +108,10 @@ interface SceneProps {
   world: WorldDefinition;
   opacity: number;
   isTransitioning: boolean;
-  onZoomToMap: () => void;
+  onGlobeClick: () => void;
 }
 
-function Scene({ world, opacity, isTransitioning }: SceneProps) {
+function Scene({ world, opacity, isTransitioning, onGlobeClick }: SceneProps) {
   const controlsRef = useRef<any>(null);
   const { camera } = useThree();
 
@@ -101,23 +125,20 @@ function Scene({ world, opacity, isTransitioning }: SceneProps) {
 
   return (
     <>
-      {/* Lighting */}
       <ambientLight intensity={0.3} />
       <directionalLight position={[5, 3, 5]} intensity={1.2} color="#ffffff" />
       <pointLight position={[-5, -3, -5]} intensity={0.4} color={world.accentColor} />
 
-      {/* Stars background */}
       <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
 
-      {/* Globe */}
       <GlobeMesh
         texturePath={world.texturePath}
         accentColor={world.accentColor}
         opacity={opacity}
         isTransitioning={isTransitioning}
+        onGlobeClick={onGlobeClick}
       />
 
-      {/* Controls */}
       <OrbitControls
         ref={controlsRef}
         enablePan={false}
@@ -139,9 +160,10 @@ interface GlobeViewerProps {
   isTransitioning: boolean;
   globeOpacity: number;
   onReady?: () => void;
+  onGlobeClick?: () => void;
 }
 
-export default function GlobeViewer({ world, isTransitioning, globeOpacity, onReady }: GlobeViewerProps) {
+export default function GlobeViewer({ world, isTransitioning, globeOpacity, onReady, onGlobeClick }: GlobeViewerProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -149,20 +171,26 @@ export default function GlobeViewer({ world, isTransitioning, globeOpacity, onRe
     onReady?.();
   }, [onReady]);
 
+  const handleGlobeClick = useCallback(() => {
+    if (!isTransitioning && onGlobeClick) {
+      onGlobeClick();
+    }
+  }, [isTransitioning, onGlobeClick]);
+
   if (!mounted) return null;
 
   return (
     <Canvas
       camera={{ position: [0, 0, 5.5], fov: 45, near: 0.1, far: 1000 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', cursor: 'pointer' }}
       dpr={[1, 2]}
     >
       <Scene
         world={world}
         opacity={globeOpacity}
         isTransitioning={isTransitioning}
-        onZoomToMap={() => {}}
+        onGlobeClick={handleGlobeClick}
       />
     </Canvas>
   );

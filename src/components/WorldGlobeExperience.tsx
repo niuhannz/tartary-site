@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect, Suspense } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { WORLDS, WORLD_ORDER, type WorldId } from '@/data/worlds';
 import WorldSelector from './WorldSelector';
 
@@ -28,87 +29,135 @@ function GlobeLoadingFallback() {
   );
 }
 
-// Simple flat map for Earth-based worlds (MARGIN, XT111, THE_UNRECORDED)
-function EarthFlatMap({ worldId }: { worldId: WorldId }) {
+// ─── UN-Style Azimuthal Flat Map ──────────────────────
+function AzimuthalFlatMap({ worldId }: { worldId: WorldId }) {
   const world = WORLDS[worldId];
+  const [hoveredLoc, setHoveredLoc] = useState<string | null>(null);
+
+  // Convert lat/lng to azimuthal equidistant coordinates (centred on North Pole)
+  // Returns percentage position within the circular map image
+  const toAzimuthalPercent = (lat: number, lng: number) => {
+    const latR = (lat * Math.PI) / 180;
+    const lngR = (lng * Math.PI) / 180;
+    const r = Math.PI / 2 - latR; // distance from pole
+    const x = r * Math.sin(lngR);
+    const y = -r * Math.cos(lngR);
+    // Map from [-pi, pi] range to [0%, 100%]
+    const px = ((x / Math.PI) * 0.45 + 0.5) * 100;
+    const py = ((y / Math.PI) * 0.45 + 0.5) * 100;
+    return { x: px, y: py };
+  };
+
+  const typeColors: Record<string, string> = {
+    capital: '#ffd700',
+    city: '#c0c0c0',
+    landmark: '#00d4ff',
+    conflict: '#ff4444',
+  };
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-lg">
-      {/* Map texture background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url(${world.flatMapTexturePath})`,
-          filter: 'brightness(0.7) contrast(1.1)',
-        }}
-      />
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {/* Circular map background */}
+      <div className="relative" style={{ width: '90%', maxWidth: '700px', aspectRatio: '1' }}>
+        <Image
+          src={world.flatMapTexturePath}
+          alt={`${world.name} map`}
+          fill
+          className="object-contain"
+          priority
+        />
 
-      {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-carbon/80" />
-
-      {/* Location markers */}
-      <div className="absolute inset-0">
+        {/* Location markers overlaid on the circular map */}
         {world.keyLocations.map((loc) => {
-          // Simple lat/lng to percentage conversion (equirectangular)
-          const x = ((loc.lng + 180) / 360) * 100;
-          const y = ((90 - loc.lat) / 180) * 100;
-
-          const typeColors: Record<string, string> = {
-            capital: '#ffd700',
-            city: '#c0c0c0',
-            landmark: '#00d4ff',
-            conflict: '#ff4444',
-          };
+          const pos = toAzimuthalPercent(loc.lat, loc.lng);
+          const isHovered = hoveredLoc === loc.name;
 
           return (
             <div
               key={loc.name}
-              className="absolute group"
-              style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+              className="absolute z-10"
+              style={{
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              onMouseEnter={() => setHoveredLoc(loc.name)}
+              onMouseLeave={() => setHoveredLoc(null)}
             >
               {/* Pulse ring */}
-              <div
-                className="absolute w-6 h-6 rounded-full animate-ping opacity-30"
+              <motion.div
+                className="absolute rounded-full"
                 style={{
-                  backgroundColor: typeColors[loc.type],
+                  width: 20,
+                  height: 20,
                   left: '50%',
                   top: '50%',
                   transform: 'translate(-50%, -50%)',
+                  border: `1px solid ${typeColors[loc.type]}`,
+                  opacity: 0.4,
+                }}
+                animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+              />
+
+              {/* Dot */}
+              <div
+                className="relative w-2.5 h-2.5 rounded-full cursor-pointer z-10"
+                style={{
+                  backgroundColor: typeColors[loc.type],
+                  boxShadow: `0 0 8px ${typeColors[loc.type]}80`,
                 }}
               />
 
-              {/* Marker dot */}
-              <div
-                className="relative w-3 h-3 rounded-full border border-white/40 cursor-pointer z-10"
-                style={{ backgroundColor: typeColors[loc.type] }}
-              />
-
-              {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
-                <div
-                  className="px-3 py-2 rounded-md whitespace-nowrap text-center"
-                  style={{
-                    background: 'rgba(13,13,13,0.95)',
-                    border: `1px solid ${typeColors[loc.type]}40`,
-                    boxShadow: `0 4px 20px rgba(0,0,0,0.6)`,
-                  }}
-                >
-                  <span
-                    className="block text-[11px] tracking-wider uppercase"
-                    style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, color: typeColors[loc.type] }}
+              {/* Label (always visible for capitals, hover for others) */}
+              <AnimatePresence>
+                {(loc.type === 'capital' || isHovered) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20"
+                    style={{ top: '-28px' }}
                   >
-                    {loc.name}
-                  </span>
-                  {loc.description && (
                     <span
-                      className="block text-[10px] text-ash mt-1 max-w-[200px]"
-                      style={{ fontFamily: 'var(--font-display)' }}
+                      className="text-[9px] md:text-[10px] tracking-[0.12em] uppercase px-2 py-1 rounded"
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: typeColors[loc.type],
+                        background: 'rgba(13,13,13,0.9)',
+                        border: `1px solid ${typeColors[loc.type]}30`,
+                      }}
+                    >
+                      {loc.name}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Description tooltip on hover */}
+              <AnimatePresence>
+                {isHovered && loc.description && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20"
+                    style={{ bottom: '-26px' }}
+                  >
+                    <span
+                      className="text-[8px] md:text-[9px] text-ash px-2 py-0.5 rounded"
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontWeight: 300,
+                        fontStyle: 'italic',
+                        background: 'rgba(13,13,13,0.9)',
+                      }}
                     >
                       {loc.description}
                     </span>
-                  )}
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
@@ -122,8 +171,11 @@ function EarthFlatMap({ worldId }: { worldId: WorldId }) {
           { type: 'conflict', label: 'Conflict', color: '#ff4444' },
         ].map((item) => (
           <div key={item.type} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-            <span className="text-[10px] tracking-wider uppercase text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+            <span
+              className="text-[9px] tracking-wider uppercase text-ash"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
               {item.label}
             </span>
           </div>
@@ -133,6 +185,7 @@ function EarthFlatMap({ worldId }: { worldId: WorldId }) {
   );
 }
 
+// ─── Main Experience ──────────────────────────────────
 export default function WorldGlobeExperience() {
   const [currentWorld, setCurrentWorld] = useState<WorldId>('HEAVENFALL');
   const [viewMode, setViewMode] = useState<ViewMode>('globe');
@@ -145,17 +198,11 @@ export default function WorldGlobeExperience() {
   const handleSelectWorld = useCallback(
     (worldId: WorldId) => {
       if (worldId === currentWorld || isTransitioning) return;
-
       setIsTransitioning(true);
       setViewMode('globe');
-
-      // Fade out
       setGlobeOpacity(0);
-
       setTimeout(() => {
         setCurrentWorld(worldId);
-
-        // Fade in
         setTimeout(() => {
           setGlobeOpacity(1);
           setTimeout(() => setIsTransitioning(false), 400);
@@ -166,26 +213,21 @@ export default function WorldGlobeExperience() {
   );
 
   const handleExploreMap = useCallback(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || viewMode === 'map') return;
     setIsTransitioning(true);
-
-    // Zoom effect via opacity
     setGlobeOpacity(0);
-
     setTimeout(() => {
       setViewMode('map');
       setTimeout(() => setIsTransitioning(false), 300);
     }, 600);
-  }, [isTransitioning]);
+  }, [isTransitioning, viewMode]);
 
   const handleBackToGlobe = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-
     setTimeout(() => {
       setViewMode('globe');
       setGlobeOpacity(0);
-
       setTimeout(() => {
         setGlobeOpacity(1);
         setTimeout(() => setIsTransitioning(false), 400);
@@ -219,7 +261,7 @@ export default function WorldGlobeExperience() {
               key="globe"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5 }}
               className="absolute inset-0"
             >
@@ -229,24 +271,42 @@ export default function WorldGlobeExperience() {
                   isTransitioning={isTransitioning}
                   globeOpacity={globeOpacity}
                   onReady={() => setGlobeReady(true)}
+                  onGlobeClick={handleExploreMap}
                 />
               </Suspense>
+
+              {/* Click hint */}
+              <motion.div
+                className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: globeReady ? 1 : 0 }}
+                transition={{ delay: 2, duration: 1 }}
+              >
+                <motion.span
+                  className="text-[10px] tracking-[0.2em] uppercase text-ash/60"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                  animate={{ opacity: [0.4, 0.8, 0.4] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  Click globe to unfold map
+                </motion.span>
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div
               key="map"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, scale: 0.85, borderRadius: '50%' }}
+              animate={{ opacity: 1, scale: 1, borderRadius: '0%' }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0"
             >
-              {currentWorld === 'HEAVENFALL' ? (
-                <div className="w-full h-full">
-                  <InteractiveMap />
-                </div>
+              {currentWorld === 'HEAVENFALL' && world.mapType === 'fantasy' ? (
+                /* HEAVENFALL uses the full interactive map for "map" mode,
+                   but the azimuthal flat map for the initial unfold view */
+                <AzimuthalFlatMap worldId={currentWorld} />
               ) : (
-                <EarthFlatMap worldId={currentWorld} />
+                <AzimuthalFlatMap worldId={currentWorld} />
               )}
             </motion.div>
           )}
@@ -284,7 +344,7 @@ export default function WorldGlobeExperience() {
           </AnimatePresence>
         </div>
 
-        {/* Controls */}
+        {/* View Toggle Controls */}
         <div className="absolute top-4 right-4 flex gap-3 z-10">
           {viewMode === 'globe' ? (
             <button
@@ -297,11 +357,8 @@ export default function WorldGlobeExperience() {
                 <line x1="8" y1="2" x2="8" y2="18" />
                 <line x1="16" y1="6" x2="16" y2="22" />
               </svg>
-              <span
-                className="text-[11px] tracking-[0.12em] uppercase"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Explore Map
+              <span className="text-[11px] tracking-[0.12em] uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
+                Unfold Map
               </span>
             </button>
           ) : (
@@ -315,10 +372,7 @@ export default function WorldGlobeExperience() {
                 <line x1="2" y1="12" x2="22" y2="12" />
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
-              <span
-                className="text-[11px] tracking-[0.12em] uppercase"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
+              <span className="text-[11px] tracking-[0.12em] uppercase" style={{ fontFamily: 'var(--font-mono)' }}>
                 Back to Globe
               </span>
             </button>

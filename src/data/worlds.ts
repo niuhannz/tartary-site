@@ -31,7 +31,7 @@ export const WORLDS: Record<string, WorldDefinition> = {
     accentColor: '#ff4d00',
     accentColorLight: '#ff7a3d',
     texturePath: '/textures/globe-heavenfall.jpg',
-    flatMapTexturePath: '/map.svg',
+    flatMapTexturePath: '/textures/flat-heavenfall.png',
     mapType: 'fantasy',
     era: 'The War of Ash and Storm',
     keyLocations: [
@@ -54,7 +54,7 @@ export const WORLDS: Record<string, WorldDefinition> = {
     accentColor: '#d4a574',
     accentColorLight: '#e8c9a0',
     texturePath: '/textures/globe-margin.jpg',
-    flatMapTexturePath: '/textures/flat-margin.jpg',
+    flatMapTexturePath: '/textures/flat-margin.png',
     mapType: 'earth-based',
     era: 'The Age of Outlaws',
     keyLocations: [
@@ -76,7 +76,7 @@ export const WORLDS: Record<string, WorldDefinition> = {
     accentColor: '#00d4ff',
     accentColorLight: '#66e5ff',
     texturePath: '/textures/globe-xt111.jpg',
-    flatMapTexturePath: '/textures/flat-xt111.jpg',
+    flatMapTexturePath: '/textures/flat-xt111.png',
     mapType: 'earth-based',
     era: 'Post-Contact Era',
     keyLocations: [
@@ -98,7 +98,7 @@ export const WORLDS: Record<string, WorldDefinition> = {
     accentColor: '#a0886e',
     accentColorLight: '#c4ad94',
     texturePath: '/textures/globe-unrecorded.jpg',
-    flatMapTexturePath: '/textures/flat-unrecorded.jpg',
+    flatMapTexturePath: '/textures/flat-unrecorded.png',
     mapType: 'earth-based',
     era: 'The Hidden Timeline',
     keyLocations: [
