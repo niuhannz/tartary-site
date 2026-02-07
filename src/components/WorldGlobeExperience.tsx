@@ -63,9 +63,10 @@ function InteractiveFlatMap({ worldId, onDoubleTap }: InteractiveFlatMapProps) {
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !dragStart.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    setTransform((t) => ({ ...t, x: dragStart.current!.tx + dx, y: dragStart.current!.ty + dy }));
+    const { x: startX, y: startY, tx, ty } = dragStart.current;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    setTransform((t) => ({ ...t, x: tx + dx, y: ty + dy }));
   }, [isDragging]);
 
   const handleMouseUp = useCallback(() => {
@@ -107,9 +108,10 @@ function InteractiveFlatMap({ worldId, onDoubleTap }: InteractiveFlatMapProps) {
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     if (e.touches.length === 1 && isDragging && dragStart.current) {
-      const dx = e.touches[0].clientX - dragStart.current.x;
-      const dy = e.touches[0].clientY - dragStart.current.y;
-      setTransform((t) => ({ ...t, x: dragStart.current!.tx + dx, y: dragStart.current!.ty + dy }));
+      const { x: startX, y: startY, tx, ty } = dragStart.current;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      setTransform((t) => ({ ...t, x: tx + dx, y: ty + dy }));
     } else if (e.touches.length === 2) {
       const dx = e.touches[1].clientX - e.touches[0].clientX;
       const dy = e.touches[1].clientY - e.touches[0].clientY;
