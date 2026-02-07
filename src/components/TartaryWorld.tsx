@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrthographicCamera, Float, Text, Sparkles, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPES
@@ -1061,12 +1061,22 @@ function HUDOverlay({
 // ═══════════════════════════════════════════════════════════════════════
 // LOADING SCREEN
 // ═══════════════════════════════════════════════════════════════════════
-function LoadingScreen() {
+function LoadingScreen({ isLoaded }: { isLoaded: boolean }) {
+  const [barWidth, setBarWidth] = useState(0);
+
+  useEffect(() => {
+    // Start the progress bar animation after mount
+    const raf = requestAnimationFrame(() => setBarWidth(100));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   return (
-    <motion.div
-      className="absolute inset-0 z-40 bg-[#020204] flex flex-col items-center justify-center"
-      exit={{ opacity: 0 }}
-      transition={{ duration: 1.0, ease: 'easeInOut' }}
+    <div
+      className="absolute inset-0 z-40 bg-[#020204] flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out"
+      style={{
+        opacity: isLoaded ? 0 : 1,
+        pointerEvents: isLoaded ? 'none' : 'auto',
+      }}
     >
       <div className="text-center">
         <p
@@ -1076,18 +1086,19 @@ function LoadingScreen() {
           Tartary
         </p>
         <div className="w-48 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
-          <motion.div
-            className="absolute top-0 left-0 h-full bg-gold"
-            initial={{ width: '0%' }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 2.2, ease: 'easeInOut' }}
+          <div
+            className="absolute top-0 left-0 h-full bg-gold transition-all ease-in-out"
+            style={{
+              width: `${barWidth}%`,
+              transitionDuration: '2.2s',
+            }}
           />
         </div>
         <p className="text-[10px] tracking-[0.25em] uppercase text-ash/40 mt-4" style={{ fontFamily: 'var(--font-mono)' }}>
           Initializing megacity
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1152,10 +1163,8 @@ export default function TartaryWorld() {
         isReady={isLoaded}
       />
 
-      {/* Loading screen */}
-      <AnimatePresence>
-        {!isLoaded && <LoadingScreen />}
-      </AnimatePresence>
+      {/* Loading screen (CSS transition fade-out) */}
+      <LoadingScreen isLoaded={isLoaded} />
 
       {/* Vignette */}
       <div
