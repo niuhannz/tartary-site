@@ -1118,6 +1118,7 @@ export default function TartaryWorld() {
   return (
     <div className="relative w-full h-screen bg-[#020204] overflow-hidden">
       {/* Three.js Canvas */}
+      <Suspense fallback={null}>
         <Canvas
           shadows
           dpr={[1, 1.5]}
@@ -1138,14 +1139,13 @@ export default function TartaryWorld() {
             near={0.1}
             far={120}
           />
-          <Suspense fallback={null}>
-            <Scene
-              hoveredDistrict={hoveredDistrict}
-              setHoveredDistrict={setHoveredDistrict}
-              onDistrictClick={handleDistrictClick}
-            />
-          </Suspense>
+          <Scene
+            hoveredDistrict={hoveredDistrict}
+            setHoveredDistrict={setHoveredDistrict}
+            onDistrictClick={handleDistrictClick}
+          />
         </Canvas>
+      </Suspense>
 
       {/* HUD Overlay */}
       <HUDOverlay
