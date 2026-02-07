@@ -1,12 +1,20 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
 
 const SITE_PASSWORD = 'mudflood';
 const STORAGE_KEY = 'tartary_auth';
 
+// Routes that bypass the password gate
+const PUBLIC_ROUTES = ['/login'];
+
 export default function PasswordGate({ children }: { children: React.ReactNode }) {
-  const [authenticated, setAuthenticated] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const pathname = usePathname();
+  const [passwordAuth, setPasswordAuth] = useState(false);
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -14,7 +22,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem(STORAGE_KEY);
-      if (stored === 'true') setAuthenticated(true);
+      if (stored === 'true') setPasswordAuth(true);
       setChecking(false);
     }
   }, []);
@@ -23,7 +31,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     e.preventDefault();
     if (input === SITE_PASSWORD) {
       sessionStorage.setItem(STORAGE_KEY, 'true');
-      setAuthenticated(true);
+      setPasswordAuth(true);
       setError(false);
     } else {
       setError(true);
@@ -31,17 +39,38 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     }
   };
 
-  if (checking) {
+  // Still loading
+  if (checking || authLoading) {
     return (
       <div style={{
         position: 'fixed', inset: 0, background: '#0a0a0a',
         display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999,
-      }} />
+      }}>
+        <div
+          style={{
+            width: 20, height: 20,
+            border: '1px solid rgba(201,169,110,0.3)',
+            borderTop: '1px solid #c9a96e',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
     );
   }
 
-  if (authenticated) return <>{children}</>;
+  // Let public routes through (like /login)
+  if (PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
+    return <>{children}</>;
+  }
 
+  // Authenticated via Supabase OR site password
+  if (user || passwordAuth) {
+    return <>{children}</>;
+  }
+
+  // Gate screen
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 99999,
@@ -58,14 +87,14 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
       }} />
 
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
-        {/* Logo */}
-        <h1 style={{
+        {/* Logo with metallic sheen */}
+        <h1 className="logo-sheen logo-glow" style={{
           fontSize: '2rem',
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
-          color: '#e8e4dc',
           fontWeight: 700,
           marginBottom: '8px',
+          fontFamily: "'Syne', sans-serif",
         }}>
           Tartary
         </h1>
@@ -155,6 +184,52 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
             </p>
           )}
         </form>
+
+        {/* Separator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '16px',
+          margin: '28px 0 20px', width: '280px',
+        }}>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+          <span style={{
+            fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase',
+            color: '#555', fontFamily: "'Space Mono', monospace",
+          }}>
+            or
+          </span>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+        </div>
+
+        {/* Login link */}
+        <Link
+          href="/login"
+          style={{
+            display: 'inline-block',
+            width: '280px',
+            padding: '14px 20px',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: '#b0b0b0',
+            fontSize: '11px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 600,
+            textAlign: 'center',
+            textDecoration: 'none',
+            transition: 'all 0.3s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)';
+            e.currentTarget.style.color = '#e8e4dc';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+            e.currentTarget.style.color = '#b0b0b0';
+          }}
+        >
+          Sign in with Account
+        </Link>
       </div>
     </div>
   );

@@ -209,6 +209,70 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
 }
 
+/* ── Metallic sheen logo ─────────────── */
+
+@keyframes metallicSheen {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.logo-sheen {
+  background: linear-gradient(
+    120deg,
+    #e8e4dc 0%,
+    #e8e4dc 35%,
+    #f5ecd7 42%,
+    #ffd98e 48%,
+    #c9a96e 50%,
+    #ffd98e 52%,
+    #f5ecd7 58%,
+    #e8e4dc 65%,
+    #e8e4dc 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: metallicSheen 4s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+/* Pause animation when not visible, re-trigger intermittently */
+.logo-sheen-intermittent {
+  background: linear-gradient(
+    120deg,
+    #e8e4dc 0%,
+    #e8e4dc 35%,
+    #f5ecd7 42%,
+    #ffd98e 48%,
+    #c9a96e 50%,
+    #ffd98e 52%,
+    #f5ecd7 58%,
+    #e8e4dc 65%,
+    #e8e4dc 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: metallicSheen 3s cubic-bezier(0.4, 0, 0.2, 1) 2s;
+  animation-fill-mode: backwards;
+}
+
+/* Add a subtle text-shadow glow behind the sheen */
+.logo-glow {
+  filter: drop-shadow(0 0 8px rgba(201, 169, 110, 0.15));
+  transition: filter 0.5s ease;
+}
+
+.logo-glow:hover {
+  filter: drop-shadow(0 0 16px rgba(201, 169, 110, 0.35));
+}
+
 /* ── Staggered animation delays ───────── */
 
 .stagger-1 { animation-delay: 0.1s; }

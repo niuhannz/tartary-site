@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
 
 // ─────────────────────────────── NAV DATA ───────────────────────────────
 interface SubLink {
@@ -225,6 +226,92 @@ function NavDropdown({
 }
 
 // ─────────────────────────────── NAVIGATION ───────────────────────────────
+// ─────────────────────────────── USER MENU ───────────────────────────────
+function UserMenu() {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  if (!user) {
+    return (
+      <Link
+        href="/login"
+        className="text-[11px] tracking-[0.12em] uppercase text-ash hover:text-gold transition-colors duration-300 hidden lg:block"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        Sign in
+      </Link>
+    );
+  }
+
+  const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
+  const initial = displayName.charAt(0).toUpperCase();
+
+  return (
+    <div
+      className="relative hidden lg:block"
+      onMouseEnter={() => { if (timeoutRef.current) clearTimeout(timeoutRef.current); setOpen(true); }}
+      onMouseLeave={() => { timeoutRef.current = setTimeout(() => setOpen(false), 150); }}
+    >
+      <button
+        className="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-[11px] tracking-wider uppercase text-gold hover:border-gold/60 transition-colors duration-300"
+        style={{ fontFamily: 'var(--font-heading)', fontWeight: 600 }}
+      >
+        {initial}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 5, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute top-full right-0 pt-4"
+            style={{ minWidth: '180px' }}
+          >
+            <div
+              className="rounded-lg overflow-hidden border border-white/[0.06] backdrop-blur-xl"
+              style={{ background: 'rgba(10, 10, 10, 0.92)' }}
+            >
+              <div className="h-[1px] bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+              <div className="px-5 py-3 border-b border-white/[0.04]">
+                <p
+                  className="text-[11px] tracking-[0.08em] text-foreground truncate"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {displayName}
+                </p>
+                <p
+                  className="text-[10px] text-ash/60 truncate mt-0.5"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {user.email}
+                </p>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={async () => {
+                    await signOut();
+                    setOpen(false);
+                    router.push('/');
+                  }}
+                  className="w-full text-left px-5 py-2.5 text-[11px] tracking-[0.12em] uppercase text-ash hover:text-foreground hover:bg-white/[0.04] transition-all duration-200"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────── NAVIGATION ───────────────────────────────
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -258,9 +345,9 @@ export default function Navigation() {
       >
         <div className="max-w-[1400px] mx-auto px-6 md:px-10">
           <div className="flex items-center justify-between h-20 md:h-24">
-            <Link href="/" className="relative z-50">
+            <Link href="/" className="relative z-50 logo-glow">
               <span
-                className="text-xl md:text-2xl tracking-[0.3em] uppercase"
+                className="text-xl md:text-2xl tracking-[0.3em] uppercase logo-sheen"
                 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
               >
                 Tartary
@@ -279,6 +366,8 @@ export default function Navigation() {
                   onClose={() => setOpenDropdown(null)}
                 />
               ))}
+              <div className="w-[1px] h-4 bg-white/[0.08]" />
+              <UserMenu />
             </nav>
 
             <button

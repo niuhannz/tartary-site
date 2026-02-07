@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
-import CursorGlow from '@/components/CursorGlow';
 import PasswordGate from '@/components/PasswordGate';
+import SiteShell from '@/components/SiteShell';
+import { AuthProvider } from '@/lib/AuthContext';
 
 export const metadata: Metadata = {
   title: {
@@ -52,12 +51,11 @@ export default function RootLayout({
         />
       </head>
       <body className="grain antialiased">
-        <PasswordGate>
-          <CursorGlow />
-          <Navigation />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
-        </PasswordGate>
+        <AuthProvider>
+          <PasswordGate>
+            <SiteShell>{children}</SiteShell>
+          </PasswordGate>
+        </AuthProvider>
       </body>
     </html>
   );
