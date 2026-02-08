@@ -28,7 +28,9 @@ interface BldInst { grp: THREE.Group; tile: [number, number]; size: [number, num
 interface NPCInst { g: THREE.Group; name: string; color: string; dialogs: string[]; wp: number; wps: [number, number][]; tile: [number, number]; pos: THREE.Vector3; tgt: THREE.Vector3; mv: boolean; pause: number; angle: number; wt: number; p: { la: THREE.Mesh; ra: THREE.Mesh; ll: THREE.Mesh; rl: THREE.Mesh }; ind: THREE.Mesh }
 interface ResInst { g: THREE.Group; type: 'gold' | 'wood' | 'stone'; tile: [number, number]; got: boolean; respawn: number; mesh: THREE.Mesh }
 interface HidInst { g: THREE.Group; type: 'chest' | 'ruin' | 'stone' | 'hermit'; tile: [number, number]; found: boolean; dialogs: string[]; mesh: THREE.Mesh }
-interface ChunkD { cx: number; cz: number; key: string; tiles: TileD[][]; blds: BldInst[]; npcs: NPCInst[]; res: ResInst[]; hid: HidInst[]; meshes: THREE.Object3D[] }
+interface MonsterInst { type: string; grp: THREE.Group; wx: number; wz: number; phase: number; dialogs: string[]; parts: Record<string, THREE.Object3D>; met: boolean }
+interface ParkInst { grp: THREE.Group; type: string; wx: number; wz: number; parts: Record<string, THREE.Object3D>; discovered: boolean }
+interface ChunkD { cx: number; cz: number; key: string; tiles: TileD[][]; blds: BldInst[]; npcs: NPCInst[]; res: ResInst[]; hid: HidInst[]; monsters: MonsterInst[]; parks: ParkInst[]; meshes: THREE.Object3D[] }
 
 // ═══════════════════════════════════════════════════════════════════════
 // DATA POOLS
@@ -53,6 +55,21 @@ const CHEST_DLG = ['A hidden chest! +5 gold found.'];
 const RUIN_DLG = ['Crumbling pillars mark where a great hall once stood...', 'Ancient inscriptions cover the walls.'];
 const STONE_DLG = ['The stone hums with an ancient resonance...', 'Faint symbols glow on its surface.'];
 const BLD_NAMES = ['Cottage', 'Farmhouse', 'Outpost', 'Waystation', 'Cabin', 'Lodge', 'Shelter'];
+
+// Monster data
+const M_TYPES = ['slime', 'dragon', 'mushroom', 'golem', 'wisp', 'spider', 'troll', 'elemental'] as const;
+const M_DLG: Record<string, string[]> = {
+  slime: ['Bloop! *wobbles happily*', 'Splish splash! Want to bounce?', '*jiggles contentedly*'],
+  dragon: ['Rawr! ...just kidding, I\'m tiny.', '*puffs a tiny flame* Did you see that?!', 'One day I\'ll be BIG. Just you wait!'],
+  mushroom: ['Don\'t eat me! I taste terrible!', '*shakes spores everywhere* Oops!', 'I\'m a fun-gi! Get it? ...anyone?'],
+  golem: ['*crystalline humming*', 'These crystals have seen millennia pass...', '*resonates with ancient energy*'],
+  wisp: ['Wooooo... just kidding. Hi!', '*flickers mysteriously*', 'Follow me! Or don\'t. I\'ll follow you.'],
+  spider: ['*clickety clack*', '*waves all eight legs* Hello friend!', 'I knit the finest silk in the land!'],
+  troll: ['You pay troll toll? ...just kidding!', '*scratches head* Which bridge was mine again?', 'I\'m actually a vegetarian. Don\'t tell anyone.'],
+  elemental: ['*crackle* Got any marshmallows?', '*warm glow* I provide free heating!', 'Hot take: fire is the best element. *ba dum tss*'],
+};
+// Theme park attraction types
+const PARK_TYPES = ['ferris', 'carousel', 'circus', 'coaster', 'bumper', 'food'] as const;
 
 // ═══════════════════════════════════════════════════════════════════════
 // UTILITIES
@@ -196,7 +213,10 @@ class IsometricGameEngine {
   private allNPCs: NPCInst[] = [];
   private allRes: ResInst[] = [];
   private allHid: HidInst[] = [];
+  private allMonsters: MonsterInst[] = [];
+  private allParks: ParkInst[] = [];
   private rc = { gold: 0, wood: 0, stone: 0 };
+  private monstersMet = 0;
   // Input
   private keys = new Set<string>();
   private mNDC = new THREE.Vector2(-999, -999);
@@ -205,6 +225,7 @@ class IsometricGameEngine {
   private pendNPC: NPCInst | null = null;
   private pendRes: ResInst | null = null;
   private pendHid: HidInst | null = null;
+  private pendMon: MonsterInst | null = null;
   private gPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.35);
   private aLight!: THREE.AmbientLight;
   private sLight!: THREE.DirectionalLight;
@@ -301,6 +322,8 @@ class IsometricGameEngine {
         for (const n of ch.npcs) this.scene.remove(n.g);
         for (const r of ch.res) this.scene.remove(r.g);
         for (const h of ch.hid) this.scene.remove(h.g);
+        for (const mon of ch.monsters) this.scene.remove(mon.grp);
+        for (const pk of ch.parks) this.scene.remove(pk.grp);
         // Remove from blocked
         for (const b of ch.blds) for (let dx = 0; dx < b.size[0]; dx++) for (let dz = 0; dz < b.size[1]; dz++) this.blocked.delete(`${b.tile[0] + dx},${b.tile[1] + dz}`);
         this.chunks.delete(key);
@@ -320,7 +343,7 @@ class IsometricGameEngine {
 
   private loadChunk(cx: number, cz: number, key: string) {
     const tiles = genChunkTiles(cx, cz);
-    const ch: ChunkD = { cx, cz, key, tiles, blds: [], npcs: [], res: [], hid: [], meshes: [] };
+    const ch: ChunkD = { cx, cz, key, tiles, blds: [], npcs: [], res: [], hid: [], monsters: [], parks: [], meshes: [] };
     const rng = srand(cseed(cx, cz));
     // Mark water + building blocked
     for (let lx = 0; lx < CK; lx++) for (let lz = 0; lz < CK; lz++) {
@@ -332,6 +355,8 @@ class IsometricGameEngine {
     this.spawnResources(ch, rng);
     this.spawnNPCs(ch, rng);
     this.spawnHidden(ch, rng);
+    this.spawnMonsters(ch, rng);
+    this.spawnThemePark(ch, rng);
     this.chunks.set(key, ch);
   }
 
@@ -497,13 +522,211 @@ class IsometricGameEngine {
     ch.hid.push({ g: gr, type, tile: [wx, wz], found: false, dialogs: dlgs, mesh });
   }
 
+  // ── Monsters ──
+  private mkMonster(type: string, rng: () => number): { grp: THREE.Group; parts: Record<string, THREE.Object3D> } {
+    const g = G(), grp = new THREE.Group(), parts: Record<string, THREE.Object3D> = {};
+    if (type === 'slime') {
+      const body = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#44cc44' }));
+      body.scale.set(0.5, 0.35, 0.5); body.position.y = 0.2; body.castShadow = true; grp.add(body); parts.body = body;
+      // eyes
+      const eyeM = mat('#ffffff');
+      for (const ex of [-0.12, 0.12]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.08); eye.position.set(ex, 0.32, 0.2); grp.add(eye); }
+      for (const ex of [-0.12, 0.12]) { const pupil = new THREE.Mesh(g.sphere, mat('#111')); pupil.scale.setScalar(0.04); pupil.position.set(ex, 0.33, 0.25); grp.add(pupil); }
+    } else if (type === 'dragon') {
+      const body = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ff4422' }));
+      body.scale.set(0.35, 0.7, 0.35); body.position.y = 0.45; body.castShadow = true; grp.add(body); parts.body = body;
+      const head = new THREE.Mesh(g.sphere, mat('#ff6644')); head.scale.setScalar(0.2); head.position.set(0, 0.85, 0.1); grp.add(head);
+      // wings
+      const wingM = new THREE.MeshLambertMaterial({ color: '#cc2200', side: THREE.DoubleSide });
+      const lw = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3), wingM); lw.position.set(-0.35, 0.6, 0); lw.rotation.y = -0.3; grp.add(lw); parts.lwing = lw;
+      const rw = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3), wingM); rw.position.set(0.35, 0.6, 0); rw.rotation.y = 0.3; grp.add(rw); parts.rwing = rw;
+    } else if (type === 'mushroom') {
+      const stem = new THREE.Mesh(g.cyl, mat('#cc9966')); stem.scale.set(0.15, 0.5, 0.15); stem.position.y = 0.25; stem.castShadow = true; grp.add(stem);
+      const cap = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ff4488' }));
+      cap.scale.set(0.45, 0.25, 0.45); cap.position.y = 0.55; cap.castShadow = true; grp.add(cap); parts.cap = cap;
+      // spots on cap
+      for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(g.sphere, mat('#ffffff')); sp.scale.setScalar(0.06); const a = (i / 5) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.25, 0.6, Math.sin(a) * 0.25); grp.add(sp); }
+      // eyes
+      for (const ex of [-0.08, 0.08]) { const eye = new THREE.Mesh(g.sphere, mat('#111')); eye.scale.setScalar(0.04); eye.position.set(ex, 0.35, 0.14); grp.add(eye); }
+    } else if (type === 'golem') {
+      const body = new THREE.Mesh(g.box, new THREE.MeshLambertMaterial({ color: '#8844ff', emissive: 0x442288, emissiveIntensity: 0.3 }));
+      body.scale.set(0.5, 0.7, 0.4); body.position.y = 0.45; body.castShadow = true; grp.add(body); parts.body = body;
+      const head = new THREE.Mesh(g.oct, new THREE.MeshLambertMaterial({ color: '#aa66ff', emissive: 0x6633cc, emissiveIntensity: 0.5 }));
+      head.scale.setScalar(0.2); head.position.y = 0.95; grp.add(head); parts.head = head;
+      // crystal arms
+      for (const sx of [-0.4, 0.4]) { const arm = new THREE.Mesh(g.oct, new THREE.MeshLambertMaterial({ color: '#9955ee', emissive: 0x5522aa, emissiveIntensity: 0.4 })); arm.scale.set(0.12, 0.25, 0.12); arm.position.set(sx, 0.5, 0); grp.add(arm); }
+    } else if (type === 'wisp') {
+      const body = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, emissive: 0xaaccff, emissiveIntensity: 0.8 }));
+      body.scale.setScalar(0.3); body.position.y = 0.8; grp.add(body); parts.body = body;
+      // glow trail
+      for (let i = 0; i < 3; i++) { const tr = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#aaccff', transparent: true, opacity: 0.2 - i * 0.05 })); tr.scale.setScalar(0.15 - i * 0.03); tr.position.set(0, 0.7 - i * 0.15, -i * 0.1); grp.add(tr); parts[`trail${i}`] = tr; }
+    } else if (type === 'spider') {
+      const body = new THREE.Mesh(g.sphere, mat('#332211')); body.scale.set(0.3, 0.2, 0.4); body.position.y = 0.35; body.castShadow = true; grp.add(body); parts.body = body;
+      // 8 legs
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const leg = new THREE.Mesh(g.cyl, mat('#221100')); leg.scale.set(0.03, 0.35, 0.03); leg.position.set(Math.cos(a) * 0.25, 0.2, Math.sin(a) * 0.25); leg.rotation.z = Math.cos(a) * 0.6; leg.rotation.x = -Math.sin(a) * 0.6; grp.add(leg); parts[`leg${i}`] = leg; }
+      // eyes (2 big, 4 small)
+      for (const ex of [-0.06, 0.06]) { const eye = new THREE.Mesh(g.sphere, mat('#ff0000')); eye.scale.setScalar(0.04); eye.position.set(ex, 0.4, 0.2); grp.add(eye); }
+    } else if (type === 'troll') {
+      const body = new THREE.Mesh(g.box, mat('#558833')); body.scale.set(0.7, 0.9, 0.5); body.position.y = 0.55; body.castShadow = true; grp.add(body); parts.body = body;
+      const head = new THREE.Mesh(g.sphere, mat('#669944')); head.scale.set(0.35, 0.3, 0.3); head.position.y = 1.2; head.castShadow = true; grp.add(head);
+      // tusks
+      for (const ex of [-0.12, 0.12]) { const tusk = new THREE.Mesh(g.cone, mat('#ffffcc')); tusk.scale.set(0.04, 0.12, 0.04); tusk.position.set(ex, 1.1, 0.2); tusk.rotation.x = 0.3; grp.add(tusk); }
+      // arms
+      for (const sx of [-0.5, 0.5]) { const arm = new THREE.Mesh(g.box, mat('#558833')); arm.scale.set(0.18, 0.6, 0.18); arm.position.set(sx, 0.4, 0); grp.add(arm); parts[sx < 0 ? 'larm' : 'rarm'] = arm; }
+    } else if (type === 'elemental') {
+      const core = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ff6600', emissive: 0xff4400, emissiveIntensity: 0.8 }));
+      core.scale.setScalar(0.3); core.position.y = 0.5; grp.add(core); parts.core = core;
+      const flame = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ffcc00', emissive: 0xff8800, emissiveIntensity: 0.6, transparent: true, opacity: 0.8 }));
+      flame.scale.set(0.4, 0.8, 0.4); flame.position.y = 0.8; grp.add(flame); parts.flame = flame;
+      // sparks
+      for (let i = 0; i < 4; i++) { const sp = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ffff44', emissive: 0xffaa00, emissiveIntensity: 1.0 })); sp.scale.setScalar(0.06); const a = (i / 4) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.3, 0.6 + i * 0.1, Math.sin(a) * 0.3); grp.add(sp); parts[`spark${i}`] = sp; }
+    }
+    return { grp, parts };
+  }
+
+  private spawnMonsters(ch: ChunkD, rng: () => number) {
+    const { cx, cz } = ch;
+    if (cx === 0 && cz === 0) return; // no monsters in starting area
+    const biome = snoise(cx * CK + 8, cz * CK + 8, SEED, 48);
+    const roll = rng();
+    const count = roll < 0.3 ? 0 : roll < 0.7 ? 1 : 2;
+    for (let i = 0; i < count; i++) {
+      const lx = 2 + Math.floor(rng() * 12), lz = 2 + Math.floor(rng() * 12);
+      const wx = cx * CK + lx, wz = cz * CK + lz;
+      if (this.blocked.has(`${wx},${wz}`) || ch.tiles[lx]?.[lz]?.type === T.WATER) continue;
+      // pick type based on biome
+      let type: string;
+      const tr = rng();
+      if (biome > 1.0) { // rocky
+        type = tr < 0.3 ? 'golem' : tr < 0.5 ? 'elemental' : tr < 0.7 ? 'spider' : tr < 0.9 ? 'slime' : 'dragon';
+      } else if (biome > 0.6) { // forest/dirt
+        type = tr < 0.3 ? 'mushroom' : tr < 0.5 ? 'spider' : tr < 0.7 ? 'slime' : tr < 0.85 ? 'troll' : 'wisp';
+      } else { // grassland/sand
+        type = tr < 0.35 ? 'slime' : tr < 0.55 ? 'mushroom' : tr < 0.7 ? 'wisp' : tr < 0.85 ? 'dragon' : 'spider';
+      }
+      const h = ch.tiles[lx][lz].height;
+      const { grp, parts } = this.mkMonster(type, rng);
+      grp.position.set(wx, h, wz);
+      this.scene.add(grp);
+      ch.meshes.push(grp);
+      ch.monsters.push({ type, grp, wx, wz, phase: rng() * Math.PI * 2, dialogs: M_DLG[type] || ['...'], parts, met: false });
+    }
+  }
+
+  // ── Theme Park ──
+  private mkAttraction(type: string): { grp: THREE.Group; parts: Record<string, THREE.Object3D> } {
+    const g = G(), grp = new THREE.Group(), parts: Record<string, THREE.Object3D> = {};
+    if (type === 'ferris') {
+      // Ferris wheel frame
+      const frame = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.06, 8, 24), new THREE.MeshLambertMaterial({ color: '#ff6600' }));
+      frame.position.y = 2.0; frame.rotation.x = Math.PI / 2; grp.add(frame); parts.wheel = frame;
+      // support poles
+      for (const sx of [-0.5, 0.5]) { const pole = new THREE.Mesh(g.cyl, mat('#884400')); pole.scale.set(0.06, 2.0, 0.06); pole.position.set(sx, 1.0, 0); grp.add(pole); }
+      // gondolas
+      const gondolas = new THREE.Group(); gondolas.position.y = 2.0;
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const gon = new THREE.Mesh(g.box, mat('#4488ff')); gon.scale.set(0.2, 0.2, 0.15); gon.position.set(Math.cos(a) * 1.2, Math.sin(a) * 1.2, 0); gondolas.add(gon); }
+      grp.add(gondolas); parts.gondolas = gondolas;
+    } else if (type === 'carousel') {
+      const platform = new THREE.Mesh(g.cyl, new THREE.MeshLambertMaterial({ color: '#ff44aa' }));
+      platform.scale.set(1.2, 0.15, 1.2); platform.position.y = 0.1; grp.add(platform);
+      const roof = new THREE.Mesh(g.cone, mat('#ff88cc')); roof.scale.set(1.4, 0.8, 1.4); roof.position.y = 1.6; grp.add(roof);
+      const pole = new THREE.Mesh(g.cyl, mat('#ffcc00')); pole.scale.set(0.06, 1.6, 0.06); pole.position.y = 0.8; grp.add(pole);
+      // horses
+      const horses = new THREE.Group(); horses.position.y = 0.3;
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const horse = new THREE.Mesh(g.cone, mat(i % 2 === 0 ? '#ffffff' : '#ffcc00')); horse.scale.set(0.15, 0.3, 0.15); horse.position.set(Math.cos(a) * 0.8, 0.3, Math.sin(a) * 0.8); const hp = new THREE.Mesh(g.cyl, mat('#ffcc00')); hp.scale.set(0.02, 0.8, 0.02); hp.position.set(Math.cos(a) * 0.8, 0.5, Math.sin(a) * 0.8); horses.add(horse); horses.add(hp); }
+      grp.add(horses); parts.horses = horses;
+    } else if (type === 'circus') {
+      // Striped tent
+      const tent = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ff0000' }));
+      tent.scale.set(1.8, 2.5, 1.8); tent.position.y = 1.25; tent.castShadow = true; grp.add(tent); parts.tent = tent;
+      // white stripes (just another smaller cone inside)
+      const inner = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ffffff', transparent: true, opacity: 0.5 }));
+      inner.scale.set(1.6, 2.3, 1.6); inner.position.y = 1.15; grp.add(inner);
+      // flag on top
+      const flagPole = new THREE.Mesh(g.cyl, mat('#884400')); flagPole.scale.set(0.03, 0.5, 0.03); flagPole.position.y = 2.75; grp.add(flagPole);
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), new THREE.MeshLambertMaterial({ color: '#ffcc00', side: THREE.DoubleSide }));
+      flag.position.set(0.15, 2.9, 0); grp.add(flag); parts.flag = flag;
+    } else if (type === 'coaster') {
+      // Track (torus knot)
+      const track = new THREE.Mesh(new THREE.TorusKnotGeometry(1.0, 0.04, 64, 8, 2, 3), new THREE.MeshLambertMaterial({ color: '#8844ff' }));
+      track.position.y = 1.0; track.scale.setScalar(0.8); grp.add(track);
+      // Support structures
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2; const sup = new THREE.Mesh(g.cyl, mat('#666')); sup.scale.set(0.04, 1.2, 0.04); sup.position.set(Math.cos(a) * 0.8, 0.6, Math.sin(a) * 0.8); grp.add(sup); }
+      // Cart
+      const cart = new THREE.Mesh(g.box, mat('#ffcc00')); cart.scale.set(0.2, 0.12, 0.12); cart.position.y = 1.0; grp.add(cart); parts.cart = cart;
+    } else if (type === 'bumper') {
+      // Arena
+      const arena = new THREE.Mesh(g.cyl, new THREE.MeshLambertMaterial({ color: '#44cc44' }));
+      arena.scale.set(1.5, 0.05, 1.5); arena.position.y = 0.03; grp.add(arena);
+      // Fence
+      const fence = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.04, 6, 24), mat('#888'));
+      fence.position.y = 0.15; fence.rotation.x = Math.PI / 2; grp.add(fence);
+      // Bumper cars
+      const cars = new THREE.Group();
+      const carColors = ['#ff4444', '#4444ff', '#ffcc00', '#ff44ff'];
+      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2; const car = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: carColors[i] })); car.scale.set(0.2, 0.12, 0.2); car.position.set(Math.cos(a) * 0.7, 0.15, Math.sin(a) * 0.7); cars.add(car); }
+      grp.add(cars); parts.cars = cars;
+    } else if (type === 'food') {
+      // Booth
+      const booth = new THREE.Mesh(g.box, mat('#ffaa00')); booth.scale.set(1.0, 1.0, 0.7); booth.position.y = 0.5; booth.castShadow = true; grp.add(booth);
+      // Awning
+      const awning = new THREE.Mesh(g.box, new THREE.MeshLambertMaterial({ color: '#ff4444' }));
+      awning.scale.set(1.2, 0.06, 0.9); awning.position.set(0, 1.2, 0.15); awning.rotation.x = -0.15; grp.add(awning); parts.awning = awning;
+      // Counter items (lollipops etc.)
+      for (let i = 0; i < 3; i++) { const candy = new THREE.Mesh(g.sphere, mat(i === 0 ? '#ff66aa' : i === 1 ? '#66ffaa' : '#ffff66')); candy.scale.setScalar(0.1); candy.position.set(-0.3 + i * 0.3, 1.1, 0.2); grp.add(candy); }
+      // Sign post
+      const signPost = new THREE.Mesh(g.cyl, mat('#884400')); signPost.scale.set(0.04, 0.5, 0.04); signPost.position.set(0.7, 1.3, 0); grp.add(signPost);
+    }
+    return { grp, parts };
+  }
+
+  private spawnThemePark(ch: ChunkD, rng: () => number) {
+    const { cx, cz } = ch;
+    // No theme parks near starting area
+    if (Math.abs(cx) < 2 && Math.abs(cz) < 2) return;
+    // ~1 per 20 chunks
+    if (rng() > 0.05) return;
+    // Check biome — only on grass
+    const centerX = cx * CK + 8, centerZ = cz * CK + 8;
+    const biome = snoise(centerX, centerZ, SEED, 48);
+    if (biome > 0.85) return; // not in rocky areas
+    // Pick 3-4 attractions
+    const numAttr = 3 + (rng() > 0.5 ? 1 : 0);
+    const usedTypes = new Set<string>();
+    const positions: [number, number][] = [[0, 0], [3, 0], [0, 3], [3, 3]];
+    for (let i = 0; i < numAttr; i++) {
+      let type: string;
+      do { type = PARK_TYPES[Math.floor(rng() * PARK_TYPES.length)]; } while (usedTypes.has(type) && usedTypes.size < PARK_TYPES.length);
+      usedTypes.add(type);
+      const [offX, offZ] = positions[i];
+      const lx = 4 + offX, lz = 4 + offZ;
+      const wx = cx * CK + lx, wz = cz * CK + lz;
+      if (this.blocked.has(`${wx},${wz}`)) continue;
+      const h = ch.tiles[lx]?.[lz]?.height ?? 0.4;
+      const { grp, parts } = this.mkAttraction(type);
+      grp.position.set(wx, h, wz);
+      this.scene.add(grp);
+      ch.meshes.push(grp);
+      ch.parks.push({ grp, type, wx, wz, parts, discovered: false });
+      // Mark path tiles as sand
+      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+        const tlx = lx + dx, tlz = lz + dz;
+        if (tlx >= 0 && tlx < CK && tlz >= 0 && tlz < CK && ch.tiles[tlx]?.[tlz]?.type === T.GRASS) {
+          ch.tiles[tlx][tlz] = { type: T.SAND, height: ch.tiles[tlx][tlz].height };
+        }
+      }
+    }
+  }
+
   // ── Collect entities from loaded chunks ──
   private collectEntities() {
-    this.allNPCs = []; this.allRes = []; this.allHid = [];
+    this.allNPCs = []; this.allRes = []; this.allHid = []; this.allMonsters = []; this.allParks = [];
     for (const ch of this.chunks.values()) {
       this.allNPCs.push(...ch.npcs);
       this.allRes.push(...ch.res);
       this.allHid.push(...ch.hid);
+      this.allMonsters.push(...ch.monsters);
+      this.allParks.push(...ch.parks);
     }
   }
 
@@ -555,7 +778,7 @@ class IsometricGameEngine {
     const kd = (e: KeyboardEvent) => { this.keys.add(e.key.toLowerCase()); if (this.dialog && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) this.advDialog(); };
     const ku = (e: KeyboardEvent) => this.keys.delete(e.key.toLowerCase());
     const cl = (e: MouseEvent) => { const r = this.ctr.getBoundingClientRect(); this.mNDC.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); this.handleClick(); };
-    const wh = (e: WheelEvent) => { e.preventDefault(); this.cam.zoom = Math.max(20, Math.min(80, this.cam.zoom - e.deltaY * 0.03)); this.cam.updateProjectionMatrix(); };
+    const wh = (e: WheelEvent) => { e.preventDefault(); this.cam.zoom = Math.max(35, Math.min(80, this.cam.zoom - e.deltaY * 0.03)); this.cam.updateProjectionMatrix(); };
     window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
     this.ctr.addEventListener('click', cl); this.ctr.addEventListener('wheel', wh, { passive: false });
     this.cleanup = () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); this.ctr.removeEventListener('click', cl); this.ctr.removeEventListener('wheel', wh); };
@@ -565,6 +788,7 @@ class IsometricGameEngine {
     if (this.dialog) { this.advDialog(); return; }
     this.ray.setFromCamera(this.mNDC, this.cam);
     for (const n of this.allNPCs) { if (this.ray.intersectObject(n.g, true).length > 0) { this.walkToNPC(n); return; } }
+    for (const mon of this.allMonsters) { if (this.ray.intersectObject(mon.grp, true).length > 0) { this.walkToMonster(mon); return; } }
     for (const r of this.allRes) { if (!r.got && this.ray.intersectObject(r.g, true).length > 0) { this.walkToRes(r); return; } }
     for (const h of this.allHid) { if (!h.found && this.ray.intersectObject(h.g, true).length > 0) { this.walkToHid(h); return; } }
     const pt = new THREE.Vector3();
@@ -572,7 +796,7 @@ class IsometricGameEngine {
       const tx = Math.round(pt.x), tz = Math.round(pt.z);
       if (!this.blocked.has(`${tx},${tz}`)) {
         const path = astar((x, z) => !this.blocked.has(`${x},${z}`), this.pTile[0], this.pTile[1], tx, tz);
-        if (path && path.length > 1) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendNPC = null; this.pendRes = null; this.pendHid = null; }
+        if (path && path.length > 1) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendNPC = null; this.pendRes = null; this.pendHid = null; this.pendMon = null; }
       }
     }
   }
@@ -581,19 +805,25 @@ class IsometricGameEngine {
     const adj = this.adjTiles(n.tile[0], n.tile[1]);
     if (!adj.length) return;
     const path = astar((x, z) => !this.blocked.has(`${x},${z}`), this.pTile[0], this.pTile[1], adj[0][0], adj[0][1]);
-    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendNPC = n; this.pendRes = null; this.pendHid = null; }
+    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendNPC = n; this.pendRes = null; this.pendHid = null; this.pendMon = null; }
   }
   private walkToRes(r: ResInst) {
     const adj = this.adjTiles(r.tile[0], r.tile[1]);
     const t = adj.length ? adj[0] : r.tile;
     const path = astar((x, z) => !this.blocked.has(`${x},${z}`), this.pTile[0], this.pTile[1], t[0], t[1]);
-    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendRes = r; this.pendNPC = null; this.pendHid = null; }
+    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendRes = r; this.pendNPC = null; this.pendHid = null; this.pendMon = null; }
   }
   private walkToHid(h: HidInst) {
     const adj = this.adjTiles(h.tile[0], h.tile[1]);
     const t = adj.length ? adj[0] : h.tile;
     const path = astar((x, z) => !this.blocked.has(`${x},${z}`), this.pTile[0], this.pTile[1], t[0], t[1]);
-    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendHid = h; this.pendNPC = null; this.pendRes = null; }
+    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendHid = h; this.pendNPC = null; this.pendRes = null; this.pendMon = null; }
+  }
+  private walkToMonster(mon: MonsterInst) {
+    const adj = this.adjTiles(mon.wx, mon.wz);
+    const t = adj.length ? adj[0] : [mon.wx, mon.wz] as [number, number];
+    const path = astar((x, z) => !this.blocked.has(`${x},${z}`), this.pTile[0], this.pTile[1], t[0], t[1]);
+    if (path) { this.pPath = path; this.pPI = 1; this.pMoving = true; this.pendMon = mon; this.pendNPC = null; this.pendRes = null; this.pendHid = null; }
   }
 
   public advDialog() {
@@ -643,6 +873,8 @@ class IsometricGameEngine {
     this.updNPCs(dt, t);
     this.updRes(dt, t);
     this.updHidden(t);
+    this.updMonsters(t);
+    this.updParks(t);
     this.updDayNight(t);
     this.updCam(dt);
     // Windmill blades
@@ -660,7 +892,7 @@ class IsometricGameEngine {
   private updPlayer(dt: number, t: number) {
     const dir = this.wasd();
     if (dir.x !== 0 || dir.z !== 0) {
-      this.pPath = []; this.pendNPC = null; this.pendRes = null; this.pendHid = null;
+      this.pPath = []; this.pendNPC = null; this.pendRes = null; this.pendHid = null; this.pendMon = null;
       const nx = this.pPos.x + dir.x * SPEED * dt, nz = this.pPos.z + dir.z * SPEED * dt;
       const ntx = Math.round(nx), ntz = Math.round(nz);
       if (!this.blocked.has(`${ntx},${ntz}`)) {
@@ -683,6 +915,12 @@ class IsometricGameEngine {
             this.dialog = { name: this.pendHid.type === 'chest' ? 'Treasure Chest' : this.pendHid.type === 'ruin' ? 'Ancient Ruins' : this.pendHid.type === 'stone' ? 'Mysterious Stone' : 'Hermit', dlgs: this.pendHid.dialogs, idx: 0 };
             this.updDialogDOM(this.dialog); this.pendHid = null;
             this.updDisc();
+          }
+          if (this.pendMon) {
+            const mName = this.pendMon.type.charAt(0).toUpperCase() + this.pendMon.type.slice(1);
+            if (!this.pendMon.met) { this.pendMon.met = true; this.monstersMet++; this.updMonCount(); }
+            this.dialog = { name: mName, dlgs: this.pendMon.dialogs, idx: 0 };
+            this.updDialogDOM(this.dialog); this.pendMon = null;
           }
         }
       } else {
@@ -753,6 +991,73 @@ class IsometricGameEngine {
         if (h.type === 'chest') h.mesh.position.y = 0.2 + Math.sin(t * 1.5) * 0.03;
       }
     }
+  }
+
+  // ── Monster animations ──
+  private updMonsters(t: number) {
+    for (const m of this.allMonsters) {
+      const vis = Math.abs(m.wx - this.pTile[0]) + Math.abs(m.wz - this.pTile[1]) < VR;
+      m.grp.visible = vis;
+      if (!vis) continue;
+      const p = m.phase + t;
+      if (m.type === 'slime') {
+        if (m.parts.body) { m.parts.body.scale.y = 0.35 + Math.sin(p * 3) * 0.1; m.parts.body.position.y = 0.2 + Math.abs(Math.sin(p * 3)) * 0.15; }
+      } else if (m.type === 'dragon') {
+        if (m.parts.lwing) m.parts.lwing.rotation.z = Math.sin(p * 5) * 0.5;
+        if (m.parts.rwing) m.parts.rwing.rotation.z = -Math.sin(p * 5) * 0.5;
+        if (m.parts.body) m.parts.body.position.y = 0.45 + Math.sin(p * 2) * 0.05;
+      } else if (m.type === 'mushroom') {
+        if (m.parts.cap) m.parts.cap.rotation.z = Math.sin(p * 2) * 0.15;
+        m.grp.rotation.y = Math.sin(p * 0.5) * 0.2;
+      } else if (m.type === 'golem') {
+        if (m.parts.head) { const em = (m.parts.head as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.3 + Math.sin(p * 2) * 0.3; }
+        if (m.parts.body) { const em = (m.parts.body as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.2 + Math.sin(p * 2 + 1) * 0.2; }
+      } else if (m.type === 'wisp') {
+        if (m.parts.body) m.parts.body.position.y = 0.8 + Math.sin(p * 1.5) * 0.3;
+        m.grp.rotation.y = t * 0.5;
+        for (let i = 0; i < 3; i++) { const tr = m.parts[`trail${i}`]; if (tr) tr.position.y = 0.7 - i * 0.15 + Math.sin(p * 2 + i) * 0.05; }
+      } else if (m.type === 'spider') {
+        for (let i = 0; i < 8; i++) { const leg = m.parts[`leg${i}`]; if (leg) leg.rotation.x += Math.sin(p * 6 + i * 0.8) * 0.01; }
+        m.grp.rotation.y += Math.sin(p * 0.3) * 0.003;
+      } else if (m.type === 'troll') {
+        m.grp.rotation.y = Math.sin(p * 0.3) * 0.1;
+        if (m.parts.body) m.parts.body.position.y = 0.55 + Math.sin(p * 1) * 0.02;
+      } else if (m.type === 'elemental') {
+        if (m.parts.flame) { m.parts.flame.scale.y = 0.8 + Math.sin(p * 4) * 0.15; m.parts.flame.scale.x = 0.4 + Math.sin(p * 5) * 0.08; }
+        if (m.parts.core) { const em = (m.parts.core as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.5 + Math.sin(p * 3) * 0.3; }
+        for (let i = 0; i < 4; i++) { const sp = m.parts[`spark${i}`]; if (sp) { const a = (i / 4) * Math.PI * 2 + t; sp.position.set(Math.cos(a) * 0.3, 0.6 + i * 0.1 + Math.sin(p * 4 + i) * 0.1, Math.sin(a) * 0.3); } }
+      }
+    }
+  }
+
+  // ── Theme park animations ──
+  private updParks(t: number) {
+    for (const pk of this.allParks) {
+      const vis = Math.abs(pk.wx - this.pTile[0]) + Math.abs(pk.wz - this.pTile[1]) < VR + 5;
+      pk.grp.visible = vis;
+      if (!vis) continue;
+      // Discovery check
+      if (!pk.discovered && Math.abs(pk.wx - this.pTile[0]) + Math.abs(pk.wz - this.pTile[1]) < 6) {
+        pk.discovered = true;
+      }
+      if (pk.type === 'ferris') {
+        if (pk.parts.gondolas) pk.parts.gondolas.rotation.z = t * 0.3;
+      } else if (pk.type === 'carousel') {
+        if (pk.parts.horses) pk.parts.horses.rotation.y = t * 0.8;
+      } else if (pk.type === 'circus') {
+        if (pk.parts.flag) pk.parts.flag.rotation.z = Math.sin(t * 3) * 0.2;
+      } else if (pk.type === 'coaster') {
+        if (pk.parts.cart) { const a = t * 1.5; const r = 0.8; pk.parts.cart.position.set(Math.cos(a) * r, 1.0 + Math.sin(a * 1.5) * 0.3, Math.sin(a) * r); }
+      } else if (pk.type === 'bumper') {
+        if (pk.parts.cars) pk.parts.cars.rotation.y = t * 0.4;
+      } else if (pk.type === 'food') {
+        if (pk.parts.awning) pk.parts.awning.rotation.x = -0.15 + Math.sin(t * 2) * 0.03;
+      }
+    }
+  }
+
+  private updMonCount() {
+    const el = document.getElementById('g-monsters'); if (el) el.textContent = String(this.monstersMet);
   }
 
   // ── Day/Night ──
@@ -826,6 +1131,12 @@ class IsometricGameEngine {
     // NPCs
     ctx.fillStyle = '#ff0';
     for (const n of this.allNPCs) { const dx = n.tile[0] - this.pTile[0] + MM_R, dz = n.tile[1] - this.pTile[1] + MM_R; if (dx >= 0 && dx < MM_R * 2) { ctx.beginPath(); ctx.arc(dx * ppx, dz * ppx, ppx, 0, Math.PI * 2); ctx.fill(); } }
+    // Monsters
+    ctx.fillStyle = '#ff4444';
+    for (const m of this.allMonsters) { const dx = m.wx - this.pTile[0] + MM_R, dz = m.wz - this.pTile[1] + MM_R; if (dx >= 0 && dx < MM_R * 2 && dz >= 0 && dz < MM_R * 2 && this.fog.explored.has(`${m.wx},${m.wz}`)) { ctx.beginPath(); ctx.arc(dx * ppx, dz * ppx, ppx * 0.8, 0, Math.PI * 2); ctx.fill(); } }
+    // Theme Parks
+    ctx.fillStyle = '#ff44ff';
+    for (const pk of this.allParks) { const dx = pk.wx - this.pTile[0] + MM_R, dz = pk.wz - this.pTile[1] + MM_R; if (dx >= 0 && dx < MM_R * 2 && dz >= 0 && dz < MM_R * 2 && this.fog.explored.has(`${pk.wx},${pk.wz}`)) { ctx.fillRect(dx * ppx - ppx, dz * ppx - ppx, ppx * 2, ppx * 2); } }
     // Player
     ctx.fillStyle = '#c9a96e'; ctx.beginPath(); ctx.arc(MM_R * ppx, MM_R * ppx, ppx * 2, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
@@ -863,6 +1174,11 @@ function HUDOverlay({ isReady, onContinue }: { isReady: boolean; onContinue: () 
           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9370db' }} />
           <span className="text-[10px] uppercase tracking-wider text-white/70">found</span>
           <span id="g-disc" className="text-[12px] font-bold text-white">0</span>
+        </div>
+        <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded px-2.5 py-1">
+          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ff4444' }} />
+          <span className="text-[10px] uppercase tracking-wider text-white/70">monsters</span>
+          <span id="g-monsters" className="text-[12px] font-bold text-white">0</span>
         </div>
       </div>
       <div className="absolute top-4 left-1/2 -translate-x-1/2 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}>
