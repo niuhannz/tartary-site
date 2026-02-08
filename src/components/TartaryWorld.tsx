@@ -366,7 +366,7 @@ class IsometricGameEngine {
       if (bd.type === 'house') {
         const b = new THREE.Mesh(g.box, mat('#d4a574')); b.scale.set(1.6, 1.2, 1.4); b.position.y = 0.6; b.castShadow = true; grp.add(b);
         const rf = new THREE.Mesh(g.cone, mat('#8b4513')); rf.scale.set(2.0, 1.0, 1.8); rf.position.y = 1.7; rf.castShadow = true; grp.add(rf);
-        grp.add(Object.assign(new THREE.Mesh(g.box, mat('#5a3010')), { scale: new THREE.Vector3(0.3, 0.5, 0.05), position: new THREE.Vector3(0, 0.35, 0.73) }));
+        const door = new THREE.Mesh(g.box, mat('#5a3010')); door.scale.set(0.3, 0.5, 0.05); door.position.set(0, 0.35, 0.73); grp.add(door);
       } else if (bd.type === 'tower') {
         const bs = new THREE.Mesh(g.cyl, mat('#808080')); bs.scale.set(1.2, 3.0, 1.2); bs.position.y = 1.5; bs.castShadow = true; grp.add(bs);
         const tp = new THREE.Mesh(g.cone, mat('#c9a96e')); tp.scale.set(1.6, 1.2, 1.6); tp.position.y = 3.6; tp.castShadow = true; grp.add(tp);
@@ -376,7 +376,7 @@ class IsometricGameEngine {
           const tw = new THREE.Mesh(g.cyl, mat('#787878')); tw.scale.set(0.5, 3.5, 0.5); tw.position.set(tx, 1.75, tz); tw.castShadow = true; grp.add(tw);
           const tc = new THREE.Mesh(g.cone, mat('#c9a96e')); tc.scale.set(0.7, 0.8, 0.7); tc.position.set(tx, 3.9, tz); grp.add(tc);
         }
-        grp.add(Object.assign(new THREE.Mesh(g.box, mat('#c9a96e')), { scale: new THREE.Vector3(0.6, 0.3, 0.02), position: new THREE.Vector3(0.3, 3.85, 0) }));
+        const flag = new THREE.Mesh(g.box, mat('#c9a96e')); flag.scale.set(0.6, 0.3, 0.02); flag.position.set(0.3, 3.85, 0); grp.add(flag);
       } else if (bd.type === 'market') {
         const bs = new THREE.Mesh(g.box, mat('#deb887')); bs.scale.set(2.4, 0.8, 1.4); bs.position.y = 0.4; bs.castShadow = true; grp.add(bs);
         const aw = new THREE.Mesh(g.box, mat('#b22222')); aw.scale.set(2.6, 0.1, 1.4); aw.position.y = 1.8; aw.castShadow = true; grp.add(aw);
