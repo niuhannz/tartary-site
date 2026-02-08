@@ -13,8 +13,8 @@ const SEED = 42;        // world seed
 const SPEED = 4.0;
 const MAX_I = 16384;    // max instances per tile type
 const T = { GRASS: 0, DIRT: 1, STONE: 2, WATER: 3, SAND: 4 } as const;
-const T_COL: Record<number, number> = { 0: 0x4a7c3f, 1: 0x8b7355, 2: 0x6b6b6b, 3: 0x2a5f8f, 4: 0xc2b280 };
-const T_HT: Record<number, number> = { 0: 0.4, 1: 0.35, 2: 0.5, 3: 0.15, 4: 0.3 };
+const T_COL: Record<number, number> = { 0: 0x3d7a35, 1: 0x7a6545, 2: 0x757580, 3: 0x2a5580, 4: 0xbfaa70 };
+const T_HT: Record<number, number> = { 0: 0.45, 1: 0.35, 2: 0.65, 3: 0.08, 4: 0.22 };
 const T_MAP: Record<number, string> = { 0: '#4a7c3f', 1: '#8b7355', 2: '#6b6b6b', 3: '#2a5f8f', 4: '#c2b280' };
 const BASE_C = Object.fromEntries(Object.entries(T_COL).map(([k, v]) => [k, new THREE.Color(v)])) as Record<number, THREE.Color>;
 const CAM_OFF = new THREE.Vector3(12, 12, 12);
@@ -117,34 +117,50 @@ function astar(ok: (x: number, z: number) => boolean, sx: number, sz: number, ex
 let _g: Record<string, THREE.BufferGeometry> | null = null;
 function G() {
   if (!_g) _g = {
-    box: new THREE.BoxGeometry(1, 1, 1), cone: new THREE.ConeGeometry(0.5, 1, 8),
-    cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 12), sphere: new THREE.SphereGeometry(0.5, 12, 8),
-    oct: new THREE.OctahedronGeometry(0.5, 0), dodec: new THREE.DodecahedronGeometry(0.5, 0),
+    box: new THREE.BoxGeometry(1, 1, 1), cone: new THREE.ConeGeometry(0.5, 1, 12),
+    cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 16), sphere: new THREE.SphereGeometry(0.5, 16, 12),
+    oct: new THREE.OctahedronGeometry(0.5, 1), dodec: new THREE.DodecahedronGeometry(0.5, 1),
+    ico: new THREE.IcosahedronGeometry(0.5, 1),
   };
   return _g;
 }
-function mat(c: string | number) { return new THREE.MeshLambertMaterial({ color: c }); }
+function mat(c: string | number) { return new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, metalness: 0.05 }); }
 
 // ═══════════════════════════════════════════════════════════════════════
 // WORLD GENERATION
 // ═══════════════════════════════════════════════════════════════════════
 function genTile(wx: number, wz: number): TileD {
-  const n = snoise(wx, wz, SEED, 48) + snoise(wx, wz, SEED + 500, 24) * 0.5 + snoise(wx, wz, SEED + 200, 8) * 0.25;
-  // Rivers
-  const rx = Math.sin(wz * 0.05 + SEED * 0.1) * 8 + Math.sin(wz * 0.12 + SEED * 0.3) * 3;
+  // Multi-octave terrain noise for organic landscape
+  const n1 = snoise(wx, wz, SEED, 64) * 1.0;     // continent scale
+  const n2 = snoise(wx, wz, SEED + 500, 28) * 0.5; // regional hills
+  const n3 = snoise(wx, wz, SEED + 200, 10) * 0.25; // local bumps
+  const n4 = snoise(wx, wz, SEED + 777, 5) * 0.12;  // micro detail
+  const n = n1 + n2 + n3 + n4;
+  // Ridge noise for mountain ranges (absolute value creates ridges)
+  const ridge = 1.0 - Math.abs(snoise(wx, wz, SEED + 900, 40)) * 1.8;
+  // Rivers — winding, organic
+  const rx = Math.sin(wz * 0.04 + SEED * 0.1) * 10 + Math.sin(wz * 0.09 + SEED * 0.3) * 5 + Math.sin(wz * 0.17) * 2;
   const rd = Math.abs(wx - rx);
-  const inRiver = rd < 1.2 && (wz % 80) < 55;
-  // Lakes
-  const lk = snoise(wx, wz, SEED + 1000, 20);
-  const isLake = lk > 0.75;
+  const inRiver = rd < 1.5 && (wz % 100) < 70;
+  // Lakes — bigger, more organic shapes
+  const lk = snoise(wx, wz, SEED + 1000, 22) + snoise(wx, wz, SEED + 1100, 9) * 0.3;
+  const isLake = lk > 0.78;
+  // Swamps
+  const swampN = snoise(wx, wz, SEED + 1500, 30);
+  const isSwamp = swampN > 0.7 && n < 0.7;
   let type: number;
   if (inRiver || isLake) type = T.WATER;
-  else if (rd < 2.5 && (wz % 80) < 55 || (lk > 0.68 && lk <= 0.75)) type = T.SAND;
-  else if (n > 1.1) type = T.STONE;
-  else if (n > 0.85) type = T.DIRT;
-  else if (n < 0.3) type = T.SAND;
+  else if (isSwamp) type = T.WATER;
+  else if (rd < 3.0 && (wz % 100) < 70 || (lk > 0.68 && lk <= 0.78)) type = T.SAND;
+  else if (n > 1.05 || ridge > 0.85) type = T.STONE;
+  else if (n > 0.8) type = T.DIRT;
+  else if (n < 0.25) type = T.SAND;
   else type = T.GRASS;
-  const h = (T_HT[type] || 0.4) + snoise(wx, wz, SEED + 300, 6) * 0.08;
+  // Height — dramatic with rolling hills
+  const baseH = T_HT[type] || 0.4;
+  const hillN = snoise(wx, wz, SEED + 300, 14) * 0.3 + snoise(wx, wz, SEED + 400, 6) * 0.15;
+  const mtH = type === T.STONE ? ridge * 0.5 + 0.2 : 0;
+  const h = Math.max(0.05, baseH + hillN + mtH);
   return { type, height: h };
 }
 
@@ -276,8 +292,8 @@ class IsometricGameEngine {
     // InstancedMeshes
     const g = G();
     for (const t of [0, 1, 2, 3, 4]) {
-      const m = new THREE.MeshLambertMaterial({ color: 0xffffff });
-      if (t === T.WATER) { m.transparent = true; m.opacity = 0.7; }
+      const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: t === T.WATER ? 0.1 : 0.85, metalness: t === T.WATER ? 0.2 : 0.0 });
+      if (t === T.WATER) { m.transparent = true; m.opacity = 0.65; }
       const im = new THREE.InstancedMesh(g.box, m, MAX_I);
       im.count = 0; im.castShadow = false; im.receiveShadow = true;
       this.scene.add(im);
@@ -302,10 +318,10 @@ class IsometricGameEngine {
 
   // ── Lights ──
   private setupLights() {
-    this.aLight = new THREE.AmbientLight(0xffffff, 0.6);
+    this.aLight = new THREE.AmbientLight(0xc8d8f0, 0.55);
     this.scene.add(this.aLight);
-    this.sLight = new THREE.DirectionalLight(0xfff5e0, 1.0);
-    this.sLight.position.set(20, 30, 20);
+    this.sLight = new THREE.DirectionalLight(0xffe8c0, 1.1);
+    this.sLight.position.set(25, 35, 20);
     this.sLight.castShadow = true;
     this.sLight.shadow.mapSize.set(1024, 1024);
     const sc = this.sLight.shadow.camera;
@@ -441,21 +457,51 @@ class IsometricGameEngine {
     }
   }
 
-  // ── Trees ──
+  // ── Trees (5 types: pine, oak, dead, bush, willow) ──
   private spawnTrees(ch: ChunkD, rng: () => number) {
     const g = G(), { cx, cz } = ch;
     const biome = snoise(cx * CK + 8, cz * CK + 8, SEED, 48);
-    const count = biome > 0.6 ? 3 + Math.floor(rng() * 4) : 5 + Math.floor(rng() * 8);
+    const count = biome > 0.6 ? 4 + Math.floor(rng() * 5) : 6 + Math.floor(rng() * 10);
     for (let i = 0; i < count; i++) {
       const lx = Math.floor(rng() * CK), lz = Math.floor(rng() * CK);
       const wx = cx * CK + lx, wz = cz * CK + lz;
-      if (this.blocked.has(`${wx},${wz}`) || ch.tiles[lx]?.[lz]?.type === T.WATER || ch.tiles[lx]?.[lz]?.type === T.SAND) continue;
-      const h = ch.tiles[lx][lz].height;
+      const tile = ch.tiles[lx]?.[lz];
+      if (this.blocked.has(`${wx},${wz}`) || !tile || tile.type === T.WATER || tile.type === T.SAND) continue;
+      const h = tile.height;
       const gr = new THREE.Group(); gr.position.set(wx, h, wz);
       const sv = 0.7 + rng() * 0.6;
-      const trunk = new THREE.Mesh(g.cyl, mat('#654321')); trunk.scale.set(0.12 * sv, 0.8 * sv, 0.12 * sv); trunk.position.y = 0.4 * sv; trunk.castShadow = true; gr.add(trunk);
-      const fc = rng() > 0.5 ? '#2d5a27' : '#3a7533';
-      for (let j = 0; j < 2; j++) { const cn = new THREE.Mesh(g.cone, mat(fc)); const cs = (1.0 - j * 0.2) * sv; cn.scale.set(cs * 0.8, cs * 0.6, cs * 0.8); cn.position.y = (0.8 + j * 0.35) * sv; cn.castShadow = true; gr.add(cn); }
+      const treeType = rng();
+      const isStone = tile.type === T.STONE;
+      const isDirt = tile.type === T.DIRT;
+      if (treeType < 0.3) {
+        // Pine — tall, narrow, 3 layers of cones
+        const trunk = new THREE.Mesh(g.cyl, mat('#4a3520')); trunk.scale.set(0.08 * sv, 1.2 * sv, 0.08 * sv); trunk.position.y = 0.6 * sv; trunk.castShadow = true; gr.add(trunk);
+        const pineG = rng() > 0.3 ? '#1a4a1a' : '#2a5a25';
+        for (let j = 0; j < 3; j++) { const cn = new THREE.Mesh(g.cone, mat(pineG)); const cs = (1.1 - j * 0.25) * sv; cn.scale.set(cs * 0.55, cs * 0.65, cs * 0.55); cn.position.y = (0.7 + j * 0.38) * sv; cn.castShadow = true; gr.add(cn); }
+      } else if (treeType < 0.55) {
+        // Oak — round bushy canopy using scaled sphere
+        const trunk = new THREE.Mesh(g.cyl, mat('#5a3a20')); trunk.scale.set(0.14 * sv, 0.7 * sv, 0.14 * sv); trunk.position.y = 0.35 * sv; trunk.castShadow = true; gr.add(trunk);
+        const oakG = rng() > 0.5 ? '#3a6830' : (rng() > 0.3 ? '#4a7a35' : '#2d5525');
+        const canopy = new THREE.Mesh(g.sphere, mat(oakG)); canopy.scale.set(0.9 * sv, 0.7 * sv, 0.9 * sv); canopy.position.y = 0.95 * sv; canopy.castShadow = true; gr.add(canopy);
+        // Second smaller canopy clump for organic shape
+        if (rng() > 0.4) { const c2 = new THREE.Mesh(g.sphere, mat(oakG)); c2.scale.set(0.5 * sv, 0.45 * sv, 0.5 * sv); c2.position.set((rng() - 0.5) * 0.4 * sv, 1.15 * sv, (rng() - 0.5) * 0.4 * sv); c2.castShadow = true; gr.add(c2); }
+      } else if (treeType < 0.68 && (isStone || isDirt)) {
+        // Dead/spooky tree — bare trunk with branches, no leaves
+        const trunk = new THREE.Mesh(g.cyl, mat('#3a2a1a')); trunk.scale.set(0.1 * sv, 1.0 * sv, 0.1 * sv); trunk.position.y = 0.5 * sv; trunk.castShadow = true; gr.add(trunk);
+        for (let b = 0; b < 3; b++) { const br = new THREE.Mesh(g.cyl, mat('#4a3520')); br.scale.set(0.04 * sv, 0.5 * sv, 0.04 * sv); const a = rng() * Math.PI * 2; br.position.set(Math.sin(a) * 0.15 * sv, (0.6 + b * 0.2) * sv, Math.cos(a) * 0.15 * sv); br.rotation.z = (rng() - 0.5) * 1.2; br.rotation.x = (rng() - 0.5) * 0.8; br.castShadow = true; gr.add(br); }
+      } else if (treeType < 0.82) {
+        // Bush — low round shrub
+        const bushCol = rng() > 0.6 ? '#3a6a2a' : (rng() > 0.3 ? '#4a7830' : '#556b2f');
+        const bush = new THREE.Mesh(g.sphere, mat(bushCol)); bush.scale.set(0.5 * sv, 0.35 * sv, 0.5 * sv); bush.position.y = 0.18 * sv; bush.castShadow = true; gr.add(bush);
+        if (rng() > 0.5) { const b2 = new THREE.Mesh(g.sphere, mat(bushCol)); b2.scale.set(0.35 * sv, 0.25 * sv, 0.35 * sv); b2.position.set((rng() - 0.5) * 0.3, 0.12 * sv, (rng() - 0.5) * 0.3); gr.add(b2); }
+      } else {
+        // Willow — drooping branches
+        const trunk = new THREE.Mesh(g.cyl, mat('#5a4a30')); trunk.scale.set(0.12 * sv, 0.9 * sv, 0.12 * sv); trunk.position.y = 0.45 * sv; trunk.castShadow = true; gr.add(trunk);
+        const willowG = '#3a6b30';
+        const canopy = new THREE.Mesh(g.sphere, mat(willowG)); canopy.scale.set(0.8 * sv, 0.5 * sv, 0.8 * sv); canopy.position.y = 0.9 * sv; canopy.castShadow = true; gr.add(canopy);
+        // Drooping fronds
+        for (let f = 0; f < 5; f++) { const frond = new THREE.Mesh(g.cyl, mat('#2a5a20')); frond.scale.set(0.04 * sv, 0.6 * sv, 0.04 * sv); const fa = (f / 5) * Math.PI * 2; frond.position.set(Math.sin(fa) * 0.4 * sv, 0.55 * sv, Math.cos(fa) * 0.4 * sv); frond.rotation.z = Math.sin(fa) * 0.5; frond.rotation.x = Math.cos(fa) * 0.5; gr.add(frond); }
+      }
       this.scene.add(gr); ch.meshes.push(gr); this.blocked.add(`${wx},${wz}`);
     }
   }
@@ -755,6 +801,31 @@ class IsometricGameEngine {
   // ═══════════════════════════════════════════════════════════════════
   // INSTANCED MESH REBUILD
   // ═══════════════════════════════════════════════════════════════════
+  private tileColorVar(wx: number, wz: number, type: number): [number, number, number] {
+    // Per-tile color variation via cheap hash for organic look
+    const h1 = Math.sin(wx * 127.1 + wz * 311.7) * 43758.5453;
+    const v = (h1 - Math.floor(h1)) * 2 - 1; // -1..1
+    const h2 = Math.sin(wx * 269.3 + wz * 183.1) * 28371.2;
+    const v2 = (h2 - Math.floor(h2)) * 2 - 1;
+    const base = BASE_C[type];
+    if (type === T.GRASS) {
+      // Grass: green variation + yellow-ish patches + dark spots
+      return [base.r + v * 0.06 + v2 * 0.02, base.g + v * 0.08 + v2 * 0.04, base.b + v * 0.03];
+    } else if (type === T.STONE) {
+      // Stone: grey-purple-brown variation
+      return [base.r + v * 0.08, base.g + v * 0.06 + v2 * 0.03, base.b + v * 0.07];
+    } else if (type === T.DIRT) {
+      // Dirt: warm browns
+      return [base.r + v * 0.07, base.g + v * 0.05, base.b + v * 0.04 + v2 * 0.02];
+    } else if (type === T.WATER) {
+      // Water: blue-teal shifts
+      return [base.r + v * 0.03, base.g + v * 0.04, base.b + v * 0.06 + v2 * 0.03];
+    } else {
+      // Sand: warm yellow variation
+      return [base.r + v * 0.06, base.g + v * 0.05 + v2 * 0.03, base.b + v * 0.04];
+    }
+  }
+
   private rebuildInstances() {
     for (const t of [0, 1, 2, 3, 4]) this.tileBuf.set(t, []);
     for (const ch of this.chunks.values()) {
@@ -765,14 +836,19 @@ class IsometricGameEngine {
       }
     }
     for (const [type, tiles] of this.tileBuf) {
-      const im = this.iMesh[type]; const base = BASE_C[type];
+      const im = this.iMesh[type];
       tiles.forEach((t, i) => {
         this.dummy.position.set(t.wx, t.h / 2, t.wz);
-        this.dummy.scale.set(1, t.h, 1);
+        this.dummy.scale.set(1, Math.max(0.05, t.h), 1);
         this.dummy.updateMatrix();
         im.setMatrixAt(i, this.dummy.matrix);
         const mul = this.fog.fogMul(t.wx, t.wz);
-        im.setColorAt(i, new THREE.Color(base.r * mul, base.g * mul, base.b * mul));
+        const [cr, cg, cb] = this.tileColorVar(t.wx, t.wz, type);
+        im.setColorAt(i, new THREE.Color(
+          Math.max(0, Math.min(1, cr)) * mul,
+          Math.max(0, Math.min(1, cg)) * mul,
+          Math.max(0, Math.min(1, cb)) * mul
+        ));
       });
       im.count = tiles.length;
       im.instanceMatrix.needsUpdate = true;
@@ -782,12 +858,16 @@ class IsometricGameEngine {
 
   private updateFogColors() {
     for (const [type, tiles] of this.tileBuf) {
-      const im = this.iMesh[type]; const base = BASE_C[type];
+      const im = this.iMesh[type];
       if (!im.instanceColor) continue;
       const arr = im.instanceColor.array as Float32Array;
       tiles.forEach((t, i) => {
         const mul = this.fog.fogMul(t.wx, t.wz);
-        const idx = i * 3; arr[idx] = base.r * mul; arr[idx + 1] = base.g * mul; arr[idx + 2] = base.b * mul;
+        const [cr, cg, cb] = this.tileColorVar(t.wx, t.wz, type);
+        const idx = i * 3;
+        arr[idx] = Math.max(0, Math.min(1, cr)) * mul;
+        arr[idx + 1] = Math.max(0, Math.min(1, cg)) * mul;
+        arr[idx + 2] = Math.max(0, Math.min(1, cb)) * mul;
       });
       im.instanceColor.needsUpdate = true;
     }
@@ -797,7 +877,7 @@ class IsometricGameEngine {
   // INPUT
   // ═══════════════════════════════════════════════════════════════════
   private setupInput() {
-    const kd = (e: KeyboardEvent) => { this.keys.add(e.key.toLowerCase()); if (this.dialog && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) this.advDialog(); else if ((e.key === ' ' || e.key.toLowerCase() === 'j') && !this.dialog) this.playerAttack(); };
+    const kd = (e: KeyboardEvent) => { if (e.key === ' ') e.preventDefault(); this.keys.add(e.key.toLowerCase()); if (this.dialog && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) this.advDialog(); else if ((e.key === ' ' || e.key.toLowerCase() === 'j') && !this.dialog) this.playerAttack(); };
     const ku = (e: KeyboardEvent) => this.keys.delete(e.key.toLowerCase());
     const cl = (e: MouseEvent) => { const r = this.ctr.getBoundingClientRect(); this.mNDC.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); this.handleClick(); };
     const wh = (e: WheelEvent) => { e.preventDefault(); this.cam.zoom = Math.max(35, Math.min(80, this.cam.zoom - e.deltaY * 0.03)); this.cam.updateProjectionMatrix(); };
