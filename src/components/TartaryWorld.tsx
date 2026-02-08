@@ -40,36 +40,38 @@ interface ChunkD { cx: number; cz: number; key: string; tiles: TileD[][]; blds: 
 // ═══════════════════════════════════════════════════════════════════════
 const NPC_NAMES = ['Aldric','Bren','Cael','Dara','Eira','Finn','Gwyn','Hale','Iris','Jora','Kael','Luna','Mira','Nira','Orin','Penn','Reva','Sage','Thane','Uma','Vale','Wren','Yara','Zara'];
 const V_DLG: string[][] = [
-  ['Welcome, traveler. These lands are vast.', 'Explore wisely — not all paths are safe.'],
-  ['Trade caravans come through here sometimes.', 'Gold shines brighter near the mountains.'],
-  ['The castle was built by the first settlers.', 'Many secrets lie buried in the soil.'],
-  ['I\'ve heard tales of ancient ruins nearby.', 'Some say mysterious stones can speak.'],
-  ['The forests are rich with timber.', 'Stay away from the deep waters.'],
-  ['Stone is strongest in the highlands.', 'Hermits live in the far reaches.'],
-  ['This settlement has stood for generations.', 'The wind carries whispers of old kingdoms.'],
-  ['Have you seen the glowing stones? They hum.', 'Treasure chests hide in forgotten places.'],
+  ['The sky cracked open three moons ago. Nobody talks about it.', 'Something fell from the rift. We found only ash and singing metal.'],
+  ['I used to be a cartographer. Then the maps started changing themselves.', 'New rivers appear where there were none. Mountains shift when you look away.'],
+  ['Do you hear it at night? The ground... breathes.', 'The dead don\'t stay buried here. They climb up as flowers.'],
+  ['My grandmother could walk between worlds. She never came back from the last one.', 'They say Tartary exists in seven dimensions at once.'],
+  ['The airships aren\'t ours. They were here before us. Before everything.', 'Sometimes the propellers spell out words. Nobody can read them.'],
+  ['I found a door underground. It was warm. It whispered my name backwards.', 'Don\'t dig past the third layer of stone. What\'s below has teeth.'],
+  ['The castle was already old when the first humans arrived.', 'Its builders had too many fingers. You can see it in the doorknobs.'],
+  ['Time runs differently near the crystal spires.', 'I aged ten years walking through that valley. My dog aged backwards.'],
+  ['The zombies aren\'t dead. They\'re dreaming. We\'re inside their dream.', 'When the last zombie wakes up, this world dissolves. So I keep them asleep.'],
+  ['I sold my shadow to a merchant from the Unrecorded lands.', 'He paid in memories that aren\'t mine. I remember a city on the moon.'],
 ];
 const H_DLG: string[][] = [
-  ['I chose solitude long ago...', 'The stones remember what we forget.', 'Listen to the wind — it knows.'],
-  ['Long ago, this land was one kingdom.', 'Now only fragments remain.', 'You seek truth? Walk further.'],
-  ['I\'ve walked this world longer than you know.', 'Every ruin tells a story.', 'Find the stones. They hold answers.'],
+  ['I left civilization when the birds started flying upside down.', 'Out here, gravity is a suggestion. The stones taught me that.', 'Would you like some tea? I brew it from dreams. Tastes like Tuesday.'],
+  ['I am the last keeper of the Unwritten Law.', 'It says: "Everything you believe is a translation error."', 'The original text was in a language that tastes like copper.'],
+  ['I\'ve died eleven times. Each time I wake up here, slightly to the left.', 'Reality is a rough draft. You can see the editor\'s notes if you squint.', 'Don\'t trust the mushrooms. They\'re taking notes.'],
 ];
-const CHEST_DLG = ['A hidden chest! +5 gold found.'];
-const RUIN_DLG = ['Crumbling pillars mark where a great hall once stood...', 'Ancient inscriptions cover the walls.'];
-const STONE_DLG = ['The stone hums with an ancient resonance...', 'Faint symbols glow on its surface.'];
-const BLD_NAMES = ['Cottage', 'Farmhouse', 'Outpost', 'Waystation', 'Cabin', 'Lodge', 'Shelter'];
+const CHEST_DLG = ['The chest opens with a sound like someone remembering your name. +5 gold materializes from nothing.'];
+const RUIN_DLG = ['These walls predate language. The carvings show creatures that haven\'t been invented yet.', 'You touch a pillar and taste the color blue. The ruins are older than geology.'];
+const STONE_DLG = ['The stone vibrates at the exact frequency of your childhood nightmares.', 'Symbols crawl across its surface like ants made of starlight. They spell: "YOU WERE EXPECTED."'];
+const BLD_NAMES = ['The Crooked House', 'Bone Cottage', 'The Leaning Outpost', 'Dusk Waystation', 'Moth Cabin', 'The Breathing Lodge', 'Phantom Shelter'];
 
 // Monster data
 const M_TYPES = ['slime', 'dragon', 'mushroom', 'golem', 'wisp', 'spider', 'troll', 'elemental'] as const;
 const M_DLG: Record<string, string[]> = {
-  slime: ['Bloop! *wobbles happily*', 'Splish splash! Want to bounce?', '*jiggles contentedly*'],
-  dragon: ['Rawr! ...just kidding, I\'m tiny.', '*puffs a tiny flame* Did you see that?!', 'One day I\'ll be BIG. Just you wait!'],
-  mushroom: ['Don\'t eat me! I taste terrible!', '*shakes spores everywhere* Oops!', 'I\'m a fun-gi! Get it? ...anyone?'],
-  golem: ['*crystalline humming*', 'These crystals have seen millennia pass...', '*resonates with ancient energy*'],
-  wisp: ['Wooooo... just kidding. Hi!', '*flickers mysteriously*', 'Follow me! Or don\'t. I\'ll follow you.'],
-  spider: ['*clickety clack*', '*waves all eight legs* Hello friend!', 'I knit the finest silk in the land!'],
-  troll: ['You pay troll toll? ...just kidding!', '*scratches head* Which bridge was mine again?', 'I\'m actually a vegetarian. Don\'t tell anyone.'],
-  elemental: ['*crackle* Got any marshmallows?', '*warm glow* I provide free heating!', 'Hot take: fire is the best element. *ba dum tss*'],
+  slime: ['I contain the dissolved memories of 47 people. They all tasted like regret.', 'I was a cathedral once. Now I ooze. Evolution is not always forward.', 'If you listen closely, you can hear the screaming. That\'s just digestion.'],
+  dragon: ['I remember when this world had a second sun. I ate it. I\'m not sorry.', 'My fire burns in colors you can\'t see. Your eyeballs aren\'t... evolved enough.', 'I\'ve been sleeping for 10,000 years. This conversation is part of my dream.'],
+  mushroom: ['My spores rewrite your DNA. You\'ll thank me in three generations.', 'I\'m connected to every mushroom in Tartary. We are ONE. We see EVERYTHING.', 'The network beneath your feet contains the complete history of this world. Step carefully.'],
+  golem: ['I was carved from the bones of a dead god. I still hear its prayers.', 'These crystals contain compressed time. Each facet holds a century.', 'I do not move. The world rotates around me. You just can\'t tell the difference.'],
+  wisp: ['I\'m the last thought of someone who hasn\'t been born yet.', 'Follow me into the spaces between moments. It\'s warm there.', 'I died so long ago that death forgot about me. Now I just... persist.'],
+  spider: ['I weave the fabric of local reality. These threads? They\'re yours. Careful.', 'Eight eyes, eight dimensions. You only see the boring three.', 'My web catches futures. Most of yours are interesting. Some are terrifying.'],
+  troll: ['I\'ve been standing on this spot since before the ground was invented.', 'My blood is liquid stone. My dreams are geological events.', 'I ate a wizard once. Now I speak fourteen dead languages and can\'t stop.'],
+  elemental: ['I\'m the memory of the first fire that ever burned. Everything since is my echo.', 'Touch me and your ancestors will feel the warmth. Time means nothing to flame.', 'Stars are my cousins. They write me letters in radiation. The news is never good.'],
 };
 // Theme park attraction types
 const PARK_TYPES = ['ferris', 'carousel', 'circus', 'coaster', 'bumper', 'food'] as const;
@@ -590,64 +592,100 @@ class IsometricGameEngine {
     ch.hid.push({ g: gr, type, tile: [wx, wz], found: false, dialogs: dlgs, mesh });
   }
 
-  // ── Monsters ──
+  // ── Monsters (MASSIVE, bizarre, imaginative) ──
   private mkMonster(type: string, rng: () => number): { grp: THREE.Group; parts: Record<string, THREE.Object3D> } {
     const g = G(), grp = new THREE.Group(), parts: Record<string, THREE.Object3D> = {};
+    const S = 2.5; // SCALE MULTIPLIER — monsters are huge
     if (type === 'slime') {
-      const body = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#44cc44' }));
-      body.scale.set(0.5, 0.35, 0.5); body.position.y = 0.2; body.castShadow = true; grp.add(body); parts.body = body;
-      // eyes
-      const eyeM = mat('#ffffff');
-      for (const ex of [-0.12, 0.12]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.08); eye.position.set(ex, 0.32, 0.2); grp.add(eye); }
-      for (const ex of [-0.12, 0.12]) { const pupil = new THREE.Mesh(g.sphere, mat('#111')); pupil.scale.setScalar(0.04); pupil.position.set(ex, 0.33, 0.25); grp.add(pupil); }
+      // Giant pulsating mass with embedded objects
+      const body = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#22ff44', roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.75 }));
+      body.scale.set(1.2 * S, 0.8 * S, 1.2 * S); body.position.y = 0.5 * S; body.castShadow = true; grp.add(body); parts.body = body;
+      // Huge unblinking eyes
+      for (const ex of [-0.3, 0.3]) { const eye = new THREE.Mesh(g.sphere, mat('#fffff0')); eye.scale.set(0.25 * S, 0.3 * S, 0.2 * S); eye.position.set(ex * S, 0.7 * S, 0.4 * S); grp.add(eye); }
+      for (const ex of [-0.3, 0.3]) { const pupil = new THREE.Mesh(g.sphere, mat('#000')); pupil.scale.setScalar(0.12 * S); pupil.position.set(ex * S, 0.72 * S, 0.52 * S); grp.add(pupil); }
+      // Embedded skull
+      const skull = new THREE.Mesh(g.sphere, mat('#ddddcc')); skull.scale.set(0.15 * S, 0.12 * S, 0.12 * S); skull.position.set(0.2 * S, 0.2 * S, 0.3 * S); grp.add(skull);
     } else if (type === 'dragon') {
-      const body = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ff4422' }));
-      body.scale.set(0.35, 0.7, 0.35); body.position.y = 0.45; body.castShadow = true; grp.add(body); parts.body = body;
-      const head = new THREE.Mesh(g.sphere, mat('#ff6644')); head.scale.setScalar(0.2); head.position.set(0, 0.85, 0.1); grp.add(head);
-      // wings
-      const wingM = new THREE.MeshLambertMaterial({ color: '#cc2200', side: THREE.DoubleSide });
-      const lw = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3), wingM); lw.position.set(-0.35, 0.6, 0); lw.rotation.y = -0.3; grp.add(lw); parts.lwing = lw;
-      const rw = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3), wingM); rw.position.set(0.35, 0.6, 0); rw.rotation.y = 0.3; grp.add(rw); parts.rwing = rw;
+      // Massive dragon with thick body, long neck, big wings
+      const torso = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#8b0000', roughness: 0.6, metalness: 0.15 }));
+      torso.scale.set(0.9 * S, 0.6 * S, 1.2 * S); torso.position.y = 0.8 * S; torso.castShadow = true; grp.add(torso); parts.body = torso;
+      // Long neck
+      const neck = new THREE.Mesh(g.cyl, mat('#9b1111')); neck.scale.set(0.2 * S, 0.7 * S, 0.2 * S); neck.position.set(0, 1.3 * S, 0.4 * S); neck.rotation.x = -0.4; grp.add(neck);
+      // Head with horns
+      const head = new THREE.Mesh(g.sphere, mat('#aa2222')); head.scale.set(0.35 * S, 0.25 * S, 0.4 * S); head.position.set(0, 1.7 * S, 0.7 * S); grp.add(head);
+      for (const hx of [-0.15, 0.15]) { const horn = new THREE.Mesh(g.cone, mat('#222')); horn.scale.set(0.06 * S, 0.3 * S, 0.06 * S); horn.position.set(hx * S, 1.85 * S, 0.6 * S); horn.rotation.x = -0.3; grp.add(horn); }
+      // Glowing eyes
+      const eyeM = new THREE.MeshStandardMaterial({ color: '#ffaa00', emissive: 0xff6600, emissiveIntensity: 1.0 });
+      for (const ex of [-0.1, 0.1]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.08 * S); eye.position.set(ex * S, 1.72 * S, 0.9 * S); grp.add(eye); }
+      // Big leathery wings
+      const wingM = new THREE.MeshStandardMaterial({ color: '#660000', side: THREE.DoubleSide, roughness: 0.9 });
+      const lw = new THREE.Mesh(new THREE.PlaneGeometry(2.0 * S, 1.0 * S), wingM); lw.position.set(-1.0 * S, 1.0 * S, 0); lw.rotation.y = -0.4; grp.add(lw); parts.lwing = lw;
+      const rw = new THREE.Mesh(new THREE.PlaneGeometry(2.0 * S, 1.0 * S), wingM); rw.position.set(1.0 * S, 1.0 * S, 0); rw.rotation.y = 0.4; grp.add(rw); parts.rwing = rw;
+      // Tail
+      const tail = new THREE.Mesh(g.cyl, mat('#7b1111')); tail.scale.set(0.15 * S, 1.0 * S, 0.15 * S); tail.position.set(0, 0.5 * S, -0.8 * S); tail.rotation.x = 0.6; grp.add(tail); parts.tail = tail;
     } else if (type === 'mushroom') {
-      const stem = new THREE.Mesh(g.cyl, mat('#cc9966')); stem.scale.set(0.15, 0.5, 0.15); stem.position.y = 0.25; stem.castShadow = true; grp.add(stem);
-      const cap = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ff4488' }));
-      cap.scale.set(0.45, 0.25, 0.45); cap.position.y = 0.55; cap.castShadow = true; grp.add(cap); parts.cap = cap;
-      // spots on cap
-      for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(g.sphere, mat('#ffffff')); sp.scale.setScalar(0.06); const a = (i / 5) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.25, 0.6, Math.sin(a) * 0.25); grp.add(sp); }
-      // eyes
-      for (const ex of [-0.08, 0.08]) { const eye = new THREE.Mesh(g.sphere, mat('#111')); eye.scale.setScalar(0.04); eye.position.set(ex, 0.35, 0.14); grp.add(eye); }
+      // Towering fungal horror
+      const stem = new THREE.Mesh(g.cyl, mat('#8b7355')); stem.scale.set(0.4 * S, 1.2 * S, 0.4 * S); stem.position.y = 0.6 * S; stem.castShadow = true; grp.add(stem);
+      const cap = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#cc2266', roughness: 0.4, emissive: 0x440022, emissiveIntensity: 0.2 }));
+      cap.scale.set(1.2 * S, 0.5 * S, 1.2 * S); cap.position.y = 1.4 * S; cap.castShadow = true; grp.add(cap); parts.cap = cap;
+      // Bioluminescent spots
+      for (let i = 0; i < 8; i++) { const sp = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ffccff', emissive: 0xff88ff, emissiveIntensity: 0.6 })); sp.scale.setScalar(0.1 * S); const a = (i / 8) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.7 * S, 1.45 * S, Math.sin(a) * 0.7 * S); grp.add(sp); }
+      // Hanging tendrils
+      for (let i = 0; i < 6; i++) { const t = new THREE.Mesh(g.cyl, new THREE.MeshStandardMaterial({ color: '#996677', transparent: true, opacity: 0.6 })); t.scale.set(0.03 * S, 0.4 * S, 0.03 * S); const a = (i / 6) * Math.PI * 2; t.position.set(Math.cos(a) * 0.8 * S, 1.0 * S, Math.sin(a) * 0.8 * S); grp.add(t); parts[`tendril${i}`] = t; }
+      // Tiny eyes on stem
+      for (const ex of [-0.12, 0.12]) { const eye = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#000', emissive: 0x440044, emissiveIntensity: 0.8 })); eye.scale.setScalar(0.08 * S); eye.position.set(ex * S, 0.9 * S, 0.35 * S); grp.add(eye); }
     } else if (type === 'golem') {
-      const body = new THREE.Mesh(g.box, new THREE.MeshLambertMaterial({ color: '#8844ff', emissive: 0x442288, emissiveIntensity: 0.3 }));
-      body.scale.set(0.5, 0.7, 0.4); body.position.y = 0.45; body.castShadow = true; grp.add(body); parts.body = body;
-      const head = new THREE.Mesh(g.oct, new THREE.MeshLambertMaterial({ color: '#aa66ff', emissive: 0x6633cc, emissiveIntensity: 0.5 }));
-      head.scale.setScalar(0.2); head.position.y = 0.95; grp.add(head); parts.head = head;
-      // crystal arms
-      for (const sx of [-0.4, 0.4]) { const arm = new THREE.Mesh(g.oct, new THREE.MeshLambertMaterial({ color: '#9955ee', emissive: 0x5522aa, emissiveIntensity: 0.4 })); arm.scale.set(0.12, 0.25, 0.12); arm.position.set(sx, 0.5, 0); grp.add(arm); }
+      // Colossal crystal construct
+      const body = new THREE.Mesh(g.box, new THREE.MeshStandardMaterial({ color: '#6622cc', roughness: 0.3, metalness: 0.4, emissive: 0x331188, emissiveIntensity: 0.4 }));
+      body.scale.set(1.0 * S, 1.4 * S, 0.8 * S); body.position.y = 0.9 * S; body.castShadow = true; grp.add(body); parts.body = body;
+      const head = new THREE.Mesh(g.oct, new THREE.MeshStandardMaterial({ color: '#aa66ff', roughness: 0.1, metalness: 0.6, emissive: 0x6633cc, emissiveIntensity: 0.6 }));
+      head.scale.setScalar(0.5 * S); head.position.y = 2.0 * S; grp.add(head); parts.head = head;
+      // Massive crystal arms
+      for (const sx of [-0.8, 0.8]) { const arm = new THREE.Mesh(g.oct, new THREE.MeshStandardMaterial({ color: '#9955ee', roughness: 0.2, metalness: 0.5, emissive: 0x5522aa, emissiveIntensity: 0.5 })); arm.scale.set(0.3 * S, 0.7 * S, 0.3 * S); arm.position.set(sx * S, 0.8 * S, 0); grp.add(arm); parts[sx < 0 ? 'larm' : 'rarm'] = arm; }
+      // Floating crystal shards around head
+      for (let i = 0; i < 5; i++) { const shard = new THREE.Mesh(g.oct, new THREE.MeshStandardMaterial({ color: '#cc88ff', emissive: 0x8844ff, emissiveIntensity: 0.8, transparent: true, opacity: 0.7 })); shard.scale.setScalar(0.1 * S); const a = (i / 5) * Math.PI * 2; shard.position.set(Math.cos(a) * 0.5 * S, 2.3 * S, Math.sin(a) * 0.5 * S); grp.add(shard); parts[`shard${i}`] = shard; }
     } else if (type === 'wisp') {
-      const body = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, emissive: 0xaaccff, emissiveIntensity: 0.8 }));
-      body.scale.setScalar(0.3); body.position.y = 0.8; grp.add(body); parts.body = body;
-      // glow trail
-      for (let i = 0; i < 3; i++) { const tr = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#aaccff', transparent: true, opacity: 0.2 - i * 0.05 })); tr.scale.setScalar(0.15 - i * 0.03); tr.position.set(0, 0.7 - i * 0.15, -i * 0.1); grp.add(tr); parts[`trail${i}`] = tr; }
+      // Massive ethereal orb with trailing aurora
+      const body = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.3, emissive: 0xaaccff, emissiveIntensity: 1.0 }));
+      body.scale.setScalar(0.7 * S); body.position.y = 1.5 * S; grp.add(body); parts.body = body;
+      // Inner core
+      const core = new THREE.Mesh(g.ico, new THREE.MeshStandardMaterial({ color: '#eeffff', emissive: 0x88aaff, emissiveIntensity: 1.2 }));
+      core.scale.setScalar(0.25 * S); core.position.y = 1.5 * S; grp.add(core); parts.core = core;
+      // Trailing wisps
+      for (let i = 0; i < 5; i++) { const tr = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#aaccff', transparent: true, opacity: 0.25 - i * 0.04, emissive: 0x6688cc, emissiveIntensity: 0.5 })); tr.scale.setScalar((0.4 - i * 0.06) * S); tr.position.set(0, (1.3 - i * 0.3) * S, -i * 0.2 * S); grp.add(tr); parts[`trail${i}`] = tr; }
     } else if (type === 'spider') {
-      const body = new THREE.Mesh(g.sphere, mat('#332211')); body.scale.set(0.3, 0.2, 0.4); body.position.y = 0.35; body.castShadow = true; grp.add(body); parts.body = body;
-      // 8 legs
-      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const leg = new THREE.Mesh(g.cyl, mat('#221100')); leg.scale.set(0.03, 0.35, 0.03); leg.position.set(Math.cos(a) * 0.25, 0.2, Math.sin(a) * 0.25); leg.rotation.z = Math.cos(a) * 0.6; leg.rotation.x = -Math.sin(a) * 0.6; grp.add(leg); parts[`leg${i}`] = leg; }
-      // eyes (2 big, 4 small)
-      for (const ex of [-0.06, 0.06]) { const eye = new THREE.Mesh(g.sphere, mat('#ff0000')); eye.scale.setScalar(0.04); eye.position.set(ex, 0.4, 0.2); grp.add(eye); }
+      // GIANT spider — body the size of a house
+      const abdomen = new THREE.Mesh(g.sphere, mat('#1a0a00')); abdomen.scale.set(0.8 * S, 0.5 * S, 1.0 * S); abdomen.position.set(0, 0.6 * S, -0.3 * S); abdomen.castShadow = true; grp.add(abdomen); parts.body = abdomen;
+      const ceph = new THREE.Mesh(g.sphere, mat('#2a1505')); ceph.scale.set(0.5 * S, 0.4 * S, 0.5 * S); ceph.position.set(0, 0.7 * S, 0.5 * S); ceph.castShadow = true; grp.add(ceph);
+      // 8 massive jointed legs
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const leg = new THREE.Mesh(g.cyl, mat('#1a0800')); leg.scale.set(0.06 * S, 1.0 * S, 0.06 * S); leg.position.set(Math.cos(a) * 0.6 * S, 0.4 * S, Math.sin(a) * 0.3 * S); leg.rotation.z = Math.cos(a) * 0.7; leg.rotation.x = -Math.sin(a) * 0.7; leg.castShadow = true; grp.add(leg); parts[`leg${i}`] = leg; }
+      // Cluster of glowing red eyes
+      for (let i = 0; i < 6; i++) { const eye = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ff0000', emissive: 0xff0000, emissiveIntensity: 0.9 })); eye.scale.setScalar((i < 2 ? 0.1 : 0.06) * S); eye.position.set((i % 3 - 1) * 0.12 * S, 0.85 * S + (i < 3 ? 0.05 : -0.05) * S, 0.7 * S); grp.add(eye); }
+      // Fangs
+      for (const fx of [-0.1, 0.1]) { const fang = new THREE.Mesh(g.cone, mat('#ffffcc')); fang.scale.set(0.04 * S, 0.2 * S, 0.04 * S); fang.position.set(fx * S, 0.55 * S, 0.75 * S); fang.rotation.x = 0.3; grp.add(fang); }
     } else if (type === 'troll') {
-      const body = new THREE.Mesh(g.box, mat('#558833')); body.scale.set(0.7, 0.9, 0.5); body.position.y = 0.55; body.castShadow = true; grp.add(body); parts.body = body;
-      const head = new THREE.Mesh(g.sphere, mat('#669944')); head.scale.set(0.35, 0.3, 0.3); head.position.y = 1.2; head.castShadow = true; grp.add(head);
-      // tusks
-      for (const ex of [-0.12, 0.12]) { const tusk = new THREE.Mesh(g.cone, mat('#ffffcc')); tusk.scale.set(0.04, 0.12, 0.04); tusk.position.set(ex, 1.1, 0.2); tusk.rotation.x = 0.3; grp.add(tusk); }
-      // arms
-      for (const sx of [-0.5, 0.5]) { const arm = new THREE.Mesh(g.box, mat('#558833')); arm.scale.set(0.18, 0.6, 0.18); arm.position.set(sx, 0.4, 0); grp.add(arm); parts[sx < 0 ? 'larm' : 'rarm'] = arm; }
+      // Hulking brute, almost 3 tiles tall
+      const body = new THREE.Mesh(g.box, mat('#3a5522')); body.scale.set(1.2 * S, 1.6 * S, 0.9 * S); body.position.y = 1.0 * S; body.castShadow = true; grp.add(body); parts.body = body;
+      const head = new THREE.Mesh(g.sphere, mat('#4a6633')); head.scale.set(0.6 * S, 0.5 * S, 0.5 * S); head.position.y = 2.2 * S; head.castShadow = true; grp.add(head);
+      // Glowing yellow eyes
+      for (const ex of [-0.15, 0.15]) { const eye = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ffff00', emissive: 0xaaaa00, emissiveIntensity: 0.8 })); eye.scale.setScalar(0.08 * S); eye.position.set(ex * S, 2.25 * S, 0.3 * S); grp.add(eye); }
+      // Massive tusks
+      for (const ex of [-0.2, 0.2]) { const tusk = new THREE.Mesh(g.cone, mat('#ffffcc')); tusk.scale.set(0.08 * S, 0.3 * S, 0.08 * S); tusk.position.set(ex * S, 2.0 * S, 0.35 * S); tusk.rotation.x = 0.4; grp.add(tusk); }
+      // Club-like arms
+      for (const sx of [-0.9, 0.9]) { const arm = new THREE.Mesh(g.box, mat('#3a5522')); arm.scale.set(0.35 * S, 1.0 * S, 0.3 * S); arm.position.set(sx * S, 0.6 * S, 0); grp.add(arm); parts[sx < 0 ? 'larm' : 'rarm'] = arm; }
+      // Boulder in one hand
+      const boulder = new THREE.Mesh(g.dodec, mat('#666')); boulder.scale.setScalar(0.25 * S); boulder.position.set(0.9 * S, 0.1 * S, 0.3 * S); grp.add(boulder);
     } else if (type === 'elemental') {
-      const core = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ff6600', emissive: 0xff4400, emissiveIntensity: 0.8 }));
-      core.scale.setScalar(0.3); core.position.y = 0.5; grp.add(core); parts.core = core;
-      const flame = new THREE.Mesh(g.cone, new THREE.MeshLambertMaterial({ color: '#ffcc00', emissive: 0xff8800, emissiveIntensity: 0.6, transparent: true, opacity: 0.8 }));
-      flame.scale.set(0.4, 0.8, 0.4); flame.position.y = 0.8; grp.add(flame); parts.flame = flame;
-      // sparks
-      for (let i = 0; i < 4; i++) { const sp = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ffff44', emissive: 0xffaa00, emissiveIntensity: 1.0 })); sp.scale.setScalar(0.06); const a = (i / 4) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.3, 0.6 + i * 0.1, Math.sin(a) * 0.3); grp.add(sp); parts[`spark${i}`] = sp; }
+      // Towering inferno with swirling flame layers
+      const core = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ff4400', emissive: 0xff2200, emissiveIntensity: 1.0 }));
+      core.scale.setScalar(0.6 * S); core.position.y = 1.0 * S; grp.add(core); parts.core = core;
+      // Multiple flame layers
+      const flame1 = new THREE.Mesh(g.cone, new THREE.MeshStandardMaterial({ color: '#ff8800', emissive: 0xff6600, emissiveIntensity: 0.8, transparent: true, opacity: 0.7 }));
+      flame1.scale.set(0.8 * S, 1.8 * S, 0.8 * S); flame1.position.y = 1.2 * S; grp.add(flame1); parts.flame = flame1;
+      const flame2 = new THREE.Mesh(g.cone, new THREE.MeshStandardMaterial({ color: '#ffcc00', emissive: 0xffaa00, emissiveIntensity: 0.6, transparent: true, opacity: 0.5 }));
+      flame2.scale.set(0.5 * S, 1.3 * S, 0.5 * S); flame2.position.y = 1.5 * S; grp.add(flame2); parts.flame2 = flame2;
+      // Orbiting ember spheres
+      for (let i = 0; i < 6; i++) { const sp = new THREE.Mesh(g.sphere, new THREE.MeshStandardMaterial({ color: '#ffff44', emissive: 0xffaa00, emissiveIntensity: 1.2 })); sp.scale.setScalar(0.12 * S); const a = (i / 6) * Math.PI * 2; sp.position.set(Math.cos(a) * 0.7 * S, 1.0 * S + i * 0.15 * S, Math.sin(a) * 0.7 * S); grp.add(sp); parts[`spark${i}`] = sp; }
     }
     return { grp, parts };
   }
@@ -1041,12 +1079,24 @@ class IsometricGameEngine {
     this.pAngle += ad * Math.min(1, dt * 10);
     this.player.position.copy(this.pPos); this.player.rotation.y = this.pAngle;
     if (this.pMoving) {
-      const sw = Math.sin(this.pWalk) * 0.4;
-      this.pParts.la.rotation.x = sw; this.pParts.ra.rotation.x = -sw; this.pParts.ll.rotation.x = -sw; this.pParts.rl.rotation.x = sw;
-      this.pParts.body.position.y = 0.65 + Math.abs(Math.sin(this.pWalk * 2)) * 0.03;
+      // Exaggerated run — big arm pumps, bouncy stride, torso lean
+      const sw = Math.sin(this.pWalk) * 0.7;
+      const bounce = Math.abs(Math.sin(this.pWalk * 2)) * 0.08;
+      this.pParts.la.rotation.x = sw; this.pParts.ra.rotation.x = -sw;
+      this.pParts.la.rotation.z = -0.15; this.pParts.ra.rotation.z = 0.15;
+      this.pParts.ll.rotation.x = -sw * 0.9; this.pParts.rl.rotation.x = sw * 0.9;
+      this.pParts.body.position.y = 0.65 + bounce;
+      this.pParts.body.rotation.z = Math.sin(this.pWalk) * 0.06; // torso sway
+      this.pParts.body.rotation.x = -0.08; // lean forward
     } else {
-      this.pParts.la.rotation.x = this.pParts.ra.rotation.x = this.pParts.ll.rotation.x = this.pParts.rl.rotation.x = 0;
-      this.pParts.body.position.y = 0.65 + Math.sin(t * 2) * 0.015;
+      // Idle — breathing, subtle sway, arms loose
+      const breath = Math.sin(t * 2) * 0.02;
+      const sway = Math.sin(t * 0.7) * 0.03;
+      this.pParts.la.rotation.x = Math.sin(t * 1.2) * 0.05; this.pParts.ra.rotation.x = Math.sin(t * 1.2 + 0.5) * 0.05;
+      this.pParts.la.rotation.z = -0.08 + sway; this.pParts.ra.rotation.z = 0.08 - sway;
+      this.pParts.ll.rotation.x = 0; this.pParts.rl.rotation.x = 0;
+      this.pParts.body.position.y = 0.65 + breath;
+      this.pParts.body.rotation.z = sway; this.pParts.body.rotation.x = 0;
     }
     this.updLoc();
   }
@@ -1063,7 +1113,7 @@ class IsometricGameEngine {
   }
 
   // ── NPCs ──
-  private updNPCs(dt: number, _t: number) {
+  private updNPCs(dt: number, t: number) {
     for (const n of this.allNPCs) {
       if (n.mv) {
         const dx = n.tgt.x - n.pos.x, dz = n.tgt.z - n.pos.z, dist = Math.sqrt(dx * dx + dz * dz);
@@ -1074,8 +1124,16 @@ class IsometricGameEngine {
         if (n.pause <= 0) { n.wp = (n.wp + 1) % n.wps.length; const wp = n.wps[n.wp]; n.tgt.set(wp[0], this.getH(wp[0], wp[1]), wp[1]); n.mv = true; n.wt = 0; }
       }
       n.g.position.copy(n.pos); n.g.rotation.y = n.angle;
-      if (n.mv) { const sw = Math.sin(n.wt) * 0.3; n.p.la.rotation.x = sw; n.p.ra.rotation.x = -sw; n.p.ll.rotation.x = -sw; n.p.rl.rotation.x = sw; }
-      else { n.p.la.rotation.x = n.p.ra.rotation.x = n.p.ll.rotation.x = n.p.rl.rotation.x = 0; }
+      if (n.mv) {
+        const sw = Math.sin(n.wt) * 0.55; const bounce = Math.abs(Math.sin(n.wt * 2)) * 0.04;
+        n.p.la.rotation.x = sw; n.p.ra.rotation.x = -sw; n.p.la.rotation.z = -0.1; n.p.ra.rotation.z = 0.1;
+        n.p.ll.rotation.x = -sw * 0.85; n.p.rl.rotation.x = sw * 0.85;
+        n.g.position.y = n.pos.y + bounce;
+      } else {
+        const idle = Math.sin(t * 1.5 + n.angle) * 0.04;
+        n.p.la.rotation.x = idle; n.p.ra.rotation.x = -idle; n.p.la.rotation.z = -0.06; n.p.ra.rotation.z = 0.06;
+        n.p.ll.rotation.x = 0; n.p.rl.rotation.x = 0;
+      }
     }
   }
 
@@ -1102,37 +1160,57 @@ class IsometricGameEngine {
 
   // ── Monster animations ──
   private updMonsters(t: number) {
+    const S = 2.5; // match creation scale
     for (const m of this.allMonsters) {
-      const vis = Math.abs(m.wx - this.pTile[0]) + Math.abs(m.wz - this.pTile[1]) < VR;
+      const vis = Math.abs(m.wx - this.pTile[0]) + Math.abs(m.wz - this.pTile[1]) < VR + 3;
       m.grp.visible = vis;
       if (!vis) continue;
       const p = m.phase + t;
       if (m.type === 'slime') {
-        if (m.parts.body) { m.parts.body.scale.y = 0.35 + Math.sin(p * 3) * 0.1; m.parts.body.position.y = 0.2 + Math.abs(Math.sin(p * 3)) * 0.15; }
+        // Pulsating, breathing mass
+        if (m.parts.body) { m.parts.body.scale.y = 0.8 * S + Math.sin(p * 2.5) * 0.2 * S; m.parts.body.scale.x = 1.2 * S + Math.sin(p * 2.5 + 1) * 0.1 * S; m.parts.body.position.y = 0.5 * S + Math.abs(Math.sin(p * 1.5)) * 0.3 * S; }
+        m.grp.rotation.y = Math.sin(p * 0.3) * 0.15;
       } else if (m.type === 'dragon') {
-        if (m.parts.lwing) m.parts.lwing.rotation.z = Math.sin(p * 5) * 0.5;
-        if (m.parts.rwing) m.parts.rwing.rotation.z = -Math.sin(p * 5) * 0.5;
-        if (m.parts.body) m.parts.body.position.y = 0.45 + Math.sin(p * 2) * 0.05;
+        // Slow majestic wing beats, body sway
+        if (m.parts.lwing) m.parts.lwing.rotation.z = Math.sin(p * 2) * 0.6;
+        if (m.parts.rwing) m.parts.rwing.rotation.z = -Math.sin(p * 2) * 0.6;
+        if (m.parts.body) m.parts.body.position.y = 0.8 * S + Math.sin(p * 1.5) * 0.15 * S;
+        if (m.parts.tail) m.parts.tail.rotation.y = Math.sin(p * 1.2) * 0.3;
+        m.grp.rotation.y = Math.sin(p * 0.2) * 0.08;
       } else if (m.type === 'mushroom') {
-        if (m.parts.cap) m.parts.cap.rotation.z = Math.sin(p * 2) * 0.15;
-        m.grp.rotation.y = Math.sin(p * 0.5) * 0.2;
+        // Swaying, spore pulsing, tendril waving
+        if (m.parts.cap) { m.parts.cap.rotation.z = Math.sin(p * 1.5) * 0.12; m.parts.cap.scale.y = 0.5 * S + Math.sin(p * 3) * 0.05 * S; }
+        m.grp.rotation.y = Math.sin(p * 0.4) * 0.15;
+        for (let i = 0; i < 6; i++) { const td = m.parts[`tendril${i}`]; if (td) { td.rotation.x = Math.sin(p * 1.5 + i) * 0.2; td.rotation.z = Math.cos(p * 1.2 + i * 0.5) * 0.15; } }
       } else if (m.type === 'golem') {
-        if (m.parts.head) { const em = (m.parts.head as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.3 + Math.sin(p * 2) * 0.3; }
-        if (m.parts.body) { const em = (m.parts.body as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.2 + Math.sin(p * 2 + 1) * 0.2; }
+        // Crystal pulsing, shard orbiting, slow stomp
+        if (m.parts.head) { const em = (m.parts.head as THREE.Mesh).material as THREE.MeshStandardMaterial; em.emissiveIntensity = 0.4 + Math.sin(p * 2) * 0.4; }
+        if (m.parts.body) { m.parts.body.position.y = 0.9 * S + Math.abs(Math.sin(p * 0.8)) * 0.08 * S; }
+        // Orbiting shards
+        for (let i = 0; i < 5; i++) { const shard = m.parts[`shard${i}`]; if (shard) { const a = (i / 5) * Math.PI * 2 + t * 0.8; shard.position.set(Math.cos(a) * 0.5 * S, 2.3 * S + Math.sin(p * 2 + i) * 0.15 * S, Math.sin(a) * 0.5 * S); } }
       } else if (m.type === 'wisp') {
-        if (m.parts.body) m.parts.body.position.y = 0.8 + Math.sin(p * 1.5) * 0.3;
-        m.grp.rotation.y = t * 0.5;
-        for (let i = 0; i < 3; i++) { const tr = m.parts[`trail${i}`]; if (tr) tr.position.y = 0.7 - i * 0.15 + Math.sin(p * 2 + i) * 0.05; }
+        // Floating, pulsing, trail undulating
+        if (m.parts.body) { m.parts.body.position.y = 1.5 * S + Math.sin(p * 1.2) * 0.5 * S; const bm = (m.parts.body as THREE.Mesh).material as THREE.MeshStandardMaterial; bm.opacity = 0.2 + Math.sin(p * 2) * 0.15; }
+        if (m.parts.core) m.parts.core.position.y = 1.5 * S + Math.sin(p * 1.2) * 0.5 * S;
+        m.grp.rotation.y = t * 0.4;
+        for (let i = 0; i < 5; i++) { const tr = m.parts[`trail${i}`]; if (tr) tr.position.y = (1.3 - i * 0.3) * S + Math.sin(p * 1.8 + i * 0.5) * 0.12 * S; }
       } else if (m.type === 'spider') {
-        for (let i = 0; i < 8; i++) { const leg = m.parts[`leg${i}`]; if (leg) leg.rotation.x += Math.sin(p * 6 + i * 0.8) * 0.01; }
-        m.grp.rotation.y += Math.sin(p * 0.3) * 0.003;
+        // Creepy leg movement, body bob
+        for (let i = 0; i < 8; i++) { const leg = m.parts[`leg${i}`]; if (leg) { leg.rotation.x += Math.sin(p * 4 + i * 0.9) * 0.015; leg.rotation.z += Math.cos(p * 3 + i * 1.1) * 0.008; } }
+        if (m.parts.body) m.parts.body.position.y = 0.6 * S + Math.sin(p * 2) * 0.05 * S;
+        m.grp.rotation.y += Math.sin(p * 0.2) * 0.004;
       } else if (m.type === 'troll') {
-        m.grp.rotation.y = Math.sin(p * 0.3) * 0.1;
-        if (m.parts.body) m.parts.body.position.y = 0.55 + Math.sin(p * 1) * 0.02;
+        // Slow breathing, arm sway, ground stomp
+        m.grp.rotation.y = Math.sin(p * 0.25) * 0.12;
+        if (m.parts.body) m.parts.body.scale.y = 1.6 * S + Math.sin(p * 1.5) * 0.05 * S;
+        if (m.parts.larm) m.parts.larm.rotation.x = Math.sin(p * 0.8) * 0.2;
+        if (m.parts.rarm) m.parts.rarm.rotation.x = Math.sin(p * 0.8 + 1) * 0.2;
       } else if (m.type === 'elemental') {
-        if (m.parts.flame) { m.parts.flame.scale.y = 0.8 + Math.sin(p * 4) * 0.15; m.parts.flame.scale.x = 0.4 + Math.sin(p * 5) * 0.08; }
-        if (m.parts.core) { const em = (m.parts.core as THREE.Mesh).material as THREE.MeshLambertMaterial; em.emissiveIntensity = 0.5 + Math.sin(p * 3) * 0.3; }
-        for (let i = 0; i < 4; i++) { const sp = m.parts[`spark${i}`]; if (sp) { const a = (i / 4) * Math.PI * 2 + t; sp.position.set(Math.cos(a) * 0.3, 0.6 + i * 0.1 + Math.sin(p * 4 + i) * 0.1, Math.sin(a) * 0.3); } }
+        // Flame flickering, ember orbiting, size pulsing
+        if (m.parts.flame) { m.parts.flame.scale.y = 1.8 * S + Math.sin(p * 4) * 0.3 * S; m.parts.flame.scale.x = 0.8 * S + Math.sin(p * 5) * 0.15 * S; m.parts.flame.rotation.y = t * 2; }
+        if (m.parts.flame2) { m.parts.flame2.scale.y = 1.3 * S + Math.sin(p * 5 + 1) * 0.2 * S; m.parts.flame2.rotation.y = -t * 1.5; }
+        if (m.parts.core) { const em = (m.parts.core as THREE.Mesh).material as THREE.MeshStandardMaterial; em.emissiveIntensity = 0.7 + Math.sin(p * 3) * 0.4; }
+        for (let i = 0; i < 6; i++) { const sp = m.parts[`spark${i}`]; if (sp) { const a = (i / 6) * Math.PI * 2 + t * 1.5; sp.position.set(Math.cos(a) * 0.7 * S, 1.0 * S + i * 0.15 * S + Math.sin(p * 4 + i) * 0.2 * S, Math.sin(a) * 0.7 * S); } }
       }
     }
   }
@@ -1212,15 +1290,24 @@ class IsometricGameEngine {
   // V02: ZOMBIE SYSTEM
   // ═══════════════════════════════════════════════════════════════════
   private mkZombie(wx: number, wz: number): ZombieInst {
-    const { grp, la, ra, ll, rl, body } = this.mkHuman('#445544', 1.0);
+    const { grp, la, ra, ll, rl, body } = this.mkHuman('#2a3a25', 1.15); // bigger, darker
     const g = G();
-    // Red eyes
-    const eyeM = new THREE.MeshLambertMaterial({ color: '#ff0000', emissive: 0xff0000, emissiveIntensity: 0.9 });
-    for (const ex of [-0.08, 0.08]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.07); eye.position.set(ex, 1.15, -0.13); grp.add(eye); }
+    // Glowing sickly eyes
+    const eyeM = new THREE.MeshStandardMaterial({ color: '#88ff44', emissive: 0x44ff00, emissiveIntensity: 1.2 });
+    for (const ex of [-0.1, 0.1]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.09); eye.position.set(ex, 1.3, -0.15); grp.add(eye); }
+    // Gore details — exposed ribs, torn flesh patches
+    const rib = new THREE.Mesh(g.box, mat('#c8c8b0')); rib.scale.set(0.35, 0.08, 0.15); rib.position.set(0.08, 0.8, 0.18); grp.add(rib);
+    // Drooping jaw
+    const jaw = new THREE.Mesh(g.box, mat('#1a2a15')); jaw.scale.set(0.15, 0.08, 0.1); jaw.position.set(0, 1.05, -0.18); jaw.rotation.x = 0.3; grp.add(jaw);
+    // One arm hangs lower (asymmetric zombie pose)
+    la.position.y = 0.55; la.rotation.x = -0.8; // left arm hanging forward
+    ra.position.y = 0.7; ra.rotation.x = -0.5; ra.rotation.z = 0.2; // right arm reaching out
+    // Hunched posture
+    body.rotation.x = -0.15;
     const h = this.getH(Math.round(wx), Math.round(wz));
     grp.position.set(wx, h, wz);
     this.scene.add(grp);
-    return { grp, pos: new THREE.Vector3(wx, h, wz), vel: new THREE.Vector3(), hp: 30, tile: [Math.round(wx), Math.round(wz)], angle: 0, parts: { la, ra, ll, rl, body }, hitCD: 0, walkT: 0, dying: false, deathT: 0 };
+    return { grp, pos: new THREE.Vector3(wx, h, wz), vel: new THREE.Vector3(), hp: 40, tile: [Math.round(wx), Math.round(wz)], angle: 0, parts: { la, ra, ll, rl, body }, hitCD: 0, walkT: 0, dying: false, deathT: 0 };
   }
   private spawnZombie() {
     if (this.zombies.length >= this.maxZombies) return;
@@ -1272,12 +1359,21 @@ class IsometricGameEngine {
         this.playerHP -= 10; z.hitCD = 1.0; this.screenShake = 0.25; this.updHealthHUD();
         if (this.playerHP <= 0) this.playerDeath();
       }
-      // Animation
+      // Animation — lurching, asymmetric zombie shamble
       z.grp.position.copy(z.pos); z.grp.rotation.y = z.angle; z.grp.scale.setScalar(1);
-      z.walkT += dt * 3.5;
-      const sw = Math.sin(z.walkT) * 0.35;
-      z.parts.la.rotation.x = sw; z.parts.ra.rotation.x = -sw; z.parts.ll.rotation.x = -sw; z.parts.rl.rotation.x = sw;
-      z.parts.body.rotation.z = Math.sin(z.walkT * 0.5) * 0.05; // shamble
+      z.walkT += dt * 2.8;
+      const lurch = Math.sin(z.walkT * 0.7);
+      // Left leg drags, right leg lurches forward
+      z.parts.ll.rotation.x = Math.sin(z.walkT) * 0.15 - 0.1; // dragging
+      z.parts.rl.rotation.x = Math.sin(z.walkT + 1.5) * 0.5;  // lurching step
+      // Arms reaching forward, swaying
+      z.parts.la.rotation.x = -0.8 + Math.sin(z.walkT * 0.6) * 0.2;
+      z.parts.ra.rotation.x = -0.5 + Math.sin(z.walkT * 0.8 + 1) * 0.3;
+      z.parts.ra.rotation.z = 0.2 + Math.sin(z.walkT * 0.4) * 0.1;
+      // Heavy body lurch and tilt
+      z.parts.body.rotation.z = lurch * 0.12;
+      z.parts.body.rotation.x = -0.15 + Math.sin(z.walkT * 1.4) * 0.05;
+      z.grp.position.y = z.pos.y + Math.abs(Math.sin(z.walkT + 0.5)) * 0.04; // uneven bob
     }
   }
   private playerDeath() {
