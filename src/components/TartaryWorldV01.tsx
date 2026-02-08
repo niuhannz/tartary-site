@@ -30,9 +30,6 @@ interface ResInst { g: THREE.Group; type: 'gold' | 'wood' | 'stone'; tile: [numb
 interface HidInst { g: THREE.Group; type: 'chest' | 'ruin' | 'stone' | 'hermit'; tile: [number, number]; found: boolean; dialogs: string[]; mesh: THREE.Mesh }
 interface MonsterInst { type: string; grp: THREE.Group; wx: number; wz: number; phase: number; dialogs: string[]; parts: Record<string, THREE.Object3D>; met: boolean }
 interface ParkInst { grp: THREE.Group; type: string; wx: number; wz: number; parts: Record<string, THREE.Object3D>; discovered: boolean }
-interface ZombieInst { grp: THREE.Group; pos: THREE.Vector3; vel: THREE.Vector3; hp: number; tile: [number, number]; angle: number; parts: { la: THREE.Mesh; ra: THREE.Mesh; ll: THREE.Mesh; rl: THREE.Mesh; body: THREE.Mesh }; hitCD: number; walkT: number; dying: boolean; deathT: number }
-interface AirshipInst { grp: THREE.Group; pos: THREE.Vector3; vel: THREE.Vector3; propeller: THREE.Mesh; targetX: number; targetZ: number }
-interface BloodPart { mesh: THREE.Mesh; pos: THREE.Vector3; vel: THREE.Vector3; life: number }
 interface ChunkD { cx: number; cz: number; key: string; tiles: TileD[][]; blds: BldInst[]; npcs: NPCInst[]; res: ResInst[]; hid: HidInst[]; monsters: MonsterInst[]; parks: ParkInst[]; meshes: THREE.Object3D[] }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -220,24 +217,6 @@ class IsometricGameEngine {
   private allParks: ParkInst[] = [];
   private rc = { gold: 0, wood: 0, stone: 0 };
   private monstersMet = 0;
-  // Combat
-  private playerHP = 100;
-  private maxHP = 100;
-  private attackCD = 0;
-  private comboCount = 0;
-  private lastAttackT = -999;
-  private screenShake = 0;
-  // Zombies
-  private zombies: ZombieInst[] = [];
-  private zombieSpawnCD = 0;
-  private maxZombies = 15;
-  private nightKills = 0;
-  private dayPhase = 0; // current d value
-  private lastNightPhase = 0;
-  // Airships
-  private airships: AirshipInst[] = [];
-  // Particles
-  private bloods: BloodPart[] = [];
   // Input
   private keys = new Set<string>();
   private mNDC = new THREE.Vector2(-999, -999);
@@ -268,7 +247,7 @@ class IsometricGameEngine {
     ctr.appendChild(r.domElement);
     this.r = r;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.005);
+    this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
     const w = ctr.clientWidth, h = ctr.clientHeight;
     this.cam = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, 0.1, 200);
     this.cam.zoom = 42;
@@ -287,7 +266,6 @@ class IsometricGameEngine {
     this.setupLights();
     this.buildPlayer();
     this.fog.update(this.pTile[0], this.pTile[1]);
-    this.initAirships();
     this.updateChunks();
     const sp = this.getH(this.pTile[0], this.pTile[1]);
     this.pPos.set(this.pTile[0], sp, this.pTile[1]);
@@ -797,7 +775,7 @@ class IsometricGameEngine {
   // INPUT
   // ═══════════════════════════════════════════════════════════════════
   private setupInput() {
-    const kd = (e: KeyboardEvent) => { this.keys.add(e.key.toLowerCase()); if (this.dialog && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) this.advDialog(); else if ((e.key === ' ' || e.key.toLowerCase() === 'j') && !this.dialog) this.playerAttack(); };
+    const kd = (e: KeyboardEvent) => { this.keys.add(e.key.toLowerCase()); if (this.dialog && (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape')) this.advDialog(); };
     const ku = (e: KeyboardEvent) => this.keys.delete(e.key.toLowerCase());
     const cl = (e: MouseEvent) => { const r = this.ctr.getBoundingClientRect(); this.mNDC.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); this.handleClick(); };
     const wh = (e: WheelEvent) => { e.preventDefault(); this.cam.zoom = Math.max(35, Math.min(80, this.cam.zoom - e.deltaY * 0.03)); this.cam.updateProjectionMatrix(); };
@@ -892,17 +870,12 @@ class IsometricGameEngine {
     // Fog check
     const ntx = Math.round(this.pPos.x), ntz = Math.round(this.pPos.z);
     if (ntx !== this.lastTx || ntz !== this.lastTz) { this.lastTx = ntx; this.lastTz = ntz; this.fog.update(ntx, ntz); this.updateFogColors(); }
-    this.updCombat(dt);
-    this.updZombies(dt, t);
-    this.updAirships(dt, t);
-    this.updParticles(dt);
     this.updNPCs(dt, t);
     this.updRes(dt, t);
     this.updHidden(t);
     this.updMonsters(t);
     this.updParks(t);
     this.updDayNight(t);
-    this.updHealthHUD();
     this.updCam(dt);
     // Windmill blades
     for (const ch of this.chunks.values()) for (const b of ch.blds) if (b.blades) b.blades.rotation.z += dt * 0.5;
@@ -1087,210 +1060,9 @@ class IsometricGameEngine {
     const el = document.getElementById('g-monsters'); if (el) el.textContent = String(this.monstersMet);
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // V02: COMBAT SYSTEM
-  // ═══════════════════════════════════════════════════════════════════
-  private playerAttack() {
-    if (this.attackCD > 0 || this.playerHP <= 0) return;
-    this.attackCD = 0.3;
-    const t = this.clk.getElapsedTime();
-    // Attack animation - arms snap forward
-    this.pParts.la.rotation.x = -1.3; this.pParts.ra.rotation.x = -1.3;
-    // Find nearest zombie in range
-    let nearest: ZombieInst | null = null, minDist = 1.8;
-    for (const z of this.zombies) {
-      if (z.dying) continue;
-      const dx = z.pos.x - this.pPos.x, dz = z.pos.z - this.pPos.z, dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < minDist) { nearest = z; minDist = dist; }
-    }
-    if (nearest) {
-      // Combo
-      if (t - this.lastAttackT < 0.8) this.comboCount = Math.min(3, this.comboCount + 1);
-      else this.comboCount = 1;
-      this.lastAttackT = t;
-      const dmg = 15 * (1 + (this.comboCount - 1) * 0.5);
-      nearest.hp -= dmg;
-      this.screenShake = 0.15;
-      // Knockback
-      const kx = nearest.pos.x - this.pPos.x, kz = nearest.pos.z - this.pPos.z;
-      const kd = Math.sqrt(kx * kx + kz * kz) || 1;
-      nearest.vel.set(kx / kd * 5, 0, kz / kd * 5);
-      this.spawnBlood(nearest.pos, 4);
-      this.updComboHUD();
-      if (nearest.hp <= 0) { nearest.dying = true; nearest.deathT = 0; this.nightKills++; this.updKillsHUD(); }
-    }
-    // Face nearest zombie
-    if (nearest) this.pTAngle = Math.atan2(nearest.pos.x - this.pPos.x, nearest.pos.z - this.pPos.z);
-  }
-  private updCombat(dt: number) {
-    this.attackCD = Math.max(0, this.attackCD - dt);
-    // Health regen during day
-    if (this.dayPhase < 0.55 && this.playerHP < this.maxHP) { this.playerHP = Math.min(this.maxHP, this.playerHP + 0.5 * dt); }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // V02: ZOMBIE SYSTEM
-  // ═══════════════════════════════════════════════════════════════════
-  private mkZombie(wx: number, wz: number): ZombieInst {
-    const { grp, la, ra, ll, rl, body } = this.mkHuman('#445544', 1.0);
-    const g = G();
-    // Red eyes
-    const eyeM = new THREE.MeshLambertMaterial({ color: '#ff0000', emissive: 0xff0000, emissiveIntensity: 0.9 });
-    for (const ex of [-0.08, 0.08]) { const eye = new THREE.Mesh(g.sphere, eyeM); eye.scale.setScalar(0.07); eye.position.set(ex, 1.15, -0.13); grp.add(eye); }
-    const h = this.getH(Math.round(wx), Math.round(wz));
-    grp.position.set(wx, h, wz);
-    this.scene.add(grp);
-    return { grp, pos: new THREE.Vector3(wx, h, wz), vel: new THREE.Vector3(), hp: 30, tile: [Math.round(wx), Math.round(wz)], angle: 0, parts: { la, ra, ll, rl, body }, hitCD: 0, walkT: 0, dying: false, deathT: 0 };
-  }
-  private spawnZombie() {
-    if (this.zombies.length >= this.maxZombies) return;
-    const angle = Math.random() * Math.PI * 2, radius = 15 + Math.random() * 5;
-    const wx = this.pTile[0] + Math.cos(angle) * radius, wz = this.pTile[1] + Math.sin(angle) * radius;
-    const tx = Math.round(wx), tz = Math.round(wz);
-    if (this.blocked.has(`${tx},${tz}`) || this.getTileType(tx, tz) === T.WATER) return;
-    this.zombies.push(this.mkZombie(wx, wz));
-  }
-  private updZombies(dt: number, t: number) {
-    const d = this.dayPhase;
-    // Night warning
-    if (d >= 0.50 && d < 0.55 && this.lastNightPhase < 0.50) this.showWarning('Night approaches...');
-    this.lastNightPhase = d;
-    // Spawn during dusk/night
-    if (d >= 0.55 && d < 0.85) {
-      this.zombieSpawnCD -= dt;
-      if (this.zombieSpawnCD <= 0) { for (let i = 0; i < (Math.random() > 0.5 ? 2 : 1); i++) this.spawnZombie(); this.zombieSpawnCD = 3.0; }
-    }
-    // Update each zombie
-    for (let i = this.zombies.length - 1; i >= 0; i--) {
-      const z = this.zombies[i];
-      if (z.dying) {
-        z.deathT += dt;
-        if (z.deathT > 0.6) { this.scene.remove(z.grp); this.zombies.splice(i, 1); continue; }
-        // Death: fly upward, fade by scaling down
-        z.grp.position.y += dt * 3;
-        const p = 1 - z.deathT / 0.6;
-        z.grp.scale.setScalar(p);
-        continue;
-      }
-      // Dawn kill
-      if (d >= 0.85 || (d < 0.50 && this.zombies.length > 0)) { z.hp -= dt * 80; if (z.hp <= 0) { z.dying = true; z.deathT = 0; this.spawnBlood(z.pos, 3); } continue; }
-      // Move toward player
-      const dx = this.pPos.x - z.pos.x, dz = this.pPos.z - z.pos.z, dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist > 0.5) {
-        const spd = 2.0;
-        z.vel.x += (dx / dist) * spd * dt * 3; z.vel.z += (dz / dist) * spd * dt * 3;
-        z.vel.multiplyScalar(0.92);
-        z.angle = Math.atan2(dx, dz);
-      }
-      // Apply velocity
-      const nx = z.pos.x + z.vel.x * dt, nz = z.pos.z + z.vel.z * dt;
-      const ntx = Math.round(nx), ntz = Math.round(nz);
-      if (!this.blocked.has(`${ntx},${ntz}`)) { z.pos.x = nx; z.pos.z = nz; z.tile = [ntx, ntz]; z.pos.y = this.getH(ntx, ntz); }
-      // Hit player
-      z.hitCD = Math.max(0, z.hitCD - dt);
-      if (dist < 0.8 && z.hitCD <= 0 && this.playerHP > 0) {
-        this.playerHP -= 10; z.hitCD = 1.0; this.screenShake = 0.25; this.updHealthHUD();
-        if (this.playerHP <= 0) this.playerDeath();
-      }
-      // Animation
-      z.grp.position.copy(z.pos); z.grp.rotation.y = z.angle; z.grp.scale.setScalar(1);
-      z.walkT += dt * 3.5;
-      const sw = Math.sin(z.walkT) * 0.35;
-      z.parts.la.rotation.x = sw; z.parts.ra.rotation.x = -sw; z.parts.ll.rotation.x = -sw; z.parts.rl.rotation.x = sw;
-      z.parts.body.rotation.z = Math.sin(z.walkT * 0.5) * 0.05; // shamble
-    }
-  }
-  private playerDeath() {
-    this.pTile = [8, 12]; this.pPos.set(8, this.getH(8, 12), 12); this.playerHP = this.maxHP;
-    this.pPath = []; this.pMoving = false;
-    this.rc.gold = Math.floor(this.rc.gold * 0.5); this.rc.wood = Math.floor(this.rc.wood * 0.5); this.rc.stone = Math.floor(this.rc.stone * 0.5);
-    this.updRC(); this.updHealthHUD();
-    this.showWarning('You died! Respawned at castle...');
-    // Kill all current zombies
-    for (const z of this.zombies) this.scene.remove(z.grp);
-    this.zombies = [];
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // V02: AIRSHIP SYSTEM
-  // ═══════════════════════════════════════════════════════════════════
-  private initAirships() {
-    for (let i = 0; i < 4; i++) {
-      const wx = (Math.random() - 0.5) * 120, wz = (Math.random() - 0.5) * 120;
-      const g = G(), grp = new THREE.Group();
-      const y = 18 + Math.random() * 6;
-      grp.position.set(wx, y, wz);
-      // Hull
-      const hull = new THREE.Mesh(g.box, mat('#6b5b4f')); hull.scale.set(3.5, 1.2, 1.5); hull.position.y = 0; hull.castShadow = true; grp.add(hull);
-      // Balloon
-      const balloon = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#c9a96e' }));
-      balloon.scale.set(2.5, 1.8, 1.8); balloon.position.y = 1.8; balloon.castShadow = true; grp.add(balloon);
-      // Ropes
-      for (const [rx, rz] of [[-0.8, 0], [0.8, 0], [0, -0.5], [0, 0.5]]) { const r = new THREE.Mesh(g.cyl, mat('#554433')); r.scale.set(0.02, 1.2, 0.02); r.position.set(rx, 0.9, rz); grp.add(r); }
-      // Propeller
-      const prop = new THREE.Mesh(g.box, mat('#555')); prop.scale.set(0.1, 0.8, 0.08); prop.position.set(-2.0, 0, 0); grp.add(prop);
-      // Gondola / cabin
-      const cab = new THREE.Mesh(g.box, mat('#8b7355')); cab.scale.set(1.5, 0.5, 0.8); cab.position.y = -0.8; grp.add(cab);
-      // Windows (small light dots)
-      for (let w = 0; w < 3; w++) { const win = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#ffcc44', emissive: 0xffcc44, emissiveIntensity: 0.5 })); win.scale.setScalar(0.08); win.position.set(-0.5 + w * 0.5, -0.7, 0.42); grp.add(win); }
-      this.scene.add(grp);
-      this.airships.push({ grp, pos: new THREE.Vector3(wx, y, wz), vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8), propeller: prop, targetX: wx + (Math.random() - 0.5) * 200, targetZ: wz + (Math.random() - 0.5) * 200 });
-    }
-  }
-  private updAirships(dt: number, t: number) {
-    for (const a of this.airships) {
-      const dx = a.targetX - a.pos.x, dz = a.targetZ - a.pos.z, dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < 10) { a.targetX = this.pPos.x + (Math.random() - 0.5) * 200; a.targetZ = this.pPos.z + (Math.random() - 0.5) * 200; }
-      const spd = 0.8;
-      a.vel.x += (dx / (dist || 1)) * spd * dt; a.vel.z += (dz / (dist || 1)) * spd * dt;
-      a.vel.multiplyScalar(0.995);
-      a.pos.add(a.vel.clone().multiplyScalar(dt));
-      a.pos.y = 18 + Math.sin(t * 0.3 + a.pos.x * 0.01) * 1.5; // gentle bob
-      a.grp.position.copy(a.pos);
-      a.grp.rotation.y = Math.atan2(a.vel.x, a.vel.z);
-      a.propeller.rotation.z += dt * 8;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // V02: VISUAL EFFECTS
-  // ═══════════════════════════════════════════════════════════════════
-  private spawnBlood(pos: THREE.Vector3, count: number) {
-    const g = G();
-    for (let i = 0; i < count; i++) {
-      const mesh = new THREE.Mesh(g.sphere, new THREE.MeshLambertMaterial({ color: '#880000' }));
-      mesh.scale.setScalar(0.04 + Math.random() * 0.04);
-      mesh.position.copy(pos);
-      this.scene.add(mesh);
-      this.bloods.push({ mesh, pos: pos.clone(), vel: new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 4, (Math.random() - 0.5) * 3), life: 1.2 });
-    }
-  }
-  private updParticles(dt: number) {
-    for (let i = this.bloods.length - 1; i >= 0; i--) {
-      const p = this.bloods[i];
-      p.life -= dt; if (p.life <= 0) { this.scene.remove(p.mesh); this.bloods.splice(i, 1); continue; }
-      p.vel.y -= 8 * dt; // gravity
-      p.pos.add(p.vel.clone().multiplyScalar(dt));
-      p.mesh.position.copy(p.pos);
-      p.mesh.scale.setScalar((p.life / 1.2) * 0.06);
-    }
-  }
-  private showWarning(msg: string) {
-    const el = document.getElementById('g-warning');
-    if (el) { el.textContent = msg; el.style.opacity = '1'; setTimeout(() => { el.style.opacity = '0'; }, 3000); }
-  }
-  private updHealthHUD() {
-    const el = document.getElementById('g-hp'); const bar = document.getElementById('g-hp-bar');
-    if (el) el.textContent = `${Math.max(0, Math.floor(this.playerHP))}/${this.maxHP}`;
-    if (bar) { const pct = Math.max(0, this.playerHP / this.maxHP) * 100; bar.style.width = pct + '%'; bar.style.backgroundColor = pct > 50 ? '#ef4444' : pct > 25 ? '#f97316' : '#991b1b'; }
-  }
-  private updKillsHUD() { const el = document.getElementById('g-kills'); if (el) el.textContent = String(this.nightKills); }
-  private updComboHUD() { const el = document.getElementById('g-combo'); if (el) { if (this.comboCount > 1) { el.textContent = `${this.comboCount}x COMBO!`; el.style.opacity = '1'; } else { el.style.opacity = '0'; } } }
-
   // ── Day/Night ──
   private updDayNight(t: number) {
     const d = (t % 90) / 90;
-    this.dayPhase = d; // expose for zombie system
     let ac: THREE.Color, sc: THREE.Color, si: number, ai: number, sky: THREE.Color;
     if (d < 0.15) { const f = d / 0.15; ac = new THREE.Color('#4a3520').lerp(new THREE.Color('#ffffff'), f); sc = new THREE.Color('#ff8040').lerp(new THREE.Color('#fff5e0'), f); si = 0.4 + f * 0.6; ai = 0.3 + f * 0.3; sky = new THREE.Color('#2a1a30').lerp(new THREE.Color('#87CEEB'), f); }
     else if (d < 0.45) { ac = new THREE.Color('#ffffff'); sc = new THREE.Color('#fff5e0'); si = 1.0; ai = 0.6; sky = new THREE.Color('#87CEEB'); }
@@ -1306,14 +1078,7 @@ class IsometricGameEngine {
   // ── Camera ──
   private updCam(dt: number) {
     this.camLook.lerp(this.pPos, dt * 3);
-    let sx = 0, sy = 0, sz = 0;
-    if (this.screenShake > 0.01) {
-      sx = (Math.random() - 0.5) * this.screenShake;
-      sy = (Math.random() - 0.5) * this.screenShake * 0.5;
-      sz = (Math.random() - 0.5) * this.screenShake;
-      this.screenShake *= 0.9;
-    } else { this.screenShake = 0; }
-    this.cam.position.set(this.camLook.x + CAM_OFF.x + sx, CAM_OFF.y + sy, this.camLook.z + CAM_OFF.z + sz);
+    this.cam.position.set(this.camLook.x + CAM_OFF.x, CAM_OFF.y, this.camLook.z + CAM_OFF.z);
     this.cam.lookAt(this.camLook);
     this.sLight.target.position.copy(this.camLook); this.sLight.target.updateMatrixWorld();
   }
@@ -1372,9 +1137,6 @@ class IsometricGameEngine {
     // Theme Parks
     ctx.fillStyle = '#ff44ff';
     for (const pk of this.allParks) { const dx = pk.wx - this.pTile[0] + MM_R, dz = pk.wz - this.pTile[1] + MM_R; if (dx >= 0 && dx < MM_R * 2 && dz >= 0 && dz < MM_R * 2 && this.fog.explored.has(`${pk.wx},${pk.wz}`)) { ctx.fillRect(dx * ppx - ppx, dz * ppx - ppx, ppx * 2, ppx * 2); } }
-    // Zombies
-    ctx.fillStyle = '#00ffcc';
-    for (const z of this.zombies) { if (z.dying) continue; const dx = z.tile[0] - this.pTile[0] + MM_R, dz = z.tile[1] - this.pTile[1] + MM_R; if (dx >= 0 && dx < MM_R * 2 && dz >= 0 && dz < MM_R * 2) { ctx.beginPath(); ctx.arc(dx * ppx, dz * ppx, ppx * 1.2, 0, Math.PI * 2); ctx.fill(); } }
     // Player
     ctx.fillStyle = '#c9a96e'; ctx.beginPath(); ctx.arc(MM_R * ppx, MM_R * ppx, ppx * 2, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
@@ -1400,7 +1162,6 @@ class IsometricGameEngine {
 function HUDOverlay({ isReady, onContinue }: { isReady: boolean; onContinue: () => void }) {
   return (
     <div className="absolute inset-0 pointer-events-none z-10" style={{ fontFamily: 'var(--font-mono)' }}>
-      {/* ── Resource bar ── */}
       <div className="absolute top-4 left-4 flex gap-3 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }}>
         {[['gold', '#ffd700', 'g-gold'], ['wood', '#8b6914', 'g-wood'], ['stone', '#888', 'g-stone']].map(([l, c, id]) => (
           <div key={l} className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded px-2.5 py-1">
@@ -1420,45 +1181,16 @@ function HUDOverlay({ isReady, onContinue }: { isReady: boolean; onContinue: () 
           <span id="g-monsters" className="text-[12px] font-bold text-white">0</span>
         </div>
       </div>
-      {/* ── Health bar ── */}
-      <div className="absolute top-14 left-4 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '900ms' }}>
-        <div className="bg-black/50 backdrop-blur-sm rounded px-2.5 py-1.5 flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-wider text-white/70">HP</span>
-          <div className="w-24 h-2.5 bg-black/60 rounded-full overflow-hidden">
-            <div id="g-hp-bar" className="h-full rounded-full transition-all duration-200" style={{ width: '100%', backgroundColor: '#ef4444' }} />
-          </div>
-          <span id="g-hp" className="text-[11px] font-bold text-white">100/100</span>
-        </div>
-      </div>
-      {/* ── Kill counter ── */}
-      <div className="absolute top-[88px] left-4 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '900ms' }}>
-        <div id="g-kills" className="bg-black/50 backdrop-blur-sm rounded px-2.5 py-1 text-[11px] font-bold text-red-400" style={{ display: 'none' }}>
-          Kills: 0
-        </div>
-      </div>
-      {/* ── Combo indicator ── */}
-      <div id="g-combo" className="absolute top-1/3 left-1/2 -translate-x-1/2 text-center" style={{ opacity: 0, transition: 'opacity 0.3s' }}>
-        <span className="text-3xl font-black text-yellow-400 drop-shadow-lg" style={{ textShadow: '0 0 20px rgba(255,200,0,0.5)' }}>COMBO x2</span>
-      </div>
-      {/* ── Night warning toast ── */}
-      <div id="g-warning" className="absolute top-1/4 left-1/2 -translate-x-1/2 text-center" style={{ opacity: 0, transition: 'opacity 0.5s' }}>
-        <div className="bg-red-900/70 backdrop-blur-sm rounded-lg px-6 py-3 border border-red-500/40">
-          <span className="text-lg font-bold text-red-300 uppercase tracking-[0.2em]" style={{ textShadow: '0 0 10px rgba(255,0,0,0.4)' }}>Night Approaches...</span>
-        </div>
-      </div>
-      {/* ── Location ── */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '1000ms' }}>
         <div className="bg-black/40 backdrop-blur-sm rounded px-4 py-1.5">
           <span id="g-loc" className="text-[11px] uppercase tracking-[0.2em] text-white/70">Wilderness</span>
         </div>
       </div>
-      {/* ── Minimap ── */}
       <div className="absolute top-4 right-4 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '800ms' }}>
         <div className="bg-black/50 backdrop-blur-sm rounded p-1.5">
           <canvas id="g-mm" width={128} height={128} className="rounded" style={{ width: 128, height: 128 }} />
         </div>
       </div>
-      {/* ── Dialog panel ── */}
       <div id="gd-panel" className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-lg transition-all duration-300" style={{ opacity: 0, transform: 'translateY(20px)', pointerEvents: 'none' }}>
         <div className="bg-black/70 backdrop-blur-md rounded-lg border border-white/10 p-4 pointer-events-auto cursor-pointer" onClick={onContinue}>
           <p id="gd-name" className="text-[11px] uppercase tracking-[0.2em] mb-2" style={{ color: '#c9a96e' }} />
@@ -1466,9 +1198,8 @@ function HUDOverlay({ isReady, onContinue }: { isReady: boolean; onContinue: () 
           <p className="text-[9px] uppercase tracking-wider text-white/30 mt-3">Click or press Space to continue</p>
         </div>
       </div>
-      {/* ── Controls hint ── */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 transition-opacity duration-700" style={{ opacity: isReady ? 1 : 0, transitionDelay: '1200ms' }}>
-        <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 bg-black/30 rounded px-3 py-1">WASD to move &middot; Space to attack &middot; Click to interact &middot; Scroll to zoom</p>
+        <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 bg-black/30 rounded px-3 py-1">WASD to move &middot; Click to interact &middot; Scroll to zoom</p>
       </div>
     </div>
   );
