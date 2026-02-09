@@ -5,20 +5,20 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import SectionReveal from '@/components/SectionReveal';
 
-// Dynamic import for Three.js world — no SSR, code-split
-const TartaryWorld = dynamic(() => import('@/components/TartaryWorld'), {
+// Dynamic import for 3D mech exploded view — no SSR, code-split
+const MechExploded = dynamic(() => import('@/components/MechExploded'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-screen bg-carbon flex items-center justify-center">
+    <div className="w-full h-screen bg-[#0a0e14] flex items-center justify-center">
       <div className="text-center">
         <p
-          className="text-2xl tracking-[0.3em] uppercase mb-8 logo-sheen"
-          style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
+          className="text-sm tracking-[0.3em] uppercase mb-4"
+          style={{ fontFamily: "'Courier New', monospace", color: '#8ab4f8' }}
         >
-          Tartary
+          INITIALIZING SYSTEMS...
         </p>
         <div className="w-48 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
-          <div className="absolute top-0 left-0 h-full bg-gold animate-pulse w-1/3" />
+          <div className="absolute top-0 left-0 h-full bg-blue-400 animate-pulse w-1/3" />
         </div>
       </div>
     </div>
@@ -227,8 +227,8 @@ const getIcon = (iconType: string) => {
 export default function Home() {
   return (
     <main className="bg-background text-foreground">
-      {/* ──────────────────────────────────────────── 3D WORLD HERO ─────────────────────────────────────────── */}
-      <TartaryWorld />
+      {/* ──────────────────────────────────────────── 3D MECH EXPLODED VIEW ─────────────────────────────────────────── */}
+      <MechExploded />
 
       {/* ──────────────────────────────────────────── FOUR DIVISIONS GRID ─────────────────────────────────────────── */}
       <section id="divisions" className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-carbon">
