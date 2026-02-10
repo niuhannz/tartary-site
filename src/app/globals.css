@@ -282,6 +282,14 @@ h1, h2, h3, h4, h5, h6 {
 .stagger-5 { animation-delay: 0.5s; }
 .stagger-6 { animation-delay: 0.6s; }
 
+/* ── Nav dropdown (technical style) ───── */
+
+.nav-dropdown {
+  background: rgba(10, 10, 10, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
 /* ── Light nav (cream hero background) ── */
 
 [data-light-nav] .logo-sheen {
@@ -305,3 +313,36 @@ h1, h2, h3, h4, h5, h6 {
 [data-light-nav] .bg-foreground { background-color: #1a1a18 !important; }
 [data-light-nav] .bg-white\/\[0\.08\] { background-color: rgba(26, 26, 24, 0.08) !important; }
 [data-light-nav] .link-hover::after { background: #1a1a18 !important; }
+
+/* Light-nav dropdown overrides */
+[data-light-nav] .nav-dropdown {
+  background: rgba(245, 240, 232, 0.95) !important;
+  border-color: rgba(26, 26, 24, 0.12) !important;
+}
+[data-light-nav] .nav-dropdown .border-gold\/40 {
+  border-color: rgba(138, 117, 64, 0.35) !important;
+}
+[data-light-nav] .nav-dropdown .border-white\/\[0\.06\] {
+  border-color: rgba(26, 26, 24, 0.08) !important;
+}
+[data-light-nav] .nav-dropdown .border-white\/\[0\.08\] {
+  border-color: rgba(26, 26, 24, 0.1) !important;
+}
+[data-light-nav] .nav-dd-label {
+  color: rgba(26, 26, 24, 0.35) !important;
+}
+[data-light-nav] .nav-dd-idx {
+  color: rgba(26, 26, 24, 0.25) !important;
+}
+[data-light-nav] .nav-dd-text {
+  color: rgba(26, 26, 24, 0.6) !important;
+}
+[data-light-nav] .nav-dd-item:hover .nav-dd-text {
+  color: #1a1a18 !important;
+}
+[data-light-nav] .nav-dd-item:hover .nav-dd-idx {
+  color: rgba(138, 117, 64, 0.6) !important;
+}
+[data-light-nav] .nav-dd-item:hover {
+  background: rgba(26, 26, 24, 0.04) !important;
+}

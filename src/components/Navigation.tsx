@@ -155,21 +155,31 @@ function NavDropdown({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full left-1/2 -translate-x-1/2 pt-4"
-            style={{ minWidth: '200px' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
+            style={{ minWidth: '220px' }}
           >
-            <div
-              className="rounded-lg overflow-hidden border border-white/[0.06] backdrop-blur-xl"
-              style={{ background: 'rgba(10, 10, 10, 0.92)' }}
-            >
-              {/* Top accent line */}
-              <div className="h-[1px] bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+            <div className="nav-dropdown relative overflow-hidden border border-white/[0.08]">
+              {/* Corner brackets — technical drawing style */}
+              <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-gold/40" />
+              <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-gold/40" />
+              <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-gold/40" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-gold/40" />
 
-              <div className="py-2">
+              {/* Header label */}
+              <div className="px-4 pt-3 pb-1.5 border-b border-white/[0.06]">
+                <span
+                  className="text-[8px] tracking-[0.2em] uppercase text-ash/50 nav-dd-label"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  SYS:// {link.label}
+                </span>
+              </div>
+
+              <div className="py-1.5">
                 {link.subs.map((sub, idx) => {
                   const isExternal = sub.external;
                   const Comp = isExternal ? 'a' : Link;
@@ -182,21 +192,28 @@ function NavDropdown({
                       key={sub.href}
                       href={sub.href}
                       {...(extraProps as Record<string, string>)}
-                      className="group/item flex items-center gap-3 px-5 py-2.5 transition-all duration-200 hover:bg-white/[0.04]"
+                      className="group/item flex items-center gap-2.5 px-4 py-2 transition-all duration-150 hover:bg-white/[0.04] nav-dd-item"
                       onClick={onClose}
                     >
-                      {/* Accent dot */}
-                      {sub.accent ? (
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity duration-200"
-                          style={{ backgroundColor: sub.accent }}
-                        />
-                      ) : (
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gold/30 group-hover/item:bg-gold/60 transition-colors duration-200" />
-                      )}
+                      {/* Index number */}
+                      <span
+                        className="text-[8px] tracking-[0.05em] text-ash/30 group-hover/item:text-gold/60 transition-colors duration-150 w-3 shrink-0 nav-dd-idx"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {String(idx).padStart(2, '0')}
+                      </span>
+
+                      {/* Accent tick */}
+                      <span
+                        className="w-[3px] h-[3px] shrink-0 opacity-50 group-hover/item:opacity-100 transition-opacity duration-150"
+                        style={{
+                          backgroundColor: sub.accent || 'var(--color-gold)',
+                          clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+                        }}
+                      />
 
                       <span
-                        className="text-[11px] tracking-[0.12em] uppercase text-mist group-hover/item:text-foreground transition-colors duration-200 whitespace-nowrap"
+                        className="text-[10px] tracking-[0.14em] uppercase text-mist group-hover/item:text-foreground transition-colors duration-150 whitespace-nowrap nav-dd-text"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
                         {sub.label}
@@ -205,7 +222,7 @@ function NavDropdown({
                       {/* External arrow */}
                       {isExternal && (
                         <svg
-                          className="w-3 h-3 text-ash/40 group-hover/item:text-gold/70 transition-colors duration-200 ml-auto shrink-0"
+                          className="w-2.5 h-2.5 text-ash/30 group-hover/item:text-gold/60 transition-colors duration-150 ml-auto shrink-0"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -265,40 +282,42 @@ function UserMenu() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full right-0 pt-4"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute top-full right-0 pt-3"
             style={{ minWidth: '180px' }}
           >
-            <div
-              className="rounded-lg overflow-hidden border border-white/[0.06] backdrop-blur-xl"
-              style={{ background: 'rgba(10, 10, 10, 0.92)' }}
-            >
-              <div className="h-[1px] bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
-              <div className="px-5 py-3 border-b border-white/[0.04]">
+            <div className="nav-dropdown relative overflow-hidden border border-white/[0.08]">
+              {/* Corner brackets */}
+              <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-gold/40" />
+              <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-gold/40" />
+              <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-gold/40" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-gold/40" />
+
+              <div className="px-4 pt-3 pb-2 border-b border-white/[0.06]">
                 <p
-                  className="text-[11px] tracking-[0.08em] text-foreground truncate"
+                  className="text-[10px] tracking-[0.1em] text-foreground truncate nav-dd-text"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {displayName}
                 </p>
                 <p
-                  className="text-[10px] text-ash/60 truncate mt-0.5"
+                  className="text-[8px] tracking-[0.05em] text-ash/50 truncate mt-0.5 nav-dd-label"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {user.email}
                 </p>
               </div>
-              <div className="py-1">
+              <div className="py-1.5">
                 <button
                   onClick={async () => {
                     await signOut();
                     setOpen(false);
                     router.push('/');
                   }}
-                  className="w-full text-left px-5 py-2.5 text-[11px] tracking-[0.12em] uppercase text-ash hover:text-foreground hover:bg-white/[0.04] transition-all duration-200"
+                  className="w-full text-left px-4 py-2 text-[10px] tracking-[0.14em] uppercase text-ash hover:text-foreground hover:bg-white/[0.04] transition-all duration-150 nav-dd-text"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   Sign out
