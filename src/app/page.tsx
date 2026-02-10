@@ -5,20 +5,20 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import SectionReveal from '@/components/SectionReveal';
 
-// Dynamic import for 3D mech exploded view — no SSR, code-split
+// Dynamic import for 3D spacecraft technical illustration — no SSR, code-split
 const MechExploded = dynamic(() => import('@/components/MechExploded'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-screen bg-[#0a0e14] flex items-center justify-center">
+    <div className="w-full h-screen flex items-center justify-center" style={{ background: '#f0ebe0' }}>
       <div className="text-center">
         <p
           className="text-sm tracking-[0.3em] uppercase mb-4"
-          style={{ fontFamily: "'Courier New', monospace", color: '#8ab4f8' }}
+          style={{ fontFamily: "'Courier New', monospace", color: '#1a1a18', opacity: 0.5 }}
         >
-          INITIALIZING SYSTEMS...
+          RENDERING TECHNICAL ILLUSTRATION...
         </p>
-        <div className="w-48 h-[1px] bg-white/10 mx-auto relative overflow-hidden">
-          <div className="absolute top-0 left-0 h-full bg-blue-400 animate-pulse w-1/3" />
+        <div className="w-48 h-[1px] mx-auto relative overflow-hidden" style={{ background: 'rgba(26,26,24,0.1)' }}>
+          <div className="absolute top-0 left-0 h-full w-1/3 animate-pulse" style={{ background: 'rgba(26,26,24,0.3)' }} />
         </div>
       </div>
     </div>

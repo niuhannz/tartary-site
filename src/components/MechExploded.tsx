@@ -1,12 +1,65 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type * as THREE_TYPES from 'three';
+import type * as T from 'three';
 
 // ═══════════════════════════════════════════════════════════════
-// MECH EXPLODED VIEW — ATLAS-7 ASSAULT MECH
-// Technical Illustration with Line Drawing + Cross-Hatching
+// LEVIATHAN-IX HEAVY BATTLECRUISER
+// Technical Illustration — Cross-Hatching on Cream Paper
 // ═══════════════════════════════════════════════════════════════
+
+// Cross-hatching vertex shader
+const hatchVert = `
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vScreenPos;
+void main() {
+  vNormal = normalize(normalMatrix * normal);
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorldPos = wp.xyz;
+  vec4 cp = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vScreenPos = cp.xy / cp.w * 0.5 + 0.5;
+  gl_Position = cp;
+}`;
+
+// Cross-hatching fragment shader — ink on paper aesthetic
+const hatchFrag = `
+uniform vec3 lightDir;
+uniform float hatchScale;
+uniform vec3 inkColor;
+uniform vec3 paperColor;
+uniform float xrayAlpha;
+varying vec3 vNormal;
+varying vec3 vWorldPos;
+varying vec2 vScreenPos;
+
+float hatchLine(vec2 uv, float angle, float freq, float width) {
+  float c = cos(angle), s = sin(angle);
+  float v = uv.x * c + uv.y * s;
+  return smoothstep(width, width * 0.3, abs(fract(v * freq) - 0.5));
+}
+
+void main() {
+  float NdotL = dot(normalize(vNormal), normalize(lightDir));
+  float shade = NdotL * 0.5 + 0.5;
+  shade = 1.0 - shade;
+
+  vec2 sp = vScreenPos * hatchScale;
+  float h = 0.0;
+
+  // Layer 1: 45 degrees — lightest shadows
+  if (shade > 0.2) h += hatchLine(sp, 0.785, 18.0, 0.38) * min((shade - 0.2) * 2.0, 1.0);
+  // Layer 2: -45 degrees — medium shadows (cross-hatch)
+  if (shade > 0.4) h += hatchLine(sp, -0.785, 20.0, 0.35) * min((shade - 0.4) * 2.5, 1.0);
+  // Layer 3: horizontal — darker areas
+  if (shade > 0.55) h += hatchLine(sp, 0.0, 22.0, 0.32) * min((shade - 0.55) * 3.0, 1.0);
+  // Layer 4: vertical — deepest shadow
+  if (shade > 0.7) h += hatchLine(sp, 1.5708, 24.0, 0.30) * min((shade - 0.7) * 4.0, 1.0);
+
+  h = clamp(h, 0.0, 1.0) * 0.85;
+  vec3 col = mix(paperColor, inkColor, h);
+  gl_FragColor = vec4(col, xrayAlpha);
+}`;
 
 export default function MechExploded() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,123 +68,88 @@ export default function MechExploded() {
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-
-    // Dynamic import Three.js
     let cleanup: (() => void) | null = null;
 
     (async () => {
       const THREE = await import('three');
       const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
 
-      // RENDERER
+      // RENDERER — cream paper
       const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setClearColor(0x0a0e14);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.2;
+      renderer.setClearColor(0xf0ebe0);
       container.appendChild(renderer.domElement);
 
-      // SCENE
       const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x0a0e14, 0.008);
+      scene.background = new THREE.Color(0xf0ebe0);
 
       // CAMERA
-      const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 200);
-      camera.position.set(14, 10, 14);
+      const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 300);
+      camera.position.set(18, 12, 18);
 
       // CONTROLS
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      controls.target.set(0, 3, 0);
-      controls.minDistance = 5;
-      controls.maxDistance = 40;
-      controls.maxPolarAngle = Math.PI * 0.85;
+      controls.target.set(0, 0, 0);
+      controls.minDistance = 6;
+      controls.maxDistance = 60;
 
-      // LIGHTING — dramatic 3-point + accent
-      const ambient = new THREE.AmbientLight(0x1a2a44, 0.8);
-      scene.add(ambient);
-      const key = new THREE.DirectionalLight(0xc8ddf8, 1.5);
-      key.position.set(10, 20, 8); key.castShadow = true;
-      key.shadow.mapSize.set(2048, 2048);
-      key.shadow.camera.near = 0.5; key.shadow.camera.far = 50;
-      key.shadow.camera.left = -15; key.shadow.camera.right = 15;
-      key.shadow.camera.top = 15; key.shadow.camera.bottom = -15;
-      scene.add(key);
-      const fill = new THREE.DirectionalLight(0x4466aa, 0.4);
-      fill.position.set(-8, 10, -6);
-      scene.add(fill);
-      const rim = new THREE.DirectionalLight(0x88aaff, 0.6);
-      rim.position.set(-5, 5, -10);
-      scene.add(rim);
+      // LIGHTING — directional for shader
+      const lightDir = new THREE.Vector3(1.0, 1.5, 0.8).normalize();
 
-      // GROUND — blueprint grid
-      const gridHelper = new THREE.GridHelper(40, 80, 0x1a2a44, 0x0f1820);
-      scene.add(gridHelper);
-      const groundGeo = new THREE.PlaneGeometry(40, 40);
-      const groundMat = new THREE.ShadowMaterial({ opacity: 0.3 });
-      const ground = new THREE.Mesh(groundGeo, groundMat);
-      ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
-      scene.add(ground);
+      // Shared shader uniforms
+      const sharedUniforms = {
+        lightDir: { value: lightDir },
+        hatchScale: { value: 8.0 },
+        inkColor: { value: new THREE.Color(0x1a1a18) },
+        paperColor: { value: new THREE.Color(0xf0ebe0) },
+        xrayAlpha: { value: 1.0 },
+      };
 
-      // ═══════════════════════════════════════════════════════════════
-      // MATERIALS
-      // ═══════════════════════════════════════════════════════════════
-      function mechMat(color: number, roughness = 0.6, metalness = 0.7) {
-        return new THREE.MeshStandardMaterial({ color, roughness, metalness });
-      }
-      function glowMat(color: number, intensity = 0.8) {
-        return new THREE.MeshStandardMaterial({
-          color, emissive: color, emissiveIntensity: intensity,
-          roughness: 0.2, metalness: 0.5
+      // Cross-hatch material factory
+      function hatchMat(tint?: number): T.ShaderMaterial {
+        const u = {
+          lightDir: sharedUniforms.lightDir,
+          hatchScale: sharedUniforms.hatchScale,
+          inkColor: tint !== undefined
+            ? { value: new THREE.Color(tint) }
+            : sharedUniforms.inkColor,
+          paperColor: sharedUniforms.paperColor,
+          xrayAlpha: sharedUniforms.xrayAlpha,
+        };
+        return new THREE.ShaderMaterial({
+          vertexShader: hatchVert,
+          fragmentShader: hatchFrag,
+          uniforms: u,
+          transparent: true,
+          side: THREE.FrontSide,
         });
       }
 
-      const M = {
-        frame: mechMat(0x3a4555, 0.7, 0.8),
-        armor: mechMat(0x556677, 0.5, 0.6),
-        dark: mechMat(0x1a2233, 0.8, 0.9),
-        accent: mechMat(0x889aaa, 0.4, 0.7),
-        joint: mechMat(0x2a3344, 0.6, 0.85),
-        pipe: mechMat(0x445566, 0.3, 0.9),
-        glow: glowMat(0x4488ff, 0.6),
-        glowRed: glowMat(0xff3344, 0.5),
-        glowGreen: glowMat(0x44ff88, 0.4),
-        glowOrange: glowMat(0xff8844, 0.5),
-        glass: new THREE.MeshStandardMaterial({
-          color: 0x88ccff, roughness: 0.05, metalness: 0.1,
-          transparent: true, opacity: 0.3
-        }),
-        wire: mechMat(0x667788, 0.9, 0.3),
-        hatch: mechMat(0x4a5a6a, 0.75, 0.5),
-      };
+      // Materials
+      const matHull = hatchMat();
+      const matDark = hatchMat(0x0d0d0c);
+      const matAccent = hatchMat(0x2a2820);
 
-      // EDGE LINE MATERIAL
-      const edgeMat = new THREE.LineBasicMaterial({
-        color: 0x8ab4f8, transparent: true, opacity: 0.35
-      });
-      const edgeMatBright = new THREE.LineBasicMaterial({
-        color: 0x8ab4f8, transparent: true, opacity: 0.7
-      });
+      // Edge line material — dark ink
+      const edgeMat = new THREE.LineBasicMaterial({ color: 0x1a1a18, transparent: true, opacity: 0.5 });
+      const edgeMatStrong = new THREE.LineBasicMaterial({ color: 0x1a1a18, transparent: true, opacity: 0.85 });
 
       // ═══════════════════════════════════════════════════════════════
       // GEOMETRY CACHE
       // ═══════════════════════════════════════════════════════════════
-      const _gc: Record<string, THREE_TYPES.BufferGeometry> = {};
-      function G(type: string, ...args: number[]): THREE_TYPES.BufferGeometry {
+      const _gc: Record<string, T.BufferGeometry> = {};
+      function G(type: string, ...args: number[]): T.BufferGeometry {
         const k = type + args.join(',');
         if (!_gc[k]) {
           if (type === 'box') _gc[k] = new THREE.BoxGeometry(args[0], args[1], args[2]);
-          else if (type === 'cyl') _gc[k] = new THREE.CylinderGeometry(args[0], args[1], args[2], args[3] || 12);
-          else if (type === 'sphere') _gc[k] = new THREE.SphereGeometry(args[0], args[1] || 12, args[2] || 8);
-          else if (type === 'cone') _gc[k] = new THREE.ConeGeometry(args[0], args[1], args[2] || 12);
-          else if (type === 'torus') _gc[k] = new THREE.TorusGeometry(args[0], args[1], args[2] || 8, args[3] || 24);
+          else if (type === 'cyl') _gc[k] = new THREE.CylinderGeometry(args[0], args[1], args[2], args[3] || 16);
+          else if (type === 'sphere') _gc[k] = new THREE.SphereGeometry(args[0], args[1] || 16, args[2] || 12);
+          else if (type === 'cone') _gc[k] = new THREE.ConeGeometry(args[0], args[1], args[2] || 16);
           else if (type === 'oct') _gc[k] = new THREE.OctahedronGeometry(args[0], args[1] || 0);
-          else if (type === 'dodec') _gc[k] = new THREE.DodecahedronGeometry(args[0], args[1] || 0);
-          else if (type === 'ico') _gc[k] = new THREE.IcosahedronGeometry(args[0], args[1] || 0);
+          else if (type === 'torus') _gc[k] = new THREE.TorusGeometry(args[0], args[1], args[2] || 8, args[3] || 24);
         }
         return _gc[k];
       }
@@ -140,447 +158,516 @@ export default function MechExploded() {
       // PART SYSTEM
       // ═══════════════════════════════════════════════════════════════
       interface Part {
-        group: THREE_TYPES.Group;
-        edgeGroup: THREE_TYPES.Group;
+        group: T.Group;
         name: string;
-        origin: THREE_TYPES.Vector3;
-        explodeDir: THREE_TYPES.Vector3;
+        origin: T.Vector3;
+        explodeDir: T.Vector3;
         explodeDist: number;
       }
       const parts: Part[] = [];
 
       function addPart(
-        name: string,
-        origin: THREE_TYPES.Vector3,
-        explodeDir: THREE_TYPES.Vector3,
-        explodeDist: number,
-        buildFn: (g: THREE_TYPES.Group) => void
+        name: string, origin: T.Vector3, explodeDir: T.Vector3, explodeDist: number,
+        buildFn: (g: T.Group) => void
       ) {
         const group = new THREE.Group();
         group.position.copy(origin);
         buildFn(group);
-
-        // Add edge lines for every mesh — technical illustration look
-        const edgeGroup = new THREE.Group();
+        // Add ink edge lines to every mesh
+        const edgesArr: T.LineSegments[] = [];
         group.traverse((child) => {
-          if ((child as THREE_TYPES.Mesh).isMesh) {
-            const mesh = child as THREE_TYPES.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            const edges = new THREE.EdgesGeometry(mesh.geometry, 20);
+          if ((child as T.Mesh).isMesh) {
+            const mesh = child as T.Mesh;
+            const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
             const line = new THREE.LineSegments(edges, edgeMat.clone());
             line.position.copy(mesh.position);
             line.rotation.copy(mesh.rotation);
             line.scale.copy(mesh.scale);
-            edgeGroup.add(line);
+            line.userData.isEdge = true;
+            group.add(line);
+            edgesArr.push(line);
           }
         });
-        group.add(edgeGroup);
         scene.add(group);
-        parts.push({
-          group, edgeGroup, name,
-          origin: origin.clone(),
-          explodeDir: explodeDir.clone().normalize(),
-          explodeDist
-        });
+        parts.push({ group, name, origin: origin.clone(), explodeDir: explodeDir.clone().normalize(), explodeDist });
       }
 
       // Mesh helper
-      function m(
-        group: THREE_TYPES.Group,
-        geometry: THREE_TYPES.BufferGeometry,
-        material: THREE_TYPES.Material,
-        pos?: number[],
-        rot?: number[],
-        scale?: number | number[]
-      ): THREE_TYPES.Mesh {
-        const mesh = new THREE.Mesh(geometry, material);
+      function m(g: T.Group, geo: T.BufferGeometry, mat: T.Material, pos?: number[], rot?: number[], scl?: number | number[]): T.Mesh {
+        const mesh = new THREE.Mesh(geo, mat);
         if (pos) mesh.position.set(pos[0], pos[1], pos[2]);
         if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
-        if (scale) {
-          if (typeof scale === 'number') mesh.scale.setScalar(scale);
-          else mesh.scale.set(scale[0], scale[1], scale[2]);
-        }
-        group.add(mesh);
+        if (scl) { if (typeof scl === 'number') mesh.scale.setScalar(scl); else mesh.scale.set(scl[0], scl[1], scl[2]); }
+        g.add(mesh);
         return mesh;
       }
 
+      // Seeded random for deterministic greebling
+      let _seed = 42;
+      function srand() { _seed = (_seed * 16807 + 0) % 2147483647; return (_seed - 1) / 2147483646; }
+      function srandRange(a: number, b: number) { return a + srand() * (b - a); }
+
+      // Greeble helper — add small detail boxes to a surface
+      function greeble(g: T.Group, mat: T.Material, cx: number, cy: number, cz: number, w: number, h: number, d: number, count: number, sizeMin: number, sizeMax: number) {
+        for (let i = 0; i < count; i++) {
+          const sx = srandRange(sizeMin, sizeMax);
+          const sy = srandRange(sizeMin, sizeMax) * 0.5;
+          const sz = srandRange(sizeMin, sizeMax);
+          const px = cx + srandRange(-w/2, w/2);
+          const py = cy + srandRange(-h/2, h/2);
+          const pz = cz + srandRange(-d/2, d/2);
+          m(g, G('box', sx, sy, sz), mat, [px, py, pz]);
+        }
+      }
+
+      // Panel line helper — thin dark strips
+      function panelLines(g: T.Group, axis: 'x' | 'y' | 'z', pos: number[], count: number, spacing: number, length: number, width: number) {
+        for (let i = 0; i < count; i++) {
+          const offset = (i - (count - 1) / 2) * spacing;
+          const p = [...pos];
+          if (axis === 'x') { p[0] += offset; m(g, G('box', width, 0.01, length), matDark, p); }
+          else if (axis === 'y') { p[1] += offset; m(g, G('box', length, width, 0.01), matDark, p); }
+          else { p[2] += offset; m(g, G('box', length, 0.01, width), matDark, p); }
+        }
+      }
+
       // ═══════════════════════════════════════════════════════════════
-      // BUILD ATLAS-7 MECH — 22 Component Groups
+      // ENGINEERING DRAWING GRID — faint concentric circles + radials
+      // ═══════════════════════════════════════════════════════════════
+      const gridGroup = new THREE.Group();
+      const gridMat = new THREE.LineBasicMaterial({ color: 0xc0b8a8, transparent: true, opacity: 0.25 });
+      // Concentric circles
+      for (let r = 3; r <= 24; r += 3) {
+        const pts: T.Vector3[] = [];
+        for (let a = 0; a <= 64; a++) {
+          const th = (a / 64) * Math.PI * 2;
+          pts.push(new THREE.Vector3(Math.cos(th) * r, -0.01, Math.sin(th) * r));
+        }
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+        gridGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(
+          pts.reduce((acc: T.Vector3[], p, i) => { if (i > 0) { acc.push(pts[i-1], p); } return acc; }, [])
+        ), gridMat));
+      }
+      // Radial lines
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        const pts = [new THREE.Vector3(0, -0.01, 0), new THREE.Vector3(Math.cos(a) * 24, -0.01, Math.sin(a) * 24)];
+        gridGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+      }
+      scene.add(gridGroup);
+
+      // ═══════════════════════════════════════════════════════════════
+      // BUILD LEVIATHAN-IX — 25+ Component Groups
+      // Ship oriented along Z axis (nose = +Z, engines = -Z)
       // ═══════════════════════════════════════════════════════════════
 
-      // ── TORSO CORE ──
-      addPart('TORSO — PRIMARY FRAME', new THREE.Vector3(0, 3.5, 0), new THREE.Vector3(0, 0, 0), 0, (g) => {
-        m(g, G('box', 2.0, 1.8, 1.2), M.frame, [0, 0, 0]);
-        // Chest plating grooves
-        m(g, G('box', 1.8, 0.08, 1.25), M.accent, [0, 0.5, 0]);
-        m(g, G('box', 1.8, 0.08, 1.25), M.accent, [0, -0.5, 0]);
-        m(g, G('box', 0.08, 1.6, 1.25), M.accent, [0.6, 0, 0]);
-        m(g, G('box', 0.08, 1.6, 1.25), M.accent, [-0.6, 0, 0]);
-        // Center reactor housing
-        m(g, G('cyl', 0.3, 0.3, 0.4, 16), M.dark, [0, 0, 0.62], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.2, 0.2, 0.1, 16), M.glow, [0, 0, 0.82], [Math.PI/2, 0, 0]);
-        // Spine vertebrae
-        for (let i = 0; i < 5; i++) {
-          m(g, G('box', 0.5, 0.12, 0.4), M.joint, [0, -0.6 + i * 0.3, -0.55]);
-        }
-        // Internal ribcage structure
-        for (let i = 0; i < 3; i++) {
-          m(g, G('box', 1.6, 0.04, 0.08), M.hatch, [0, -0.3 + i * 0.3, 0.5]);
-        }
-        // Side vents
-        for (const sx of [-1, 1]) {
-          for (let i = 0; i < 3; i++) {
-            m(g, G('box', 0.04, 0.15, 0.8), M.dark, [sx * 0.95, 0.1 + i * 0.2, 0]);
-          }
+      // ── 1. MAIN HULL — CENTRAL FUSELAGE ──
+      addPart('MAIN HULL — CENTRAL FUSELAGE', new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), 0, (g) => {
+        // Primary hull — elongated octagonal cross-section
+        m(g, G('box', 2.0, 1.2, 8.0), matHull, [0, 0, 0]);
+        // Chamfered top/bottom hull panels
+        m(g, G('box', 1.6, 0.15, 7.5), matHull, [0, 0.68, 0]);
+        m(g, G('box', 1.6, 0.15, 7.5), matHull, [0, -0.68, 0]);
+        // Side hull thickening
+        m(g, G('box', 0.15, 0.9, 7.5), matHull, [1.05, 0, 0]);
+        m(g, G('box', 0.15, 0.9, 7.5), matHull, [-1.05, 0, 0]);
+        // Spine ridge (dorsal)
+        m(g, G('box', 0.3, 0.2, 6.5), matAccent, [0, 0.82, 0]);
+        // Ventral keel
+        m(g, G('box', 0.4, 0.15, 5.0), matAccent, [0, -0.78, 0.5]);
+        // Hull panel lines — horizontal
+        panelLines(g, 'z', [0, 0.76, 0], 5, 1.2, 0.02, 7.0);
+        panelLines(g, 'z', [0, -0.76, 0], 5, 1.2, 0.02, 7.0);
+        // Hull panel lines — side
+        panelLines(g, 'y', [1.08, 0, 0], 6, 1.1, 0.02, 0.8);
+        panelLines(g, 'y', [-1.08, 0, 0], 6, 1.1, 0.02, 0.8);
+        // Surface greebles — dorsal
+        greeble(g, matDark, 0, 0.82, 0, 1.2, 0.01, 5.5, 25, 0.04, 0.15);
+        // Surface greebles — port/starboard
+        greeble(g, matDark, 1.05, 0, 0, 0.01, 0.7, 5.5, 18, 0.03, 0.12);
+        greeble(g, matDark, -1.05, 0, 0, 0.01, 0.7, 5.5, 18, 0.03, 0.12);
+        // Rivet rows along panel seams
+        for (let z = -3; z <= 3; z += 0.4) {
+          m(g, G('sphere', 0.015, 4, 3), matDark, [0.95, 0.45, z]);
+          m(g, G('sphere', 0.015, 4, 3), matDark, [-0.95, 0.45, z]);
         }
       });
 
-      // ── TORSO UPPER ARMOR ──
-      addPart('TORSO — UPPER ARMOR PLATE', new THREE.Vector3(0, 4.6, 0), new THREE.Vector3(0, 1, 0.3), 3, (g) => {
-        m(g, G('box', 2.4, 0.5, 1.5), M.armor, [0, 0, 0]);
-        // Collar ridges
-        m(g, G('box', 1.0, 0.15, 0.3), M.dark, [0, 0.3, -0.5]);
-        m(g, G('box', 0.3, 0.15, 1.0), M.dark, [0.9, 0.3, 0]);
-        m(g, G('box', 0.3, 0.15, 1.0), M.dark, [-0.9, 0.3, 0]);
-        // Ventilation slots
+      // ── 2. PROW — FORWARD HULL ──
+      addPart('PROW — FORWARD HULL SECTION', new THREE.Vector3(0, 0, 5.5), new THREE.Vector3(0, 0, 2), 4, (g) => {
+        // Tapered nose cone
+        m(g, G('box', 1.6, 0.9, 2.5), matHull, [0, 0, 0]);
+        m(g, G('box', 1.2, 0.7, 1.5), matHull, [0, 0, 1.5]);
+        m(g, G('box', 0.6, 0.4, 1.0), matHull, [0, 0, 2.6]);
+        m(g, G('cone', 0.25, 1.2, 8), matHull, [0, 0, 3.5], [Math.PI/2, 0, 0]);
+        // Nose sensor array
+        m(g, G('cyl', 0.08, 0.08, 0.6, 8), matDark, [0, 0, 4.1], [Math.PI/2, 0, 0]);
+        m(g, G('sphere', 0.06, 6, 4), matAccent, [0, 0, 4.4]);
+        // Forward viewport slits
+        for (let i = -2; i <= 2; i++) {
+          m(g, G('box', 0.08, 0.03, 0.35), matDark, [i * 0.25, 0.46, 1.0]);
+        }
+        // Armored shutters
+        m(g, G('box', 1.0, 0.08, 0.4), matAccent, [0, 0.5, 0.5]);
+        m(g, G('box', 0.8, 0.08, 0.3), matAccent, [0, 0.38, 1.6]);
+        // Prow detail greebles
+        greeble(g, matDark, 0, 0.46, 0, 1.0, 0.01, 2.0, 15, 0.03, 0.1);
+        greeble(g, matDark, 0, -0.46, 0, 1.0, 0.01, 2.0, 12, 0.03, 0.08);
+        // Chin sensor pods
+        m(g, G('cyl', 0.1, 0.08, 0.4, 8), matDark, [0.3, -0.5, 1.5], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.1, 0.08, 0.4, 8), matDark, [-0.3, -0.5, 1.5], [Math.PI/2, 0, 0]);
+      });
+
+      // ── 3. STERN — AFT HULL ──
+      addPart('STERN — AFT HULL SECTION', new THREE.Vector3(0, 0, -5.5), new THREE.Vector3(0, 0, -2), 4, (g) => {
+        m(g, G('box', 1.8, 1.0, 2.5), matHull, [0, 0, 0]);
+        // Engine mounting plate
+        m(g, G('box', 2.2, 1.4, 0.3), matAccent, [0, 0, -1.3]);
+        // Exhaust shroud
+        m(g, G('box', 1.5, 0.8, 0.5), matDark, [0, 0, -1.5]);
+        // Coolant manifold
         for (let i = 0; i < 4; i++) {
-          m(g, G('box', 0.25, 0.05, 0.08), M.dark, [-0.5 + i * 0.35, 0.26, 0.76]);
+          m(g, G('cyl', 0.06, 0.06, 1.8, 8), matDark, [srandRange(-0.6, 0.6), srandRange(-0.3, 0.3), 0.3]);
         }
-        // Sub-plating detail
-        m(g, G('box', 2.0, 0.08, 1.3), M.hatch, [0, -0.22, 0]);
-        // Mounting bolts
-        for (const sx of [-1, 1]) {
-          for (const sz of [-1, 1]) {
-            m(g, G('cyl', 0.04, 0.04, 0.08, 8), M.accent, [sx * 0.8, 0.26, sz * 0.5]);
-          }
-        }
+        // Stern greebles
+        greeble(g, matDark, 0, 0, 0, 1.4, 0.8, 2.0, 20, 0.03, 0.1);
+        // Aft running lights
+        m(g, G('sphere', 0.04, 6, 4), matDark, [0.7, 0.4, -1.3]);
+        m(g, G('sphere', 0.04, 6, 4), matDark, [-0.7, 0.4, -1.3]);
       });
 
-      // ── TORSO LOWER SKIRT ──
-      addPart('TORSO — LOWER SKIRT ARMOR', new THREE.Vector3(0, 2.4, 0), new THREE.Vector3(0, -1, 0.2), 2.5, (g) => {
-        m(g, G('box', 2.2, 0.6, 1.4), M.armor, [0, 0, 0]);
-        // Hip joints housing
-        m(g, G('cyl', 0.35, 0.35, 0.5, 12), M.joint, [0.8, 0, 0], [0, 0, Math.PI/2]);
-        m(g, G('cyl', 0.35, 0.35, 0.5, 12), M.joint, [-0.8, 0, 0], [0, 0, Math.PI/2]);
-        // Pelvis armor plates
-        m(g, G('box', 0.8, 0.4, 0.2), M.dark, [0, -0.1, 0.8]);
-        // Decorative rivets
-        for (let i = 0; i < 6; i++) {
-          m(g, G('cyl', 0.03, 0.03, 0.05, 6), M.accent, [-0.8 + i * 0.32, 0.31, 0.71]);
+      // ── 4. BRIDGE TOWER ──
+      addPart('BRIDGE — COMMAND TOWER', new THREE.Vector3(0, 1.2, 1.5), new THREE.Vector3(0, 2, 0.5), 4.5, (g) => {
+        // Main bridge structure
+        m(g, G('box', 1.2, 0.8, 1.5), matHull, [0, 0, 0]);
+        m(g, G('box', 1.0, 0.4, 1.2), matHull, [0, 0.55, 0]);
+        m(g, G('box', 0.7, 0.25, 0.8), matHull, [0, 0.9, 0.1]);
+        // Viewport windows — horizontal slits
+        for (let i = -3; i <= 3; i++) {
+          m(g, G('box', 0.12, 0.02, 0.04), matDark, [i * 0.13, 0.72, 0.62]);
         }
+        // Sensor mast
+        m(g, G('cyl', 0.04, 0.03, 0.8, 6), matDark, [0, 1.3, 0]);
+        m(g, G('sphere', 0.06, 6, 4), matAccent, [0, 1.72, 0]);
+        // Antenna array
+        m(g, G('cyl', 0.015, 0.015, 0.5, 4), matDark, [0.3, 1.15, -0.2]);
+        m(g, G('cyl', 0.015, 0.015, 0.4, 4), matDark, [-0.25, 1.1, -0.1]);
+        m(g, G('cyl', 0.015, 0.015, 0.6, 4), matDark, [0, 1.3, -0.4], [0.3, 0, 0]);
+        // Bridge greebles
+        greeble(g, matDark, 0, 0.5, 0, 0.9, 0.01, 1.2, 12, 0.02, 0.08);
+        // Comms dish
+        m(g, G('sphere', 0.15, 8, 6), matHull, [0.5, 0.9, -0.3], [0, 0, 0], [1, 0.3, 1]);
+        m(g, G('cyl', 0.015, 0.015, 0.2, 4), matDark, [0.5, 1.05, -0.3]);
       });
 
-      // ── HEAD ──
-      addPart('HEAD — SENSOR ARRAY', new THREE.Vector3(0, 5.5, 0), new THREE.Vector3(0, 1.5, 0), 3.5, (g) => {
-        // Skull casing
-        m(g, G('box', 0.9, 0.7, 0.8), M.frame, [0, 0, 0]);
-        // Visor
-        m(g, G('box', 0.85, 0.2, 0.1), M.glass, [0, 0.1, 0.42]);
-        m(g, G('box', 0.85, 0.22, 0.02), M.glow, [0, 0.1, 0.47]);
-        // Antenna
-        m(g, G('cyl', 0.02, 0.02, 0.5, 6), M.pipe, [0.35, 0.55, -0.1]);
-        m(g, G('cyl', 0.02, 0.02, 0.4, 6), M.pipe, [-0.35, 0.5, -0.1]);
-        m(g, G('sphere', 0.04, 8, 6), M.glowRed, [0.35, 0.82, -0.1]);
-        m(g, G('sphere', 0.04, 8, 6), M.glowGreen, [-0.35, 0.72, -0.1]);
-        // Jaw
-        m(g, G('box', 0.6, 0.15, 0.5), M.dark, [0, -0.35, 0.15]);
-        // Side sensors
-        for (const sx of [-1, 1]) {
-          m(g, G('box', 0.15, 0.3, 0.4), M.accent, [sx * 0.52, 0.05, 0.1]);
-          m(g, G('cyl', 0.05, 0.05, 0.2, 8), M.glow, [sx * 0.58, 0.15, 0.3], [Math.PI/2, 0, 0]);
+      // ── 5. PORT ENGINE NACELLE ──
+      addPart('PORT ENGINE — PRIMARY NACELLE', new THREE.Vector3(-2.5, -0.2, -3.0), new THREE.Vector3(-2.5, -0.5, -1.5), 5, (g) => {
+        // Engine body
+        m(g, G('cyl', 0.6, 0.5, 3.5, 12), matHull, [0, 0, 0], [Math.PI/2, 0, 0]);
+        // Intake cowling
+        m(g, G('cyl', 0.7, 0.65, 0.4, 12), matAccent, [0, 0, 1.6], [Math.PI/2, 0, 0]);
+        // Exhaust bell
+        m(g, G('cyl', 0.5, 0.7, 0.8, 12), matDark, [0, 0, -2.0], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.45, 0.45, 0.1, 12), matAccent, [0, 0, -2.4], [Math.PI/2, 0, 0]);
+        // Cooling fins
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          m(g, G('box', 0.02, 0.12, 1.5), matDark, [Math.cos(a) * 0.55, Math.sin(a) * 0.55, -0.5], [0, 0, a]);
         }
-        // Top crest
-        m(g, G('box', 0.15, 0.25, 0.6), M.armor, [0, 0.48, -0.05]);
-        // Neck pistons
-        m(g, G('cyl', 0.04, 0.04, 0.4, 6), M.pipe, [0.2, -0.5, 0]);
-        m(g, G('cyl', 0.04, 0.04, 0.4, 6), M.pipe, [-0.2, -0.5, 0]);
+        // Fuel lines
+        m(g, G('cyl', 0.03, 0.03, 2.0, 6), matDark, [0.4, 0.3, 0], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.03, 0.03, 2.0, 6), matDark, [-0.4, 0.3, 0], [Math.PI/2, 0, 0]);
+        // Mounting pylon connection
+        m(g, G('box', 0.8, 0.15, 0.6), matHull, [0.8, 0.3, 0.5]);
+        greeble(g, matDark, 0, 0.5, 0, 0.6, 0.01, 2.5, 15, 0.02, 0.08);
       });
 
-      // ── RIGHT SHOULDER ──
-      addPart('RIGHT SHOULDER — MISSILE PAULDRON', new THREE.Vector3(1.6, 4.2, 0), new THREE.Vector3(1.5, 0.8, 0), 3, (g) => {
-        m(g, G('box', 1.2, 0.8, 1.0), M.armor, [0, 0, 0]);
-        m(g, G('box', 1.3, 0.12, 1.1), M.accent, [0, 0.35, 0]);
-        m(g, G('box', 1.1, 0.12, 0.9), M.accent, [0, -0.35, 0]);
-        // Missile pod — 6 tubes
+      // ── 6. STARBOARD ENGINE NACELLE ──
+      addPart('STARBOARD ENGINE — PRIMARY NACELLE', new THREE.Vector3(2.5, -0.2, -3.0), new THREE.Vector3(2.5, -0.5, -1.5), 5, (g) => {
+        m(g, G('cyl', 0.6, 0.5, 3.5, 12), matHull, [0, 0, 0], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.7, 0.65, 0.4, 12), matAccent, [0, 0, 1.6], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.5, 0.7, 0.8, 12), matDark, [0, 0, -2.0], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.45, 0.45, 0.1, 12), matAccent, [0, 0, -2.4], [Math.PI/2, 0, 0]);
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          m(g, G('box', 0.02, 0.12, 1.5), matDark, [Math.cos(a) * 0.55, Math.sin(a) * 0.55, -0.5], [0, 0, a]);
+        }
+        m(g, G('cyl', 0.03, 0.03, 2.0, 6), matDark, [0.4, 0.3, 0], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.03, 0.03, 2.0, 6), matDark, [-0.4, 0.3, 0], [Math.PI/2, 0, 0]);
+        m(g, G('box', 0.8, 0.15, 0.6), matHull, [-0.8, 0.3, 0.5]);
+        greeble(g, matDark, 0, 0.5, 0, 0.6, 0.01, 2.5, 15, 0.02, 0.08);
+      });
+
+      // ── 7. PORT ENGINE PYLON ──
+      addPart('PORT PYLON — ENGINE STRUT', new THREE.Vector3(-1.5, 0, -2.0), new THREE.Vector3(-1.5, -0.3, -0.8), 3, (g) => {
+        m(g, G('box', 1.2, 0.2, 2.0), matHull, [0, 0, 0]);
+        m(g, G('box', 1.0, 0.08, 1.8), matAccent, [0, 0.12, 0]);
+        m(g, G('box', 0.08, 0.18, 1.6), matDark, [0.35, 0, 0]);
+        m(g, G('box', 0.08, 0.18, 1.6), matDark, [-0.35, 0, 0]);
+        greeble(g, matDark, 0, 0.12, 0, 0.9, 0.01, 1.5, 10, 0.02, 0.06);
+        // Fuel conduits
+        m(g, G('cyl', 0.025, 0.025, 1.8, 6), matDark, [0.5, -0.05, 0], [0, 0, 0]);
+      });
+
+      // ── 8. STARBOARD ENGINE PYLON ──
+      addPart('STARBOARD PYLON — ENGINE STRUT', new THREE.Vector3(1.5, 0, -2.0), new THREE.Vector3(1.5, -0.3, -0.8), 3, (g) => {
+        m(g, G('box', 1.2, 0.2, 2.0), matHull, [0, 0, 0]);
+        m(g, G('box', 1.0, 0.08, 1.8), matAccent, [0, 0.12, 0]);
+        m(g, G('box', 0.08, 0.18, 1.6), matDark, [0.35, 0, 0]);
+        m(g, G('box', 0.08, 0.18, 1.6), matDark, [-0.35, 0, 0]);
+        greeble(g, matDark, 0, 0.12, 0, 0.9, 0.01, 1.5, 10, 0.02, 0.06);
+        m(g, G('cyl', 0.025, 0.025, 1.8, 6), matDark, [-0.5, -0.05, 0]);
+      });
+
+      // ── 9. DORSAL WEAPONS PLATFORM ──
+      addPart('DORSAL — WEAPONS BATTERY', new THREE.Vector3(0, 1.0, -1.0), new THREE.Vector3(0, 2.5, 0), 4, (g) => {
+        // Turret base
+        m(g, G('cyl', 0.5, 0.6, 0.3, 12), matHull, [0, 0, 0]);
+        // Turret housing
+        m(g, G('box', 0.8, 0.4, 0.8), matHull, [0, 0.3, 0]);
+        // Twin barrels
+        m(g, G('cyl', 0.06, 0.05, 2.0, 8), matDark, [0.15, 0.35, 1.2], [Math.PI/2, 0, 0]);
+        m(g, G('cyl', 0.06, 0.05, 2.0, 8), matDark, [-0.15, 0.35, 1.2], [Math.PI/2, 0, 0]);
+        // Barrel shroud
+        m(g, G('box', 0.5, 0.12, 0.4), matAccent, [0, 0.35, 0.5]);
+        // Targeting optics
+        m(g, G('sphere', 0.05, 6, 4), matDark, [0, 0.55, 0.25]);
+        m(g, G('cyl', 0.02, 0.02, 0.15, 4), matDark, [0.35, 0.35, 0.2], [0, 0, Math.PI/2]);
+        greeble(g, matDark, 0, 0.52, 0, 0.6, 0.01, 0.6, 8, 0.02, 0.06);
+      });
+
+      // ── 10. VENTRAL TORPEDO BAY ──
+      addPart('VENTRAL — TORPEDO LAUNCH BAY', new THREE.Vector3(0, -0.9, 0.5), new THREE.Vector3(0, -2.5, 0), 4, (g) => {
+        m(g, G('box', 1.4, 0.4, 2.0), matHull, [0, 0, 0]);
+        // Torpedo tubes (6)
         for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
-          m(g, G('cyl', 0.08, 0.08, 0.3, 8), M.dark, [-0.2 + c * 0.2, 0.42 + r * 0.01, -0.15 + r * 0.3], [Math.PI/2, 0, 0]);
+          m(g, G('cyl', 0.08, 0.08, 0.5, 8), matDark, [-0.3 + c * 0.3, -0.1 + r * 0.2, 1.1], [Math.PI/2, 0, 0]);
         }
-        // Joint ball
-        m(g, G('sphere', 0.25, 12, 8), M.joint, [-0.55, -0.1, 0]);
-        // Armor edging detail
-        m(g, G('box', 1.25, 0.04, 0.04), M.hatch, [0, 0, 0.52]);
-        m(g, G('box', 1.25, 0.04, 0.04), M.hatch, [0, 0, -0.52]);
+        // Bay doors
+        m(g, G('box', 1.2, 0.04, 0.8), matAccent, [0, -0.22, 0.6]);
+        m(g, G('box', 1.2, 0.04, 0.8), matAccent, [0, -0.22, -0.2]);
+        greeble(g, matDark, 0, -0.22, 0, 1.1, 0.01, 1.6, 12, 0.02, 0.07);
       });
 
-      // ── LEFT SHOULDER ──
-      addPart('LEFT SHOULDER — SHIELD PAULDRON', new THREE.Vector3(-1.6, 4.2, 0), new THREE.Vector3(-1.5, 0.8, 0), 3, (g) => {
-        m(g, G('box', 1.2, 0.8, 1.0), M.armor, [0, 0, 0]);
-        m(g, G('box', 1.3, 0.12, 1.1), M.accent, [0, 0.35, 0]);
-        m(g, G('box', 1.1, 0.12, 0.9), M.accent, [0, -0.35, 0]);
-        // Shield emitter array
-        m(g, G('oct', 0.2, 0), M.glow, [0, 0, 0.55]);
+      // ── 11. PORT WING ──
+      addPart('PORT WING — WEAPON HARDPOINTS', new THREE.Vector3(-2.0, 0.1, 0), new THREE.Vector3(-3, 0, 0), 4.5, (g) => {
+        // Wing spar
+        m(g, G('box', 2.0, 0.12, 2.5), matHull, [0, 0, 0]);
+        m(g, G('box', 1.8, 0.06, 2.3), matAccent, [0, 0.08, 0]);
+        // Wing tip
+        m(g, G('box', 0.5, 0.08, 1.5), matHull, [-0.9, 0, 0.3]);
+        // Leading edge
+        m(g, G('box', 1.8, 0.05, 0.1), matDark, [0, 0, 1.28]);
+        // Weapon pylons
+        m(g, G('box', 0.1, 0.25, 0.3), matDark, [-0.5, -0.15, 0.5]);
+        m(g, G('box', 0.1, 0.25, 0.3), matDark, [0.3, -0.15, 0.5]);
+        // Wing surface greebles
+        greeble(g, matDark, -0.3, 0.08, 0, 1.5, 0.01, 2.0, 18, 0.02, 0.08);
+        // Navigation light
+        m(g, G('sphere', 0.03, 4, 3), matDark, [-1.0, 0.08, 1.0]);
+      });
+
+      // ── 12. STARBOARD WING ──
+      addPart('STARBOARD WING — WEAPON HARDPOINTS', new THREE.Vector3(2.0, 0.1, 0), new THREE.Vector3(3, 0, 0), 4.5, (g) => {
+        m(g, G('box', 2.0, 0.12, 2.5), matHull, [0, 0, 0]);
+        m(g, G('box', 1.8, 0.06, 2.3), matAccent, [0, 0.08, 0]);
+        m(g, G('box', 0.5, 0.08, 1.5), matHull, [0.9, 0, 0.3]);
+        m(g, G('box', 1.8, 0.05, 0.1), matDark, [0, 0, 1.28]);
+        m(g, G('box', 0.1, 0.25, 0.3), matDark, [0.5, -0.15, 0.5]);
+        m(g, G('box', 0.1, 0.25, 0.3), matDark, [-0.3, -0.15, 0.5]);
+        greeble(g, matDark, 0.3, 0.08, 0, 1.5, 0.01, 2.0, 18, 0.02, 0.08);
+        m(g, G('sphere', 0.03, 4, 3), matDark, [1.0, 0.08, 1.0]);
+      });
+
+      // ── 13. PORT FORWARD CANNON ──
+      addPart('PORT CANNON — HEAVY RAILGUN', new THREE.Vector3(-1.2, -0.3, 3.0), new THREE.Vector3(-1.5, -0.5, 2), 4, (g) => {
+        // Barrel housing
+        m(g, G('cyl', 0.12, 0.08, 3.0, 10), matHull, [0, 0, 0], [Math.PI/2, 0, 0]);
+        // Coil accelerators
+        for (let i = 0; i < 6; i++) {
+          m(g, G('torus', 0.14, 0.02, 6, 12), matAccent, [0, 0, -1.0 + i * 0.4], [Math.PI/2, 0, 0]);
+        }
+        // Muzzle brake
+        m(g, G('cyl', 0.15, 0.12, 0.2, 8), matDark, [0, 0, 1.6], [Math.PI/2, 0, 0]);
+        // Mounting bracket
+        m(g, G('box', 0.3, 0.2, 0.4), matAccent, [0, 0.15, -1.2]);
+        // Power cable
+        m(g, G('cyl', 0.02, 0.02, 2.5, 6), matDark, [0.1, 0.12, 0], [Math.PI/2, 0, 0]);
+      });
+
+      // ── 14. STARBOARD FORWARD CANNON ──
+      addPart('STARBOARD CANNON — HEAVY RAILGUN', new THREE.Vector3(1.2, -0.3, 3.0), new THREE.Vector3(1.5, -0.5, 2), 4, (g) => {
+        m(g, G('cyl', 0.12, 0.08, 3.0, 10), matHull, [0, 0, 0], [Math.PI/2, 0, 0]);
+        for (let i = 0; i < 6; i++) {
+          m(g, G('torus', 0.14, 0.02, 6, 12), matAccent, [0, 0, -1.0 + i * 0.4], [Math.PI/2, 0, 0]);
+        }
+        m(g, G('cyl', 0.15, 0.12, 0.2, 8), matDark, [0, 0, 1.6], [Math.PI/2, 0, 0]);
+        m(g, G('box', 0.3, 0.2, 0.4), matAccent, [0, 0.15, -1.2]);
+        m(g, G('cyl', 0.02, 0.02, 2.5, 6), matDark, [-0.1, 0.12, 0], [Math.PI/2, 0, 0]);
+      });
+
+      // ── 15. DORSAL FIN ──
+      addPart('DORSAL FIN — SENSOR ARRAY', new THREE.Vector3(0, 1.5, -2.5), new THREE.Vector3(0, 2.5, -0.5), 3.5, (g) => {
+        // Fin body — tall wedge
+        m(g, G('box', 0.08, 1.5, 1.8), matHull, [0, 0, 0]);
+        m(g, G('box', 0.06, 1.2, 1.5), matAccent, [0, 0.2, 0]);
+        // Sensor strips
+        for (let i = 0; i < 4; i++) {
+          m(g, G('box', 0.1, 0.03, 0.3), matDark, [0, -0.4 + i * 0.4, 0.7]);
+        }
+        // Tip light
+        m(g, G('sphere', 0.04, 6, 4), matDark, [0, 0.78, 0]);
+        greeble(g, matDark, 0, 0, 0, 0.01, 1.2, 1.5, 10, 0.02, 0.06);
+      });
+
+      // ── 16. VENTRAL FIN ──
+      addPart('VENTRAL FIN — STABILIZER', new THREE.Vector3(0, -1.2, -3.0), new THREE.Vector3(0, -2.5, -0.5), 3, (g) => {
+        m(g, G('box', 0.06, 0.8, 1.2), matHull, [0, 0, 0]);
+        m(g, G('box', 0.05, 0.6, 1.0), matAccent, [0, -0.12, 0]);
+        m(g, G('sphere', 0.03, 4, 3), matDark, [0, -0.42, 0.5]);
+        greeble(g, matDark, 0, -0.12, 0, 0.01, 0.5, 0.8, 6, 0.02, 0.05);
+      });
+
+      // ── 17. REACTOR MODULE ──
+      addPart('REACTOR — FUSION CORE MODULE', new THREE.Vector3(0, 0, -2.5), new THREE.Vector3(0, 0, -2), 4.5, (g) => {
+        // Reactor housing
+        m(g, G('cyl', 0.5, 0.5, 1.2, 12), matHull, [0, 0, 0]);
+        // Shielding rings
+        for (let i = 0; i < 4; i++) {
+          m(g, G('torus', 0.55, 0.03, 8, 16), matAccent, [0, -0.4 + i * 0.25, 0]);
+        }
+        // Coolant pipes
+        for (let a = 0; a < 4; a++) {
+          const th = (a / 4) * Math.PI * 2 + 0.4;
+          m(g, G('cyl', 0.035, 0.035, 1.4, 6), matDark, [Math.cos(th) * 0.6, 0, Math.sin(th) * 0.6]);
+        }
+        // Warning markings
+        for (let i = 0; i < 3; i++) {
+          m(g, G('box', 0.08, 0.02, 0.08), matDark, [0, 0.62, -0.2 + i * 0.2]);
+        }
+        greeble(g, matDark, 0, 0, 0, 0.8, 0.8, 0.01, 10, 0.03, 0.08);
+      });
+
+      // ── 18. PORT MISSILE POD ──
+      addPart('PORT MISSILES — LAUNCH CLUSTER', new THREE.Vector3(-1.8, 0.6, -0.5), new THREE.Vector3(-2, 1.5, 0), 3.5, (g) => {
+        m(g, G('box', 0.6, 0.5, 1.0), matHull, [0, 0, 0]);
+        // Missile tubes — 3x2
+        for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+          m(g, G('cyl', 0.06, 0.06, 0.6, 8), matDark, [-0.15 + c * 0.15, -0.1 + r * 0.2, 0.6], [Math.PI/2, 0, 0]);
+        }
+        m(g, G('box', 0.5, 0.08, 0.9), matAccent, [0, 0.28, 0]);
+        greeble(g, matDark, 0, 0.28, 0, 0.4, 0.01, 0.8, 6, 0.02, 0.05);
+      });
+
+      // ── 19. STARBOARD MISSILE POD ──
+      addPart('STARBOARD MISSILES — LAUNCH CLUSTER', new THREE.Vector3(1.8, 0.6, -0.5), new THREE.Vector3(2, 1.5, 0), 3.5, (g) => {
+        m(g, G('box', 0.6, 0.5, 1.0), matHull, [0, 0, 0]);
+        for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+          m(g, G('cyl', 0.06, 0.06, 0.6, 8), matDark, [-0.15 + c * 0.15, -0.1 + r * 0.2, 0.6], [Math.PI/2, 0, 0]);
+        }
+        m(g, G('box', 0.5, 0.08, 0.9), matAccent, [0, 0.28, 0]);
+        greeble(g, matDark, 0, 0.28, 0, 0.4, 0.01, 0.8, 6, 0.02, 0.05);
+      });
+
+      // ── 20. SHIELD GENERATOR ──
+      addPart('SHIELD — DEFLECTOR GENERATOR', new THREE.Vector3(0, 0.8, 3.5), new THREE.Vector3(0, 1.5, 2), 3, (g) => {
+        // Dish
+        m(g, G('sphere', 0.4, 12, 8), matHull, [0, 0, 0], [0, 0, 0], [1.2, 0.4, 1.2]);
+        // Emitter core
+        m(g, G('sphere', 0.12, 8, 6), matAccent, [0, 0.15, 0]);
+        // Support strut
+        m(g, G('cyl', 0.04, 0.04, 0.5, 6), matDark, [0, -0.3, 0]);
+        // Ring
+        m(g, G('torus', 0.35, 0.02, 8, 16), matDark, [0, 0, 0], [Math.PI/2, 0, 0]);
+        greeble(g, matDark, 0, 0, 0, 0.6, 0.2, 0.01, 6, 0.02, 0.05);
+      });
+
+      // ── 21. COMM ANTENNA ARRAY ──
+      addPart('COMMS — ANTENNA ARRAY', new THREE.Vector3(0.8, 1.3, -1.5), new THREE.Vector3(1.5, 2.5, -0.5), 3, (g) => {
+        // Main dish
+        m(g, G('sphere', 0.3, 10, 8), matHull, [0, 0, 0], [0, 0, 0], [1, 0.3, 1]);
+        m(g, G('cyl', 0.02, 0.02, 0.25, 4), matDark, [0, 0.12, 0]);
+        m(g, G('sphere', 0.03, 4, 3), matAccent, [0, 0.25, 0]);
+        // Sub-array rods
+        m(g, G('cyl', 0.015, 0.015, 0.4, 4), matDark, [0.15, 0, 0.15], [0.3, 0, 0]);
+        m(g, G('cyl', 0.015, 0.015, 0.35, 4), matDark, [-0.15, 0, 0.1], [-0.2, 0, 0]);
+        // Mount
+        m(g, G('box', 0.15, 0.08, 0.15), matAccent, [0, -0.18, 0]);
+      });
+
+      // ── 22. HANGAR BAY ──
+      addPart('HANGAR — FLIGHT DECK', new THREE.Vector3(0, -0.5, 2.5), new THREE.Vector3(0, -2, 1.5), 3.5, (g) => {
+        m(g, G('box', 1.6, 0.5, 1.5), matHull, [0, 0, 0]);
+        // Bay opening
+        m(g, G('box', 1.0, 0.35, 0.05), matDark, [0, -0.05, 0.77]);
+        // Internal detail
+        m(g, G('box', 0.9, 0.3, 1.2), matDark, [0, 0, 0]);
+        // Landing guides
+        for (let i = 0; i < 4; i++) {
+          m(g, G('box', 0.02, 0.01, 1.2), matAccent, [-0.3 + i * 0.2, -0.25, 0]);
+        }
+        greeble(g, matDark, 0, 0.26, 0, 1.2, 0.01, 1.2, 10, 0.02, 0.06);
+      });
+
+      // ── 23. PORT POINT-DEFENSE ──
+      addPart('PORT PD — CLOSE-IN WEAPON SYSTEM', new THREE.Vector3(-1.3, 0.5, 2.0), new THREE.Vector3(-1.8, 1, 1), 2.5, (g) => {
+        m(g, G('cyl', 0.15, 0.18, 0.2, 8), matHull, [0, 0, 0]);
+        m(g, G('box', 0.25, 0.15, 0.25), matAccent, [0, 0.12, 0]);
+        // Gatling barrels
         for (let i = 0; i < 4; i++) {
           const a = (i / 4) * Math.PI * 2;
-          m(g, G('cyl', 0.03, 0.03, 0.25, 6), M.pipe, [Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0.5], [Math.PI/2, 0, 0]);
+          m(g, G('cyl', 0.015, 0.015, 0.6, 4), matDark, [Math.cos(a) * 0.06, 0.12, 0.4 + Math.sin(a) * 0.06], [Math.PI/2, 0, 0]);
         }
-        m(g, G('sphere', 0.25, 12, 8), M.joint, [0.55, -0.1, 0]);
+        m(g, G('sphere', 0.03, 4, 3), matDark, [0.12, 0.18, 0.05]);
       });
 
-      // ── RIGHT UPPER ARM ──
-      addPart('RIGHT ARM — UPPER SEGMENT', new THREE.Vector3(2.3, 3.5, 0), new THREE.Vector3(2, 0.3, 0), 3.5, (g) => {
-        m(g, G('box', 0.5, 1.4, 0.5), M.frame, [0, 0, 0]);
-        // Hydraulic pistons
-        m(g, G('cyl', 0.06, 0.06, 1.2, 8), M.pipe, [0.2, 0, 0.2]);
-        m(g, G('cyl', 0.06, 0.06, 1.2, 8), M.pipe, [-0.2, 0, -0.2]);
-        m(g, G('cyl', 0.04, 0.04, 0.8, 6), M.accent, [0.2, -0.15, -0.2]);
-        m(g, G('box', 0.55, 1.0, 0.12), M.armor, [0, 0, 0.3]);
-        m(g, G('sphere', 0.2, 10, 8), M.joint, [0, -0.75, 0]);
-        // Cable wrap
+      // ── 24. STARBOARD POINT-DEFENSE ──
+      addPart('STARBOARD PD — CLOSE-IN WEAPON SYSTEM', new THREE.Vector3(1.3, 0.5, 2.0), new THREE.Vector3(1.8, 1, 1), 2.5, (g) => {
+        m(g, G('cyl', 0.15, 0.18, 0.2, 8), matHull, [0, 0, 0]);
+        m(g, G('box', 0.25, 0.15, 0.25), matAccent, [0, 0.12, 0]);
         for (let i = 0; i < 4; i++) {
-          m(g, G('torus', 0.28, 0.015, 6, 12), M.wire, [0, -0.5 + i * 0.3, 0]);
+          const a = (i / 4) * Math.PI * 2;
+          m(g, G('cyl', 0.015, 0.015, 0.6, 4), matDark, [Math.cos(a) * 0.06, 0.12, 0.4 + Math.sin(a) * 0.06], [Math.PI/2, 0, 0]);
         }
+        m(g, G('sphere', 0.03, 4, 3), matDark, [-0.12, 0.18, 0.05]);
       });
 
-      // ── LEFT UPPER ARM ──
-      addPart('LEFT ARM — UPPER SEGMENT', new THREE.Vector3(-2.3, 3.5, 0), new THREE.Vector3(-2, 0.3, 0), 3.5, (g) => {
-        m(g, G('box', 0.5, 1.4, 0.5), M.frame, [0, 0, 0]);
-        m(g, G('cyl', 0.06, 0.06, 1.2, 8), M.pipe, [0.2, 0, 0.2]);
-        m(g, G('cyl', 0.06, 0.06, 1.2, 8), M.pipe, [-0.2, 0, -0.2]);
-        m(g, G('box', 0.55, 1.0, 0.12), M.armor, [0, 0, 0.3]);
-        m(g, G('sphere', 0.2, 10, 8), M.joint, [0, -0.75, 0]);
-        // Cable wrap
-        for (let i = 0; i < 4; i++) {
-          m(g, G('torus', 0.28, 0.015, 6, 12), M.wire, [0, -0.5 + i * 0.3, 0]);
-        }
+      // ── 25. AFT SENSOR DOME ──
+      addPart('AFT SENSOR — TRACKING DOME', new THREE.Vector3(0, 0.6, -4.5), new THREE.Vector3(0, 1.5, -2), 3, (g) => {
+        m(g, G('sphere', 0.3, 10, 8), matHull, [0, 0, 0], [0, 0, 0], [1, 0.6, 1]);
+        m(g, G('cyl', 0.32, 0.35, 0.1, 10), matAccent, [0, -0.15, 0]);
+        m(g, G('cyl', 0.02, 0.02, 0.35, 4), matDark, [0, 0.15, 0]);
+        m(g, G('sphere', 0.04, 6, 4), matDark, [0, 0.33, 0]);
+        greeble(g, matDark, 0, -0.15, 0, 0.5, 0.01, 0.5, 6, 0.02, 0.05);
       });
 
-      // ── RIGHT FOREARM + GAUSS CANNON ──
-      addPart('RIGHT ARM — GAUSS CANNON', new THREE.Vector3(2.3, 2.2, 0), new THREE.Vector3(2.5, -0.5, 0.5), 4, (g) => {
-        m(g, G('box', 0.5, 1.2, 0.5), M.frame, [0, 0, 0]);
-        // Gauss cannon barrel assembly
-        m(g, G('cyl', 0.18, 0.12, 1.8, 12), M.dark, [0, 0, 1.1], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.22, 0.22, 0.3, 12), M.frame, [0, 0, 0.3], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.15, 0.1, 0.5, 12), M.accent, [0, 0, 1.8], [Math.PI/2, 0, 0]);
-        // Barrel rings
-        for (let i = 0; i < 4; i++) {
-          m(g, G('torus', 0.16, 0.02, 8, 16), M.accent, [0, 0, 0.5 + i * 0.35], [Math.PI/2, 0, 0]);
-        }
-        // Muzzle glow
-        m(g, G('cyl', 0.1, 0.1, 0.05, 12), M.glow, [0, 0, 2.02], [Math.PI/2, 0, 0]);
-        // Ammo feed
-        m(g, G('cyl', 0.08, 0.08, 0.8, 8), M.pipe, [0.25, 0.1, 0.4], [0.3, 0, 0.2]);
-        // Hand guard
-        m(g, G('box', 0.15, 0.4, 0.3), M.armor, [0, -0.4, 0.2]);
-        // Targeting reticle
-        m(g, G('cyl', 0.04, 0.04, 0.6, 6), M.pipe, [0.15, 0.2, 1.0], [Math.PI/2, 0, 0]);
-        m(g, G('sphere', 0.03, 6), M.glowRed, [0.15, 0.2, 1.35]);
-      });
-
-      // ── LEFT FOREARM + SHIELD PROJECTOR ──
-      addPart('LEFT ARM — ENERGY SHIELD PROJECTOR', new THREE.Vector3(-2.3, 2.2, 0), new THREE.Vector3(-2.5, -0.5, 0.5), 4, (g) => {
-        m(g, G('box', 0.5, 1.2, 0.5), M.frame, [0, 0, 0]);
-        // Shield projector — partial sphere
-        m(g, G('sphere', 0.5, 16, 8), M.accent, [0, 0, 0.5], [0, 0, 0], [1, 1, 0.5]);
-        m(g, G('cyl', 0.15, 0.15, 0.3, 12), M.glow, [0, 0, 0.5], [Math.PI/2, 0, 0]);
-        // Energy conduits
-        for (let i = 0; i < 3; i++) {
-          const a = (i / 3) * Math.PI * 2 - Math.PI/2;
-          m(g, G('cyl', 0.04, 0.04, 0.6, 6), M.pipe, [Math.cos(a) * 0.25, Math.sin(a) * 0.25, 0.2], [Math.PI/2, 0, 0]);
-        }
-        // Wrist joint
-        m(g, G('cyl', 0.15, 0.15, 0.2, 10), M.joint, [0, -0.6, 0], [0, 0, Math.PI/2]);
-        // Fingers / clamp
-        for (const sx of [-0.15, 0, 0.15]) {
-          m(g, G('box', 0.06, 0.3, 0.06), M.dark, [sx, -0.85, 0.1]);
-        }
-        // Shield energy ring
-        m(g, G('torus', 0.4, 0.02, 8, 24), M.glow, [0, 0, 0.65], [Math.PI/2, 0, 0]);
-      });
-
-      // ── RIGHT THIGH ──
-      addPart('RIGHT LEG — THIGH', new THREE.Vector3(0.8, 1.5, 0), new THREE.Vector3(1, -1, 0.3), 3, (g) => {
-        m(g, G('box', 0.65, 1.6, 0.65), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.7, 1.2, 0.15), M.armor, [0, 0, 0.38]);
-        m(g, G('box', 0.15, 1.2, 0.7), M.armor, [0.38, 0, 0]);
-        m(g, G('cyl', 0.07, 0.07, 1.4, 8), M.pipe, [0.25, 0, -0.25]);
-        m(g, G('cyl', 0.05, 0.05, 1.0, 6), M.accent, [-0.25, 0, 0.25]);
-        // Knee joint assembly
-        m(g, G('sphere', 0.22, 10, 8), M.joint, [0, -0.85, 0]);
-        m(g, G('cyl', 0.25, 0.25, 0.2, 10), M.joint, [0, -0.85, 0], [0, 0, Math.PI/2]);
-        // Piston detail
-        m(g, G('cyl', 0.03, 0.03, 1.2, 6), M.wire, [0.28, 0, 0.28]);
-      });
-
-      // ── LEFT THIGH ──
-      addPart('LEFT LEG — THIGH', new THREE.Vector3(-0.8, 1.5, 0), new THREE.Vector3(-1, -1, 0.3), 3, (g) => {
-        m(g, G('box', 0.65, 1.6, 0.65), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.7, 1.2, 0.15), M.armor, [0, 0, 0.38]);
-        m(g, G('box', 0.15, 1.2, 0.7), M.armor, [-0.38, 0, 0]);
-        m(g, G('cyl', 0.07, 0.07, 1.4, 8), M.pipe, [-0.25, 0, -0.25]);
-        m(g, G('cyl', 0.05, 0.05, 1.0, 6), M.accent, [0.25, 0, 0.25]);
-        m(g, G('sphere', 0.22, 10, 8), M.joint, [0, -0.85, 0]);
-        m(g, G('cyl', 0.25, 0.25, 0.2, 10), M.joint, [0, -0.85, 0], [0, 0, Math.PI/2]);
-        m(g, G('cyl', 0.03, 0.03, 1.2, 6), M.wire, [-0.28, 0, 0.28]);
-      });
-
-      // ── RIGHT SHIN ──
-      addPart('RIGHT LEG — SHIN', new THREE.Vector3(0.8, 0.3, 0.15), new THREE.Vector3(1.2, -1.5, 0.5), 3.5, (g) => {
-        m(g, G('box', 0.55, 1.4, 0.55), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.6, 1.2, 0.12), M.armor, [0, 0.05, 0.32]);
-        // Thruster nozzle
-        m(g, G('cyl', 0.2, 0.12, 0.3, 10), M.dark, [0, -0.2, -0.35], [Math.PI * 0.4, 0, 0]);
-        m(g, G('cyl', 0.1, 0.1, 0.05, 8), M.glowRed, [0, -0.35, -0.48], [Math.PI * 0.4, 0, 0]);
-        // Cable runs
-        for (let i = 0; i < 3; i++) {
-          m(g, G('cyl', 0.03, 0.03, 1.0, 6), M.wire, [0.22, i * 0.02, -0.18 + i * 0.08]);
-        }
-        // Shin guard bolts
-        for (let i = 0; i < 3; i++) {
-          m(g, G('cyl', 0.03, 0.03, 0.06, 6), M.accent, [0.22, -0.3 + i * 0.3, 0.38]);
-        }
-      });
-
-      // ── LEFT SHIN ──
-      addPart('LEFT LEG — SHIN', new THREE.Vector3(-0.8, 0.3, 0.15), new THREE.Vector3(-1.2, -1.5, 0.5), 3.5, (g) => {
-        m(g, G('box', 0.55, 1.4, 0.55), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.6, 1.2, 0.12), M.armor, [0, 0.05, 0.32]);
-        m(g, G('cyl', 0.2, 0.12, 0.3, 10), M.dark, [0, -0.2, -0.35], [Math.PI * 0.4, 0, 0]);
-        m(g, G('cyl', 0.1, 0.1, 0.05, 8), M.glowRed, [0, -0.35, -0.48], [Math.PI * 0.4, 0, 0]);
-        for (let i = 0; i < 3; i++) {
-          m(g, G('cyl', 0.03, 0.03, 1.0, 6), M.wire, [-0.22, i * 0.02, -0.18 + i * 0.08]);
-        }
-      });
-
-      // ── RIGHT FOOT ──
-      addPart('RIGHT FOOT — STABILIZER', new THREE.Vector3(0.8, -0.5, 0.2), new THREE.Vector3(1, -2, 0.8), 3, (g) => {
-        m(g, G('box', 0.7, 0.25, 1.0), M.frame, [0, 0, 0.1]);
-        m(g, G('box', 0.65, 0.3, 0.5), M.armor, [0, 0.05, -0.15]);
-        // Toe claws
-        for (const tx of [-0.2, 0, 0.2]) {
-          m(g, G('box', 0.12, 0.15, 0.2), M.dark, [tx, -0.08, 0.55]);
-        }
-        m(g, G('cyl', 0.1, 0.06, 0.15, 8), M.joint, [0, -0.1, -0.4]);
-        m(g, G('sphere', 0.15, 8, 6), M.joint, [0, 0.2, -0.1]);
-        // Magnetic grip pads
-        m(g, G('cyl', 0.08, 0.08, 0.03, 8), M.glow, [-0.15, -0.13, 0.3]);
-        m(g, G('cyl', 0.08, 0.08, 0.03, 8), M.glow, [0.15, -0.13, 0.3]);
-      });
-
-      // ── LEFT FOOT ──
-      addPart('LEFT FOOT — STABILIZER', new THREE.Vector3(-0.8, -0.5, 0.2), new THREE.Vector3(-1, -2, 0.8), 3, (g) => {
-        m(g, G('box', 0.7, 0.25, 1.0), M.frame, [0, 0, 0.1]);
-        m(g, G('box', 0.65, 0.3, 0.5), M.armor, [0, 0.05, -0.15]);
-        for (const tx of [-0.2, 0, 0.2]) {
-          m(g, G('box', 0.12, 0.15, 0.2), M.dark, [tx, -0.08, 0.55]);
-        }
-        m(g, G('cyl', 0.1, 0.06, 0.15, 8), M.joint, [0, -0.1, -0.4]);
-        m(g, G('sphere', 0.15, 8, 6), M.joint, [0, 0.2, -0.1]);
-        m(g, G('cyl', 0.08, 0.08, 0.03, 8), M.glow, [-0.15, -0.13, 0.3]);
-        m(g, G('cyl', 0.08, 0.08, 0.03, 8), M.glow, [0.15, -0.13, 0.3]);
-      });
-
-      // ── BACKPACK REACTOR ──
-      addPart('BACKPACK — FUSION REACTOR', new THREE.Vector3(0, 3.8, -1.0), new THREE.Vector3(0, 0.5, -2), 4, (g) => {
-        m(g, G('box', 1.5, 1.5, 0.8), M.dark, [0, 0, 0]);
-        // Reactor core — glowing
-        m(g, G('cyl', 0.3, 0.3, 0.85, 16), M.glow, [0, 0, 0]);
-        // Heat sink radiator fins
-        for (let i = 0; i < 5; i++) {
-          m(g, G('box', 1.6, 0.03, 0.6), M.accent, [0, -0.5 + i * 0.25, -0.35]);
-        }
-        // Exhaust ports
-        for (const sy of [-0.4, 0.4]) {
-          m(g, G('cyl', 0.15, 0.2, 0.3, 10), M.frame, [0.6, sy, -0.3], [Math.PI/2, 0, 0]);
-          m(g, G('cyl', 0.15, 0.2, 0.3, 10), M.frame, [-0.6, sy, -0.3], [Math.PI/2, 0, 0]);
-          m(g, G('cyl', 0.1, 0.1, 0.05, 8), M.glowOrange, [0.6, sy, -0.48], [Math.PI/2, 0, 0]);
-          m(g, G('cyl', 0.1, 0.1, 0.05, 8), M.glowOrange, [-0.6, sy, -0.48], [Math.PI/2, 0, 0]);
-        }
-        // Power cables
-        m(g, G('cyl', 0.05, 0.05, 0.6, 6), M.pipe, [0.3, 0.3, 0.5]);
-        m(g, G('cyl', 0.05, 0.05, 0.6, 6), M.pipe, [-0.3, 0.3, 0.5]);
-        // Coolant pipes
-        m(g, G('cyl', 0.04, 0.04, 1.2, 6), M.pipe, [0.6, 0, 0.1], [0, 0, 0.3]);
-        m(g, G('cyl', 0.04, 0.04, 1.2, 6), M.pipe, [-0.6, 0, 0.1], [0, 0, -0.3]);
-      });
-
-      // ── LEFT WING THRUSTER ──
-      addPart('LEFT WING — THRUSTER NACELLE', new THREE.Vector3(-1.8, 4.0, -0.8), new THREE.Vector3(-2, 0.5, -1.5), 4.5, (g) => {
-        m(g, G('box', 0.3, 0.6, 1.5), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.35, 0.15, 1.6), M.armor, [0, 0.3, 0]);
-        m(g, G('cyl', 0.2, 0.12, 0.5, 10), M.dark, [0, 0, -0.9], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.12, 0.12, 0.1, 8), M.glow, [0, 0, -1.18], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.15, 0.2, 0.3, 10), M.accent, [0, 0, 0.8], [Math.PI/2, 0, 0]);
-        m(g, G('box', 0.08, 0.08, 0.5), M.pipe, [0, -0.2, 0.3]);
-        // Winglet
-        m(g, G('box', 0.6, 0.04, 0.4), M.armor, [-0.2, 0.08, -0.3]);
-      });
-
-      // ── RIGHT WING THRUSTER ──
-      addPart('RIGHT WING — THRUSTER NACELLE', new THREE.Vector3(1.8, 4.0, -0.8), new THREE.Vector3(2, 0.5, -1.5), 4.5, (g) => {
-        m(g, G('box', 0.3, 0.6, 1.5), M.frame, [0, 0, 0]);
-        m(g, G('box', 0.35, 0.15, 1.6), M.armor, [0, 0.3, 0]);
-        m(g, G('cyl', 0.2, 0.12, 0.5, 10), M.dark, [0, 0, -0.9], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.12, 0.12, 0.1, 8), M.glow, [0, 0, -1.18], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.15, 0.2, 0.3, 10), M.accent, [0, 0, 0.8], [Math.PI/2, 0, 0]);
-        m(g, G('box', 0.08, 0.08, 0.5), M.pipe, [0, -0.2, 0.3]);
-        m(g, G('box', 0.6, 0.04, 0.4), M.armor, [0.2, 0.08, -0.3]);
-      });
-
-      // ── DORSAL ROTARY CANNON ──
-      addPart('DORSAL — ROTARY CANNON', new THREE.Vector3(0.6, 5.3, -0.6), new THREE.Vector3(0.8, 1.5, -1), 4, (g) => {
-        // Mount arm
-        m(g, G('box', 0.15, 0.4, 0.15), M.frame, [0, -0.3, 0.2]);
-        // Cannon housing
-        m(g, G('cyl', 0.15, 0.15, 0.8, 10), M.dark, [0, 0, 0], [Math.PI/2, 0, 0]);
-        // Rotating barrels (6)
-        for (let i = 0; i < 6; i++) {
-          const a = (i / 6) * Math.PI * 2;
-          m(g, G('cyl', 0.025, 0.025, 1.0, 6), M.pipe, [Math.cos(a) * 0.08, Math.sin(a) * 0.08, 0.5], [Math.PI/2, 0, 0]);
-        }
-        // Barrel shroud
-        m(g, G('cyl', 0.12, 0.1, 0.15, 10), M.accent, [0, 0, 0.95], [Math.PI/2, 0, 0]);
-        m(g, G('cyl', 0.06, 0.06, 0.02, 8), M.glowRed, [0, 0, 1.05], [Math.PI/2, 0, 0]);
-        // Ammo drum
-        m(g, G('cyl', 0.12, 0.12, 0.3, 10), M.dark, [0.2, -0.1, -0.2]);
-      });
-
-      // Update stats display
+      // ═══════════════════════════════════════════════════════════════
+      // TRIANGLE COUNT
+      // ═══════════════════════════════════════════════════════════════
       let totalTris = 0;
       scene.traverse((c) => {
-        const mesh = c as THREE_TYPES.Mesh;
+        const mesh = c as T.Mesh;
         if (mesh.isMesh && mesh.geometry) {
-          totalTris += (mesh.geometry.index
-            ? mesh.geometry.index.count / 3
-            : mesh.geometry.attributes.position.count / 3);
+          totalTris += (mesh.geometry.index ? mesh.geometry.index.count / 3 : mesh.geometry.attributes.position.count / 3);
         }
       });
 
       // ═══════════════════════════════════════════════════════════════
-      // STATE
+      // STATE & INTERACTION
       // ═══════════════════════════════════════════════════════════════
-      let explodeAmount = 0;
-      let targetExplode = 0;
-      let wireframeMode = false;
-      let xrayMode = false;
-      let autoSpin = false;
+      let explodeAmount = 0, targetExplode = 0;
+      let wireframeMode = false, xrayMode = false, autoSpin = false;
       let hoveredPart: Part | null = null;
 
-      // ═══════════════════════════════════════════════════════════════
-      // RAYCASTING FOR PART HOVER
-      // ═══════════════════════════════════════════════════════════════
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
-
       function onMouseMove(event: MouseEvent) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       }
       window.addEventListener('mousemove', onMouseMove);
 
-      // ═══════════════════════════════════════════════════════════════
-      // DOM UPDATES — wire up buttons via DOM after render
-      // ═══════════════════════════════════════════════════════════════
+      // Part count display
       function updatePartCount() {
         const el = document.getElementById('mech-part-count');
         if (el) el.textContent = String(parts.length);
@@ -589,80 +676,54 @@ export default function MechExploded() {
       }
       updatePartCount();
 
-      // Button/slider event hookups
+      // Button hookups
       function setupUI() {
-        const btnAssembled = document.getElementById('mech-btn-assembled');
-        const btnExploded = document.getElementById('mech-btn-exploded');
-        const btnWireframe = document.getElementById('mech-btn-wireframe');
-        const btnXray = document.getElementById('mech-btn-xray');
-        const btnSpin = document.getElementById('mech-btn-spin');
+        const btnA = document.getElementById('mech-btn-assembled');
+        const btnE = document.getElementById('mech-btn-exploded');
+        const btnW = document.getElementById('mech-btn-wireframe');
+        const btnX = document.getElementById('mech-btn-xray');
+        const btnS = document.getElementById('mech-btn-spin');
         const slider = document.getElementById('mech-sep-slider') as HTMLInputElement | null;
 
+        const inkBtn = 'rgba(26,26,24,0.08)';
+        const inkBtnActive = 'rgba(26,26,24,0.2)';
+
         function updateBtnStates() {
-          [btnAssembled, btnExploded, btnWireframe, btnXray, btnSpin].forEach(b => {
-            if (b) b.style.background = 'rgba(138,180,248,0.08)';
-          });
-          if (targetExplode === 0 && btnAssembled) btnAssembled.style.background = 'rgba(138,180,248,0.2)';
-          if (targetExplode === 1 && btnExploded) btnExploded.style.background = 'rgba(138,180,248,0.2)';
-          if (wireframeMode && btnWireframe) btnWireframe.style.background = 'rgba(138,180,248,0.2)';
-          if (xrayMode && btnXray) btnXray.style.background = 'rgba(138,180,248,0.2)';
-          if (autoSpin && btnSpin) btnSpin.style.background = 'rgba(138,180,248,0.2)';
+          [btnA, btnE, btnW, btnX, btnS].forEach(b => { if (b) b.style.background = inkBtn; });
+          if (targetExplode === 0 && btnA) btnA.style.background = inkBtnActive;
+          if (targetExplode === 1 && btnE) btnE.style.background = inkBtnActive;
+          if (wireframeMode && btnW) btnW.style.background = inkBtnActive;
+          if (xrayMode && btnX) btnX.style.background = inkBtnActive;
+          if (autoSpin && btnS) btnS.style.background = inkBtnActive;
         }
 
-        if (btnAssembled) btnAssembled.onclick = () => {
-          targetExplode = 0;
-          if (slider) slider.value = '0';
-          updateBtnStates();
-        };
-        if (btnExploded) btnExploded.onclick = () => {
-          targetExplode = 1;
-          if (slider) slider.value = '100';
-          updateBtnStates();
-        };
-        if (btnWireframe) btnWireframe.onclick = () => {
+        if (btnA) btnA.onclick = () => { targetExplode = 0; if (slider) slider.value = '0'; updateBtnStates(); };
+        if (btnE) btnE.onclick = () => { targetExplode = 1; if (slider) slider.value = '100'; updateBtnStates(); };
+        if (btnW) btnW.onclick = () => {
           wireframeMode = !wireframeMode;
-          parts.forEach(p => {
-            p.group.traverse(c => {
-              const mesh = c as THREE_TYPES.Mesh;
-              if (mesh.isMesh && mesh.material) (mesh.material as THREE_TYPES.MeshStandardMaterial).wireframe = wireframeMode;
-            });
-            p.edgeGroup.visible = !wireframeMode;
-          });
+          parts.forEach(p => p.group.traverse(c => {
+            if ((c as T.Mesh).isMesh) {
+              const mat = (c as T.Mesh).material as T.ShaderMaterial;
+              if (mat.wireframe !== undefined) mat.wireframe = wireframeMode;
+            }
+            if (c.userData.isEdge) c.visible = !wireframeMode;
+          }));
           updateBtnStates();
         };
-        if (btnXray) btnXray.onclick = () => {
+        if (btnX) btnX.onclick = () => {
           xrayMode = !xrayMode;
-          parts.forEach(p => {
-            p.group.traverse(c => {
-              const mesh = c as THREE_TYPES.Mesh;
-              if (mesh.isMesh && mesh.material) {
-                const mat = mesh.material as THREE_TYPES.MeshStandardMaterial;
-                if (!mat.emissive || mat.emissive.getHex() === 0) {
-                  mat.transparent = xrayMode;
-                  mat.opacity = xrayMode ? 0.15 : 1;
-                }
-              }
-            });
-            p.edgeGroup.traverse(c => {
-              const line = c as THREE_TYPES.LineSegments;
-              if (line.isLineSegments) {
-                (line.material as THREE_TYPES.LineBasicMaterial).opacity = xrayMode ? 0.8 : 0.35;
-              }
-            });
-          });
+          sharedUniforms.xrayAlpha.value = xrayMode ? 0.12 : 1.0;
+          parts.forEach(p => p.group.traverse(c => {
+            if (c.userData.isEdge) {
+              (c as T.LineSegments).material = xrayMode ? edgeMatStrong : edgeMat;
+            }
+          }));
           updateBtnStates();
         };
-        if (btnSpin) btnSpin.onclick = () => {
-          autoSpin = !autoSpin;
-          updateBtnStates();
-        };
-        if (slider) slider.oninput = () => {
-          targetExplode = parseInt(slider.value) / 100;
-        };
-
+        if (btnS) btnS.onclick = () => { autoSpin = !autoSpin; updateBtnStates(); };
+        if (slider) slider.oninput = () => { targetExplode = parseInt(slider.value) / 100; };
         updateBtnStates();
       }
-      // Small delay to let React render the DOM
       setTimeout(setupUI, 100);
 
       // ═══════════════════════════════════════════════════════════════
@@ -674,40 +735,23 @@ export default function MechExploded() {
       function animate() {
         animId = requestAnimationFrame(animate);
         const dt = Math.min(clock.getDelta(), 0.05);
-        const t = clock.elapsedTime;
 
-        // Smooth explode interpolation
         explodeAmount += (targetExplode - explodeAmount) * 3 * dt;
-
-        // Position parts
         parts.forEach(p => {
           const offset = p.explodeDir.clone().multiplyScalar(p.explodeDist * explodeAmount);
           p.group.position.copy(p.origin).add(offset);
         });
 
-        // Auto spin
         controls.autoRotate = autoSpin;
-        controls.autoRotateSpeed = 1.5;
+        controls.autoRotateSpeed = 1.0;
 
-        // Glow pulse
-        const pulse = 0.5 + Math.sin(t * 2) * 0.3;
-        M.glow.emissiveIntensity = 0.4 + pulse * 0.4;
-        M.glowRed.emissiveIntensity = 0.3 + pulse * 0.3;
-        M.glowGreen.emissiveIntensity = 0.3 + Math.sin(t * 3) * 0.2;
-        M.glowOrange.emissiveIntensity = 0.3 + pulse * 0.25;
-
-        // Raycasting for part hover label
+        // Raycasting
         raycaster.setFromCamera(mouse, camera);
-        const allMeshes: THREE_TYPES.Mesh[] = [];
-        parts.forEach(p => {
-          p.group.traverse(c => {
-            if ((c as THREE_TYPES.Mesh).isMesh) allMeshes.push(c as THREE_TYPES.Mesh);
-          });
-        });
+        const allMeshes: T.Mesh[] = [];
+        parts.forEach(p => p.group.traverse(c => { if ((c as T.Mesh).isMesh) allMeshes.push(c as T.Mesh); }));
         const intersects = raycaster.intersectObjects(allMeshes, false);
         const labelEl = document.getElementById('mech-part-label');
         if (intersects.length > 0) {
-          // Find which part this mesh belongs to
           let found: Part | null = null;
           for (const p of parts) {
             let match = false;
@@ -716,26 +760,18 @@ export default function MechExploded() {
           }
           if (found && found !== hoveredPart) {
             hoveredPart = found;
-            if (labelEl) {
-              labelEl.textContent = found.name;
-              labelEl.style.opacity = '1';
-            }
+            if (labelEl) { labelEl.textContent = found.name; labelEl.style.opacity = '1'; }
           }
         } else {
-          if (hoveredPart) {
-            hoveredPart = null;
-            if (labelEl) labelEl.style.opacity = '0';
-          }
+          if (hoveredPart) { hoveredPart = null; if (labelEl) labelEl.style.opacity = '0'; }
         }
 
         controls.update();
         renderer.render(scene, camera);
       }
-
       animate();
       setLoaded(true);
 
-      // Resize handler
       function onResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -743,16 +779,13 @@ export default function MechExploded() {
       }
       window.addEventListener('resize', onResize);
 
-      // Cleanup
       cleanup = () => {
         cancelAnimationFrame(animId);
         window.removeEventListener('resize', onResize);
         window.removeEventListener('mousemove', onMouseMove);
         controls.dispose();
         renderer.dispose();
-        if (container.contains(renderer.domElement)) {
-          container.removeChild(renderer.domElement);
-        }
+        if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
       };
     })();
 
@@ -760,42 +793,44 @@ export default function MechExploded() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-[#0a0e14]">
+    <div className="relative w-full h-screen" style={{ background: '#f0ebe0' }}>
       <div ref={containerRef} className="absolute inset-0" />
 
-      <div className="absolute inset-0 pointer-events-none z-10" style={{ fontFamily: "'Courier New', monospace", color: '#8ab4f8' }}>
+      <div className="absolute inset-0 pointer-events-none z-10" style={{ fontFamily: "'Courier New', monospace", color: '#1a1a18' }}>
+        {/* Top-left title */}
         <div className="absolute top-6 sm:top-8 left-6 sm:left-10">
-          <div style={{ fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.4 }}>
-            TARTARY HEAVY INDUSTRIES — TECHNICAL DIVISION
+          <div style={{ fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.35 }}>
+            TARTARY HEAVY INDUSTRIES — BUREAU OF NAVAL ARCHITECTURE
           </div>
-          <h1 style={{ fontSize: '24px', letterSpacing: '0.15em', fontWeight: 300, color: '#c8ddf8', margin: '4px 0' }}>
-            ATLAS-7 ASSAULT MECH
+          <h1 style={{ fontSize: '22px', letterSpacing: '0.18em', fontWeight: 300, color: '#1a1a18', margin: '4px 0' }}>
+            LEVIATHAN-IX BATTLECRUISER
           </h1>
-          <div style={{ fontSize: '10px', letterSpacing: '0.4em', textTransform: 'uppercase', opacity: 0.35 }}>
-            EXPLODED ASSEMBLY VIEW — CLASSIFIED
+          <div style={{ fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', opacity: 0.3 }}>
+            EXPLODED ASSEMBLY — TECHNICAL ILLUSTRATION — DWG. NO. THI-2847-IX
           </div>
         </div>
 
-        <div className="absolute top-6 sm:top-8 right-6 sm:right-10 text-right" style={{ fontSize: '10px', letterSpacing: '0.2em', opacity: 0.4 }}>
+        {/* Top-right stats */}
+        <div className="absolute top-6 sm:top-8 right-6 sm:right-10 text-right" style={{ fontSize: '9px', letterSpacing: '0.2em', opacity: 0.35 }}>
           DRAG TO ROTATE<br />
           SCROLL TO ZOOM<br /><br />
           COMPONENTS: <span id="mech-part-count">0</span><br />
           TRIANGLES: <span id="mech-tri-count">0</span>
         </div>
 
+        {/* Part hover label */}
         <div
           id="mech-part-label"
           className="absolute left-1/2 -translate-x-1/2"
           style={{
-            bottom: '80px',
-            fontSize: '12px', letterSpacing: '0.25em', textTransform: 'uppercase',
+            bottom: '80px', fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase',
             opacity: 0, transition: 'opacity 0.4s',
-            background: 'rgba(10,14,20,0.8)',
-            padding: '6px 16px',
-            border: '1px solid rgba(138,180,248,0.15)',
+            background: 'rgba(240,235,224,0.9)', padding: '6px 16px',
+            border: '1px solid rgba(26,26,24,0.15)',
           }}
         />
 
+        {/* Bottom buttons */}
         <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3 pointer-events-auto">
           {[
             { id: 'mech-btn-assembled', label: 'ASSEMBLED' },
@@ -804,48 +839,35 @@ export default function MechExploded() {
             { id: 'mech-btn-xray', label: 'X-RAY' },
             { id: 'mech-btn-spin', label: 'AUTO-SPIN' },
           ].map(btn => (
-            <button
-              key={btn.id}
-              id={btn.id}
-              style={{
-                background: 'rgba(138,180,248,0.08)',
-                border: '1px solid rgba(138,180,248,0.2)',
-                color: '#8ab4f8',
-                padding: '8px 14px',
-                fontFamily: "'Courier New', monospace",
-                fontSize: '10px',
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase' as const,
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-              }}
-            >
+            <button key={btn.id} id={btn.id} style={{
+              background: 'rgba(26,26,24,0.08)', border: '1px solid rgba(26,26,24,0.2)',
+              color: '#1a1a18', padding: '8px 14px', fontFamily: "'Courier New', monospace",
+              fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.3s',
+            }}>
               {btn.label}
             </button>
           ))}
         </div>
 
+        {/* Slider */}
         <div className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 flex items-center gap-2 pointer-events-auto">
-          <label style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.5 }}>Separation</label>
-          <input
-            id="mech-sep-slider"
-            type="range"
-            min="0"
-            max="100"
-            defaultValue="0"
-            style={{ width: '100px' }}
-          />
+          <label style={{ fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.4 }}>Separation</label>
+          <input id="mech-sep-slider" type="range" min="0" max="100" defaultValue="0" style={{ width: '100px' }} />
         </div>
+
+        {/* Drawing border frame */}
+        <div className="absolute inset-4 sm:inset-6 pointer-events-none" style={{ border: '1px solid rgba(26,26,24,0.12)' }} />
+        <div className="absolute inset-5 sm:inset-7 pointer-events-none" style={{ border: '1px solid rgba(26,26,24,0.06)' }} />
       </div>
 
       {!loaded && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0a0e14]">
+        <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: '#f0ebe0' }}>
           <div className="text-center">
-            <p style={{ fontFamily: "'Courier New', monospace", color: '#8ab4f8', fontSize: '11px', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
-              INITIALIZING SYSTEMS...
+            <p style={{ fontFamily: "'Courier New', monospace", color: '#1a1a18', fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.5 }}>
+              RENDERING TECHNICAL ILLUSTRATION...
             </p>
-            <div className="w-48 h-[1px] bg-white/10 mx-auto mt-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 h-full w-1/3 bg-blue-400 animate-pulse" />
+            <div className="w-48 h-[1px] mx-auto mt-4 relative overflow-hidden" style={{ background: 'rgba(26,26,24,0.1)' }}>
+              <div className="absolute top-0 left-0 h-full w-1/3 animate-pulse" style={{ background: 'rgba(26,26,24,0.3)' }} />
             </div>
           </div>
         </div>
