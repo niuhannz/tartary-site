@@ -335,6 +335,9 @@ export default function Navigation() {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  const isHome = pathname === '/';
+  const lightNav = isHome && !scrolled;
+
   return (
     <>
       <header
@@ -343,6 +346,7 @@ export default function Navigation() {
             ? 'bg-carbon/80 backdrop-blur-xl border-b border-white/5'
             : 'bg-transparent'
         }`}
+        {...(lightNav ? { 'data-light-nav': '' } : {})}
       >
         <div className="max-w-[1400px] mx-auto px-6 md:px-10">
           <div className="flex items-center justify-between h-20 md:h-24">
