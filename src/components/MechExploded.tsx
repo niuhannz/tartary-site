@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import type * as T from 'three';
 
 // ═══════════════════════════════════════════════════════════════
-// TARTARY HEAVY INDUSTRIES — NAVAL ARCHITECTURE GALLERY
-// 6 Ship Models — Cross-Hatching on Cream Paper
+// TARTARY IMPERIAL AERONAUTICS — AIRSHIP ENGINEERING GALLERY
+// 6 Zeppelin-Aircraft Fusions — Cross-Hatching on Cream Paper
 // Arrow keys to cycle, random on load
 // ═══════════════════════════════════════════════════════════════
 
@@ -103,7 +103,6 @@ export default function MechExploded() {
       const edgeMat = new THREE.LineBasicMaterial({ color: 0x1a1a18, transparent: true, opacity: 0.5 });
       const edgeMatStrong = new THREE.LineBasicMaterial({ color: 0x1a1a18, transparent: true, opacity: 0.85 });
 
-      // ── Geometry cache ──
       const _gc: Record<string, T.BufferGeometry> = {};
       function G(type: string, ...a: number[]): T.BufferGeometry {
         const k = type + a.join(',');
@@ -118,7 +117,6 @@ export default function MechExploded() {
         return _gc[k];
       }
 
-      // ── Part system ──
       interface Part { group: T.Group; name: string; origin: T.Vector3; explodeDir: T.Vector3; explodeDist: number; }
       const parts: Part[] = [];
 
@@ -152,7 +150,6 @@ export default function MechExploded() {
       const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
       const PI = Math.PI, PI2 = PI / 2;
 
-      // ── Seeded random ──
       let _seed = 42;
       function sr() { _seed = (_seed * 16807) % 2147483647; return (_seed - 1) / 2147483646; }
       function srr(a: number, b: number) { return a + sr() * (b - a); }
@@ -161,7 +158,6 @@ export default function MechExploded() {
         for (let i = 0; i < n; i++) m(g, G('b', srr(sMin, sMax), srr(sMin, sMax) * .5, srr(sMin, sMax)), mat, [cx + srr(-w/2, w/2), cy + srr(-h/2, h/2), cz + srr(-d/2, d/2)]);
       }
 
-      // ── Engineering grid ──
       const gridGroup = new THREE.Group();
       const gridMat = new THREE.LineBasicMaterial({ color: 0xc0b8a8, transparent: true, opacity: 0.25 });
       for (let r = 3; r <= 24; r += 3) {
@@ -173,427 +169,653 @@ export default function MechExploded() {
       scene.add(gridGroup);
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 1: LEVIATHAN-IX HEAVY BATTLECRUISER
+      // MODEL 1: LEVIATHAN-IX — IMPERIAL DREADNOUGHT AIRSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildLeviathan() {
         _seed = 42;
-        addPart('MAIN HULL — CENTRAL FUSELAGE', V(0,0,0), V(0,0,0), 0, g => {
-          m(g, G('b',2,1.2,8), MH); m(g, G('b',1.6,.15,7.5), MH, [0,.68,0]); m(g, G('b',1.6,.15,7.5), MH, [0,-.68,0]);
-          m(g, G('b',.15,.9,7.5), MH, [1.05,0,0]); m(g, G('b',.15,.9,7.5), MH, [-1.05,0,0]);
-          m(g, G('b',.3,.2,6.5), MA, [0,.82,0]); m(g, G('b',.4,.15,5), MA, [0,-.78,.5]);
-          greeble(g, MD, 0,.82,0, 1.2,.01,5.5, 25,.04,.15);
-          greeble(g, MD, 1.05,0,0, .01,.7,5.5, 18,.03,.12); greeble(g, MD, -1.05,0,0, .01,.7,5.5, 18,.03,.12);
-          for(let z=-3;z<=3;z+=.4){m(g,G('s',.015,4,3),MD,[.95,.45,z]);m(g,G('s',.015,4,3),MD,[-.95,.45,z]);}
+        addPart('GAS ENVELOPE — FORWARD DOME', V(0,2.5,4), V(0,1,2.5), 4, g => {
+          m(g,G('s',2.2,14,10),MH,[0,0,0],[0,0,0],[1,.85,1.3]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.015,.015,2.5),MD,[Math.cos(a)*2,Math.sin(a)*1.8,0]);}
+          greeble(g,MD,0,.5,.5,1.5,.01,2,12,.02,.06);
         });
-        addPart('PROW — FORWARD HULL', V(0,0,5.5), V(0,0,2), 4, g => {
-          m(g,G('b',1.6,.9,2.5),MH); m(g,G('b',1.2,.7,1.5),MH,[0,0,1.5]); m(g,G('b',.6,.4,1),MH,[0,0,2.6]);
-          m(g,G('n',.25,1.2,8),MH,[0,0,3.5],[PI2,0,0]); m(g,G('c',.08,.08,.6,8),MD,[0,0,4.1],[PI2,0,0]);
-          for(let i=-2;i<=2;i++) m(g,G('b',.08,.03,.35),MD,[i*.25,.46,1]);
-          greeble(g,MD,0,.46,0,1,.01,2,15,.03,.1); greeble(g,MD,0,-.46,0,1,.01,2,12,.03,.08);
+        addPart('GAS ENVELOPE — CENTRAL BARREL', V(0,2.5,0), V(0,1.5,0), 3.5, g => {
+          m(g,G('c',2.4,2.4,6,16),MH);
+          for(let i=0;i<12;i++){const a=(i/12)*PI*2; m(g,G('b',.012,.012,5.8),MD,[Math.cos(a)*2.42,Math.sin(a)*2.42,0]);}
+          greeble(g,MD,0,1.5,0,2,.01,4.5,20,.02,.08); greeble(g,MD,0,-1.5,0,2,.01,4.5,15,.02,.07);
         });
-        addPart('STERN — AFT HULL', V(0,0,-5.5), V(0,0,-2), 4, g => {
-          m(g,G('b',1.8,1,2.5),MH); m(g,G('b',2.2,1.4,.3),MA,[0,0,-1.3]); m(g,G('b',1.5,.8,.5),MD,[0,0,-1.5]);
-          greeble(g,MD,0,0,0,1.4,.8,2,20,.03,.1);
+        addPart('GAS ENVELOPE — AFT TAPER', V(0,2.5,-4.5), V(0,1,-2.5), 4, g => {
+          m(g,G('n',2.2,4,14),MH,[0,0,0],[-PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.012,.012,3),MD,[Math.cos(a)*1.2,Math.sin(a)*1.2,-1]);}
+          greeble(g,MD,0,0,-1.5,1,.01,2.5,8,.02,.05);
         });
-        addPart('BRIDGE — COMMAND TOWER', V(0,1.2,1.5), V(0,2,.5), 4.5, g => {
-          m(g,G('b',1.2,.8,1.5),MH); m(g,G('b',1,.4,1.2),MH,[0,.55,0]); m(g,G('b',.7,.25,.8),MH,[0,.9,.1]);
-          for(let i=-3;i<=3;i++) m(g,G('b',.12,.02,.04),MD,[i*.13,.72,.62]);
-          m(g,G('c',.04,.03,.8,6),MD,[0,1.3,0]); m(g,G('s',.06,6,4),MA,[0,1.72,0]);
-          m(g,G('s',.15,8,6),MH,[.5,.9,-.3],[0,0,0],[1,.3,1]); greeble(g,MD,0,.5,0,.9,.01,1.2,12,.02,.08);
+        addPart('STRUCTURAL RING — FRAME 7', V(0,2.5,2), V(0,2,.5), 3, g => {
+          m(g,G('t',2.5,.06,10,28),MH,[0,0,0],[PI2,0,0]); m(g,G('t',2.5,.03,8,24),MA,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.04,.04,.08),MD,[Math.cos(a)*2.5,Math.sin(a)*2.5,0]);}
         });
-        addPart('PORT ENGINE — NACELLE', V(-2.5,-.2,-3), V(-2.5,-.5,-1.5), 5, g => {
-          m(g,G('c',.6,.5,3.5,12),MH,[0,0,0],[PI2,0,0]); m(g,G('c',.7,.65,.4,12),MA,[0,0,1.6],[PI2,0,0]);
-          m(g,G('c',.5,.7,.8,12),MD,[0,0,-2],[PI2,0,0]);
-          for(let i=0;i<8;i++){const a=(i/8)*PI*2;m(g,G('b',.02,.12,1.5),MD,[Math.cos(a)*.55,Math.sin(a)*.55,-.5],[0,0,a]);}
-          greeble(g,MD,0,.5,0,.6,.01,2.5,15,.02,.08);
+        addPart('STRUCTURAL RING — FRAME 14', V(0,2.5,-1.5), V(0,2,-.3), 3, g => {
+          m(g,G('t',2.5,.06,10,28),MH,[0,0,0],[PI2,0,0]); m(g,G('t',2.5,.03,8,24),MA,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.04,.04,.08),MD,[Math.cos(a)*2.5,Math.sin(a)*2.5,0]);}
         });
-        addPart('STARBOARD ENGINE — NACELLE', V(2.5,-.2,-3), V(2.5,-.5,-1.5), 5, g => {
-          m(g,G('c',.6,.5,3.5,12),MH,[0,0,0],[PI2,0,0]); m(g,G('c',.7,.65,.4,12),MA,[0,0,1.6],[PI2,0,0]);
-          m(g,G('c',.5,.7,.8,12),MD,[0,0,-2],[PI2,0,0]);
-          for(let i=0;i<8;i++){const a=(i/8)*PI*2;m(g,G('b',.02,.12,1.5),MD,[Math.cos(a)*.55,Math.sin(a)*.55,-.5],[0,0,a]);}
-          greeble(g,MD,0,.5,0,.6,.01,2.5,15,.02,.08);
+        addPart('KEEL TRUSS — CENTRAL WALKWAY', V(0,.5,0), V(0,-1.5,0), 3.5, g => {
+          m(g,G('b',.3,.2,9),MH);
+          for(let z=-4;z<=4;z+=.6) m(g,G('b',.25,.03,.06),MD,[0,-.12,z]);
+          m(g,G('b',.08,.08,8.5),MA,[.12,.08,0]); m(g,G('b',.08,.08,8.5),MA,[-.12,.08,0]);
+          greeble(g,MD,0,.12,0,.2,.01,7,15,.02,.05);
         });
-        addPart('PORT PYLON', V(-1.5,0,-2), V(-1.5,-.3,-.8), 3, g => {
-          m(g,G('b',1.2,.2,2),MH); m(g,G('b',1,.08,1.8),MA,[0,.12,0]); greeble(g,MD,0,.12,0,.9,.01,1.5,10,.02,.06);
+        addPart('COMMAND GONDOLA — MAIN DECK', V(0,-.8,.5), V(0,-3,.5), 5, g => {
+          m(g,G('b',2,.8,3),MH); m(g,G('b',1.8,.12,2.8),MH,[0,.42,0]); m(g,G('b',1.8,.12,2.8),MH,[0,-.42,0]);
+          for(let z=-1;z<=1;z+=.3){m(g,G('s',.015,4,3),MD,[1.02,.2,z]);m(g,G('s',.015,4,3),MD,[-1.02,.2,z]);}
+          greeble(g,MD,0,.42,0,1.5,.01,2.5,20,.03,.1);
         });
-        addPart('STARBOARD PYLON', V(1.5,0,-2), V(1.5,-.3,-.8), 3, g => {
-          m(g,G('b',1.2,.2,2),MH); m(g,G('b',1,.08,1.8),MA,[0,.12,0]); greeble(g,MD,0,.12,0,.9,.01,1.5,10,.02,.06);
+        addPart('BRIDGE TOWER — GOTHIC SPIRE', V(0,.2,1), V(0,-2,1.5), 4, g => {
+          m(g,G('b',.8,.6,.8),MH); m(g,G('b',.6,.5,.6),MH,[0,.5,0]); m(g,G('b',.4,.8,.4),MH,[0,1.1,0]);
+          m(g,G('n',.15,.6,6),MH,[0,1.7,0]);
+          for(let i=-2;i<=2;i++) m(g,G('b',.06,.02,.03),MD,[i*.1,.35,.42]);
+          m(g,G('c',.03,.02,.5,4),MD,[0,2.1,0]); m(g,G('s',.04,4,3),MA,[0,2.35,0]);
+          greeble(g,MD,0,.8,0,.5,.01,.6,8,.02,.05);
         });
-        addPart('DORSAL — WEAPONS BATTERY', V(0,1,-1), V(0,2.5,0), 4, g => {
-          m(g,G('c',.5,.6,.3,12),MH); m(g,G('b',.8,.4,.8),MH,[0,.3,0]);
-          m(g,G('c',.06,.05,2,8),MD,[.15,.35,1.2],[PI2,0,0]); m(g,G('c',.06,.05,2,8),MD,[-.15,.35,1.2],[PI2,0,0]);
-          greeble(g,MD,0,.52,0,.6,.01,.6,8,.02,.06);
+        addPart('PORT FORWARD NACELLE', V(-3.2,1.8,-1), V(-2.5,0,-.5), 5, g => {
+          m(g,G('c',.5,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.55,.5,.25,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.12,.12,.1,6),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.45,.015,.05),MD,[Math.cos(a)*.2,Math.sin(a)*.2,-1.5],[0,0,a]);}
+          greeble(g,MD,0,.4,0,.4,.01,2,8,.02,.05);
         });
-        addPart('VENTRAL — TORPEDO BAY', V(0,-.9,.5), V(0,-2.5,0), 4, g => {
-          m(g,G('b',1.4,.4,2),MH);
-          for(let r=0;r<2;r++)for(let c=0;c<3;c++) m(g,G('c',.08,.08,.5,8),MD,[-.3+c*.3,-.1+r*.2,1.1],[PI2,0,0]);
-          greeble(g,MD,0,-.22,0,1.1,.01,1.6,12,.02,.07);
+        addPart('STBD FORWARD NACELLE', V(3.2,1.8,-1), V(2.5,0,-.5), 5, g => {
+          m(g,G('c',.5,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.55,.5,.25,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.12,.12,.1,6),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.45,.015,.05),MD,[Math.cos(a)*.2,Math.sin(a)*.2,-1.5],[0,0,a]);}
+          greeble(g,MD,0,.4,0,.4,.01,2,8,.02,.05);
         });
-        addPart('PORT WING', V(-2,.1,0), V(-3,0,0), 4.5, g => {
-          m(g,G('b',2,.12,2.5),MH); m(g,G('b',1.8,.06,2.3),MA,[0,.08,0]); m(g,G('b',.5,.08,1.5),MH,[-.9,0,.3]);
-          greeble(g,MD,-.3,.08,0,1.5,.01,2,18,.02,.08);
+        addPart('PORT AFT NACELLE', V(-2.8,2,-3.5), V(-2.5,.5,-1.5), 5, g => {
+          m(g,G('c',.45,.35,2,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.5,.45,.2,10),MA,[0,0,.8],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.4,.015,.04),MD,[Math.cos(a)*.15,Math.sin(a)*.15,-1.3],[0,0,a]);}
         });
-        addPart('STARBOARD WING', V(2,.1,0), V(3,0,0), 4.5, g => {
-          m(g,G('b',2,.12,2.5),MH); m(g,G('b',1.8,.06,2.3),MA,[0,.08,0]); m(g,G('b',.5,.08,1.5),MH,[.9,0,.3]);
-          greeble(g,MD,.3,.08,0,1.5,.01,2,18,.02,.08);
+        addPart('STBD AFT NACELLE', V(2.8,2,-3.5), V(2.5,.5,-1.5), 5, g => {
+          m(g,G('c',.45,.35,2,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.5,.45,.2,10),MA,[0,0,.8],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.4,.015,.04),MD,[Math.cos(a)*.15,Math.sin(a)*.15,-1.3],[0,0,a]);}
         });
-        addPart('PORT RAILGUN', V(-1.2,-.3,3), V(-1.5,-.5,2), 4, g => {
-          m(g,G('c',.12,.08,3,10),MH,[0,0,0],[PI2,0,0]);
-          for(let i=0;i<6;i++) m(g,G('t',.14,.02,6,12),MA,[0,0,-1+i*.4],[PI2,0,0]);
-          m(g,G('c',.15,.12,.2,8),MD,[0,0,1.6],[PI2,0,0]);
+        addPart('PORT BROADSIDE GALLERY', V(-2.5,.5,0), V(-3,.5,0), 4, g => {
+          m(g,G('b',.6,.5,3.5),MH);
+          for(let z=-1.2;z<=1.2;z+=.4) m(g,G('c',.05,.04,.8,6),MD,[-.32,.1,z],[0,0,PI2]);
+          greeble(g,MD,0,.25,0,.4,.01,3,12,.02,.06);
         });
-        addPart('STARBOARD RAILGUN', V(1.2,-.3,3), V(1.5,-.5,2), 4, g => {
-          m(g,G('c',.12,.08,3,10),MH,[0,0,0],[PI2,0,0]);
-          for(let i=0;i<6;i++) m(g,G('t',.14,.02,6,12),MA,[0,0,-1+i*.4],[PI2,0,0]);
-          m(g,G('c',.15,.12,.2,8),MD,[0,0,1.6],[PI2,0,0]);
+        addPart('STBD BROADSIDE GALLERY', V(2.5,.5,0), V(3,.5,0), 4, g => {
+          m(g,G('b',.6,.5,3.5),MH);
+          for(let z=-1.2;z<=1.2;z+=.4) m(g,G('c',.05,.04,.8,6),MD,[.32,.1,z],[0,0,PI2]);
+          greeble(g,MD,0,.25,0,.4,.01,3,12,.02,.06);
         });
-        addPart('DORSAL FIN — SENSOR ARRAY', V(0,1.5,-2.5), V(0,2.5,-.5), 3.5, g => {
-          m(g,G('b',.08,1.5,1.8),MH); m(g,G('b',.06,1.2,1.5),MA,[0,.2,0]);
-          for(let i=0;i<4;i++) m(g,G('b',.1,.03,.3),MD,[0,-.4+i*.4,.7]);
-          m(g,G('s',.04,6,4),MD,[0,.78,0]);
+        addPart('DORSAL OBSERVATORY DOME', V(0,5.2,.5), V(0,3,.3), 4, g => {
+          m(g,G('s',.6,10,8),MH,[0,0,0],[0,0,0],[1,.5,1]);
+          m(g,G('t',.55,.025,8,20),MA,[0,-.1,0],[PI2,0,0]);
+          m(g,G('c',.08,.06,.3,6),MD,[0,.28,0]); m(g,G('s',.04,4,3),MA,[0,.42,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.015,.18,.015),MD,[Math.cos(a)*.5,0,Math.sin(a)*.5]);}
+        });
+        addPart('GOTHIC SPIRE — AFT TOWER', V(0,5,-2), V(0,3,-.5), 3.5, g => {
+          m(g,G('b',.3,.4,.3),MH); m(g,G('b',.2,1,.2),MA,[0,.6,0]); m(g,G('n',.1,.5,6),MH,[0,1.3,0]);
+          greeble(g,MD,0,.3,0,.2,.01,.3,6,.02,.04);
+        });
+        addPart('RUDDER — VERTICAL FIN', V(0,2.5,-7), V(0,1.5,-2.5), 4, g => {
+          m(g,G('b',.06,2,1.5),MH); m(g,G('b',.04,1.6,1.2),MA,[0,.2,0]);
+          m(g,G('s',.03,4,3),MD,[0,1.02,0]);
+        });
+        addPart('ELEVATOR — PORT', V(-1.5,2.5,-6.5), V(-1.5,.5,-2), 3.5, g => {
+          m(g,G('b',1.5,.06,1),MH); m(g,G('b',1.3,.04,.8),MA,[0,.04,0]);
+        });
+        addPart('ELEVATOR — STARBOARD', V(1.5,2.5,-6.5), V(1.5,.5,-2), 3.5, g => {
+          m(g,G('b',1.5,.06,1),MH); m(g,G('b',1.3,.04,.8),MA,[0,.04,0]);
+        });
+        addPart('MOORING CONE — BOW', V(0,2.5,6.5), V(0,.5,3), 4.5, g => {
+          m(g,G('n',.4,1.5,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('t',.35,.03,6,16),MA,[0,0,-.3],[PI2,0,0]);
+          m(g,G('c',.06,.06,.3,4),MD,[0,-.25,-.5]);
+        });
+        addPart('STEAM MANIFOLD — PORT', V(-2.5,3.5,0), V(-2,.8,0), 3, g => {
+          for(let z=-.8;z<=.8;z+=.4){m(g,G('c',.04,.04,.6,6),MD,[0,0,z],[PI2,0,0]); m(g,G('c',.06,.06,.04,6),MA,[0,0,z+.2],[PI2,0,0]);}
+          m(g,G('b',.08,.08,2),MD,[0,.06,0]);
+        });
+        addPart('STEAM MANIFOLD — STBD', V(2.5,3.5,0), V(2,.8,0), 3, g => {
+          for(let z=-.8;z<=.8;z+=.4){m(g,G('c',.04,.04,.6,6),MD,[0,0,z],[PI2,0,0]); m(g,G('c',.06,.06,.04,6),MA,[0,0,z+.2],[PI2,0,0]);}
+          m(g,G('b',.08,.08,2),MD,[0,.06,0]);
+        });
+        addPart('BALLAST TANK — FORWARD', V(0,1,3), V(0,-1.5,1.5), 3, g => {
+          m(g,G('c',.3,.3,1.5,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.35,.35,.1,8),MA,[0,0,.6],[PI2,0,0]); m(g,G('c',.35,.35,.1,8),MA,[0,0,-.6],[PI2,0,0]);
+        });
+        addPart('BALLAST TANK — AFT', V(0,1,-3), V(0,-1.5,-1.5), 3, g => {
+          m(g,G('c',.3,.3,1.5,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.35,.35,.1,8),MA,[0,0,.6],[PI2,0,0]); m(g,G('c',.35,.35,.1,8),MA,[0,0,-.6],[PI2,0,0]);
+        });
+        addPart('SIGNAL MAST — DORSAL', V(0,5.5,-1), V(0,2.5,-.3), 2.5, g => {
+          m(g,G('c',.025,.02,.8,4),MD); m(g,G('s',.03,4,3),MA,[0,.42,0]);
+          m(g,G('b',.3,.015,.015),MD,[0,.2,0]); m(g,G('b',.2,.015,.015),MD,[0,.35,0]);
         });
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 2: WHISPERWIND FAST INTERCEPTOR
+      // MODEL 2: WHISPERWIND — PHANTOM CORSAIR AIRSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildWhisperwind() {
         _seed = 137;
-        addPart('FUSELAGE — AERODYNAMIC HULL', V(0,0,0), V(0,0,0), 0, g => {
-          m(g,G('b',1,.6,6),MH); m(g,G('b',.8,.3,5.5),MA,[0,.35,0]); m(g,G('b',.8,.3,5.5),MA,[0,-.35,0]);
-          m(g,G('b',.12,.5,5),MH,[.52,0,0]); m(g,G('b',.12,.5,5),MH,[-.52,0,0]);
-          greeble(g,MD,0,.35,0,.6,.01,4,20,.03,.1);
-          greeble(g,MD,.52,0,0,.01,.4,4,12,.02,.08); greeble(g,MD,-.52,0,0,.01,.4,4,12,.02,.08);
+        addPart('ENVELOPE — STREAMLINED HULL', V(0,2,0), V(0,1.5,0), 3.5, g => {
+          m(g,G('c',1.6,1.6,7,14),MH); m(g,G('s',1.6,12,8),MH,[0,0,3.8],[0,0,0],[1,.9,.6]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.01,.01,7.5),MD,[Math.cos(a)*1.62,Math.sin(a)*1.62,-.2]);}
+          greeble(g,MD,0,1,0,1.2,.01,5,18,.02,.07);
         });
-        addPart('NOSE CONE — SENSOR PROBE', V(0,0,4.5), V(0,0,2.5), 3.5, g => {
-          m(g,G('n',.35,2.5,10),MH,[0,0,0],[PI2,0,0]); m(g,G('c',.06,.06,.8,6),MD,[0,0,1.4],[PI2,0,0]);
-          m(g,G('s',.04,6,4),MA,[0,0,2]); greeble(g,MD,0,.2,0,.4,.01,1.5,8,.02,.06);
+        addPart('ENVELOPE — AFT CONE', V(0,2,-5), V(0,1,-2), 4, g => {
+          m(g,G('n',1.5,3.5,12),MH,[0,0,0],[-PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.01,.01,2.5),MD,[Math.cos(a)*.8,Math.sin(a)*.8,-.5]);}
         });
-        addPart('COCKPIT CANOPY', V(0,.5,1.5), V(0,1.5,.5), 3, g => {
-          m(g,G('s',.3,10,8),MH,[0,0,0],[0,0,0],[1.2,.5,1.5]);
-          for(let i=-2;i<=2;i++) m(g,G('b',.06,.01,.2),MD,[i*.1,.14,.3]);
-          m(g,G('b',.5,.04,.8),MA,[0,-.12,0]);
+        addPart('STRUCTURAL RING — FORWARD', V(0,2,2.5), V(0,2,.5), 3, g => {
+          m(g,G('t',1.65,.04,8,24),MH,[0,0,0],[PI2,0,0]); m(g,G('t',1.65,.02,6,20),MA,[0,0,0],[PI2,0,0]);
         });
-        addPart('PORT DELTA WING', V(-1.8,0,-.5), V(-3,0,.5), 5, g => {
-          m(g,G('b',2.5,.06,3),MH); m(g,G('b',2.2,.04,2.6),MA,[0,.04,0]);
-          m(g,G('b',2.5,.04,.08),MD,[0,0,1.52]); // leading edge
-          m(g,G('b',.1,.2,.25),MD,[-.8,-.12,.3]); m(g,G('b',.1,.2,.25),MD,[.2,-.12,.3]); // hardpoints
-          greeble(g,MD,0,.04,0,2,.01,2.5,20,.02,.08);
-          m(g,G('s',.03,4,3),MD,[-1.25,.04,.8]); // nav light
+        addPart('STRUCTURAL RING — AFT', V(0,2,-2), V(0,2,-.5), 3, g => {
+          m(g,G('t',1.65,.04,8,24),MH,[0,0,0],[PI2,0,0]); m(g,G('t',1.65,.02,6,20),MA,[0,0,0],[PI2,0,0]);
         });
-        addPart('STARBOARD DELTA WING', V(1.8,0,-.5), V(3,0,.5), 5, g => {
-          m(g,G('b',2.5,.06,3),MH); m(g,G('b',2.2,.04,2.6),MA,[0,.04,0]);
-          m(g,G('b',2.5,.04,.08),MD,[0,0,1.52]);
-          m(g,G('b',.1,.2,.25),MD,[.8,-.12,.3]); m(g,G('b',.1,.2,.25),MD,[-.2,-.12,.3]);
-          greeble(g,MD,0,.04,0,2,.01,2.5,20,.02,.08);
-          m(g,G('s',.03,4,3),MD,[1.25,.04,.8]);
+        addPart('KEEL — SPINE', V(0,.6,0), V(0,-1.5,0), 3, g => {
+          m(g,G('b',.15,.12,8),MH); m(g,G('b',.06,.06,7.5),MA,[.06,.05,0]); m(g,G('b',.06,.06,7.5),MA,[-.06,.05,0]);
+          for(let z=-3.5;z<=3.5;z+=.5) m(g,G('b',.12,.02,.04),MD,[0,-.07,z]);
         });
-        addPart('PORT TAIL FIN', V(-.6,.6,-3.5), V(-.8,2,-.5), 3, g => {
-          m(g,G('b',.04,1.2,1.2),MH); m(g,G('b',.03,.9,1),MA,[0,.15,0]);
-          m(g,G('s',.03,4,3),MD,[0,.62,0]); greeble(g,MD,0,0,0,.01,.9,1,6,.02,.05);
+        addPart('CORSAIR GONDOLA', V(0,-.5,.8), V(0,-3,.5), 4.5, g => {
+          m(g,G('b',1,.5,2),MH); m(g,G('b',.8,.15,1.8),MH,[0,.28,0]);
+          for(let z=-.6;z<=.6;z+=.25) m(g,G('s',.012,4,3),MD,[.52,.12,z]);
+          greeble(g,MD,0,.28,0,.7,.01,1.5,12,.02,.06);
         });
-        addPart('STARBOARD TAIL FIN', V(.6,.6,-3.5), V(.8,2,-.5), 3, g => {
-          m(g,G('b',.04,1.2,1.2),MH); m(g,G('b',.03,.9,1),MA,[0,.15,0]);
-          m(g,G('s',.03,4,3),MD,[0,.62,0]); greeble(g,MD,0,0,0,.01,.9,1,6,.02,.05);
+        addPart('COCKPIT — OBSERVATION BUBBLE', V(0,.1,2.2), V(0,-1.5,2), 3.5, g => {
+          m(g,G('s',.3,10,8),MH,[0,0,0],[0,0,0],[1.2,.5,1]);
+          for(let i=-2;i<=2;i++) m(g,G('b',.06,.01,.15),MD,[i*.1,.13,.2]);
+          m(g,G('b',.4,.03,.6),MA,[0,-.14,0]);
         });
-        addPart('PORT ENGINE POD', V(-1,-.15,-3), V(-1.5,-.5,-2), 4, g => {
-          m(g,G('c',.3,.25,2.5,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.25,.35,.5,10),MD,[0,0,-1.4],[PI2,0,0]); // exhaust
-          m(g,G('c',.35,.3,.3,10),MA,[0,0,1],[PI2,0,0]); // intake
-          greeble(g,MD,0,.25,0,.3,.01,2,8,.02,.06);
+        addPart('PORT ENGINE — VECTORING', V(-2,1.2,-3.5), V(-2.5,.5,-1.5), 5, g => {
+          m(g,G('c',.4,.3,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.45,.4,.2,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.1,.1,.08,6),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.5,.012,.04),MD,[Math.cos(a)*.18,Math.sin(a)*.18,-1.5],[0,0,a]);}
+          greeble(g,MD,0,.3,0,.3,.01,2,8,.02,.05);
         });
-        addPart('STARBOARD ENGINE POD', V(1,-.15,-3), V(1.5,-.5,-2), 4, g => {
-          m(g,G('c',.3,.25,2.5,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.25,.35,.5,10),MD,[0,0,-1.4],[PI2,0,0]);
-          m(g,G('c',.35,.3,.3,10),MA,[0,0,1],[PI2,0,0]);
-          greeble(g,MD,0,.25,0,.3,.01,2,8,.02,.06);
+        addPart('STBD ENGINE — VECTORING', V(2,1.2,-3.5), V(2.5,.5,-1.5), 5, g => {
+          m(g,G('c',.4,.3,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.45,.4,.2,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.1,.1,.08,6),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.5,.012,.04),MD,[Math.cos(a)*.18,Math.sin(a)*.18,-1.5],[0,0,a]);}
+          greeble(g,MD,0,.3,0,.3,.01,2,8,.02,.05);
         });
-        addPart('CHIN GUN — PULSE LASER', V(0,-.4,2.5), V(0,-1.5,1.5), 3, g => {
-          m(g,G('b',.2,.15,.4),MA,[0,0,0]); m(g,G('c',.04,.03,1.5,6),MD,[0,0,.8],[PI2,0,0]);
-          m(g,G('c',.04,.03,1.5,6),MD,[.08,0,.8],[PI2,0,0]);
-          m(g,G('s',.03,4,3),MD,[.04,0,1.55]);
+        addPart('PORT SWEPT FIN', V(-1.2,2,-5.5), V(-1.5,1,-1.5), 3.5, g => {
+          m(g,G('b',1.2,.05,1.2),MH); m(g,G('b',1,.03,1),MA,[0,.03,0]);
+          m(g,G('s',.02,4,3),MD,[-.6,.03,0]);
         });
-        addPart('PORT WINGTIP LAUNCHER', V(-3,0,0), V(-2,.5,.5), 2, g => {
-          m(g,G('c',.08,.08,.6,6),MD,[0,0,0],[PI2,0,0]); m(g,G('c',.1,.08,.15,6),MA,[0,0,.35],[PI2,0,0]);
+        addPart('STBD SWEPT FIN', V(1.2,2,-5.5), V(1.5,1,-1.5), 3.5, g => {
+          m(g,G('b',1.2,.05,1.2),MH); m(g,G('b',1,.03,1),MA,[0,.03,0]);
+          m(g,G('s',.02,4,3),MD,[.6,.03,0]);
         });
-        addPart('STARBOARD WINGTIP LAUNCHER', V(3,0,0), V(2,.5,.5), 2, g => {
-          m(g,G('c',.08,.08,.6,6),MD,[0,0,0],[PI2,0,0]); m(g,G('c',.1,.08,.15,6),MA,[0,0,.35],[PI2,0,0]);
+        addPart('DORSAL FIN — VERTICAL', V(0,3.5,-5), V(0,2.5,-1.5), 3, g => {
+          m(g,G('b',.05,1.5,1.5),MH); m(g,G('b',.04,1.2,1.2),MA,[0,.15,0]);
+          m(g,G('s',.025,4,3),MD,[0,.78,0]);
+        });
+        addPart('VENTRAL FIN', V(0,.5,-5), V(0,-1.5,-1.5), 3, g => {
+          m(g,G('b',.05,.8,1),MH); m(g,G('b',.04,.6,.8),MA,[0,-.1,0]);
+        });
+        addPart('NOSE LANCE — SENSOR PROBE', V(0,2,5.5), V(0,.5,3), 4, g => {
+          m(g,G('c',.08,.04,2,6),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('s',.06,6,4),MA,[0,0,1.2]); m(g,G('t',.12,.015,6,12),MD,[0,0,.5],[PI2,0,0]);
+        });
+        addPart('PORT CANARD WING', V(-1.5,1.5,3), V(-2,.5,1.5), 3, g => {
+          m(g,G('b',1,.04,.6),MH); m(g,G('b',.8,.03,.5),MA,[0,.03,0]);
+          greeble(g,MD,0,.03,0,.7,.01,.4,6,.02,.04);
+        });
+        addPart('STBD CANARD WING', V(1.5,1.5,3), V(2,.5,1.5), 3, g => {
+          m(g,G('b',1,.04,.6),MH); m(g,G('b',.8,.03,.5),MA,[0,.03,0]);
+          greeble(g,MD,0,.03,0,.7,.01,.4,6,.02,.04);
+        });
+        addPart('TARTARIAN LANTERN — PORT', V(-1.6,3.5,0), V(-1.5,1.5,0), 2.5, g => {
+          m(g,G('c',.08,.08,.25,6),MH); m(g,G('s',.1,6,4),MA,[0,.15,0]); m(g,G('n',.06,.15,6),MH,[0,.25,0]);
+          m(g,G('c',.015,.015,.15,4),MD,[0,-.18,0]);
+        });
+        addPart('TARTARIAN LANTERN — STBD', V(1.6,3.5,0), V(1.5,1.5,0), 2.5, g => {
+          m(g,G('c',.08,.08,.25,6),MH); m(g,G('s',.1,6,4),MA,[0,.15,0]); m(g,G('n',.06,.15,6),MH,[0,.25,0]);
+          m(g,G('c',.015,.015,.15,4),MD,[0,-.18,0]);
+        });
+        addPart('STEAM EXHAUST — AFT', V(0,3,-3.5), V(0,2,-1), 2.5, g => {
+          m(g,G('c',.06,.04,.5,6),MD,[0,0,0]); m(g,G('c',.08,.06,.06,6),MA,[0,0,.2]);
+          m(g,G('c',.06,.04,.5,6),MD,[.15,0,0]); m(g,G('c',.08,.06,.06,6),MA,[.15,0,.2]);
+        });
+        addPart('GRAPPLING ANCHOR', V(0,-1,-.5), V(0,-2.5,-.3), 2.5, g => {
+          m(g,G('b',.15,.1,.15),MA); m(g,G('c',.015,.015,.4,4),MD,[0,-.2,0]);
+          m(g,G('b',.08,.02,.15),MD,[0,-.4,.05],[.2,0,0]); m(g,G('b',.08,.02,.15),MD,[0,-.4,-.05],[-.2,0,0]);
         });
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 3: CATHEDRAL DREADNOUGHT
+      // MODEL 3: CATHEDRAL — GRAND BASILICA AIRSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildCathedral() {
         _seed = 271;
-        addPart('MAIN HULL — ARMORED CITADEL', V(0,0,0), V(0,0,0), 0, g => {
-          m(g,G('b',3.5,1,7),MH); m(g,G('b',3,.15,6.5),MH,[0,.55,0]); m(g,G('b',3,.15,6.5),MH,[0,-.55,0]);
-          m(g,G('b',.15,.8,6.5),MH,[1.78,0,0]); m(g,G('b',.15,.8,6.5),MH,[-1.78,0,0]);
-          greeble(g,MD,0,.55,0,2.5,.01,5.5,35,.04,.15);
-          greeble(g,MD,1.78,0,0,.01,.6,5,20,.03,.12); greeble(g,MD,-1.78,0,0,.01,.6,5,20,.03,.12);
-          for(let z=-3;z<=3;z+=.3){m(g,G('s',.015,4,3),MD,[1.7,.35,z]);m(g,G('s',.015,4,3),MD,[-1.7,.35,z]);}
+        addPart('ENVELOPE — GRAND DOME FORWARD', V(0,3.5,3.5), V(0,1.5,2), 4, g => {
+          m(g,G('s',3,14,10),MH,[0,0,0],[0,0,0],[1,.75,1.1]);
+          for(let i=0;i<10;i++){const a=(i/10)*PI*2; m(g,G('b',.018,.018,3),MD,[Math.cos(a)*2.8,Math.sin(a)*2.1,0]);}
+          greeble(g,MD,0,1,0,2,.01,2,15,.02,.07);
         });
-        addPart('PROW — ARMORED RAM', V(0,0,5), V(0,0,2.5), 4, g => {
-          m(g,G('b',2.5,.8,2),MH); m(g,G('b',1.5,.6,1.5),MH,[0,0,1.2]); m(g,G('b',.8,.4,1),MH,[0,0,2.2]);
-          m(g,G('b',.3,.2,1.5),MD,[0,-.3,2]); // ventral ram blade
-          greeble(g,MD,0,.42,0,1.8,.01,2,15,.03,.1);
+        addPart('ENVELOPE — CENTRAL VAULT', V(0,3.5,0), V(0,2,0), 3.5, g => {
+          m(g,G('c',3.2,3.2,5.5,16),MH);
+          for(let i=0;i<14;i++){const a=(i/14)*PI*2; m(g,G('b',.015,.015,5.2),MD,[Math.cos(a)*3.22,Math.sin(a)*3.22,0]);}
+          greeble(g,MD,0,2,0,2.5,.01,4,25,.02,.08);
         });
-        addPart('BRIDGE SPIRE — COMMAND', V(0,1.5,0), V(0,3,0), 5, g => {
-          m(g,G('b',.8,.6,1),MH); m(g,G('b',.6,.5,.8),MH,[0,.5,0]); m(g,G('b',.4,.8,.5),MH,[0,1.2,0]);
-          m(g,G('b',.2,1.2,.3),MA,[0,1.5,0]); // gothic spire
-          m(g,G('n',.12,.5,6),MH,[0,2.3,0]); // spire tip
-          for(let i=-2;i<=2;i++) m(g,G('b',.06,.02,.03),MD,[i*.08,.35,.52]);
-          greeble(g,MD,0,.8,0,.5,.01,.8,10,.02,.06);
+        addPart('ENVELOPE — AFT NAVE', V(0,3.5,-4), V(0,1.5,-2), 4, g => {
+          m(g,G('n',3,3.5,14),MH,[0,0,0],[-PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.015,.015,2.5),MD,[Math.cos(a)*1.5,Math.sin(a)*1.5,-1]);}
         });
-        addPart('PORT BROADSIDE — BATTERY', V(-2.2,.2,-.5), V(-3,.5,0), 4.5, g => {
-          m(g,G('b',1,.6,3),MH);
-          for(let z=-1;z<=1;z+=.5) m(g,G('c',.05,.04,1,6),MD,[-.52,.1,z],[0,0,PI2]);
-          greeble(g,MD,0,.32,0,.8,.01,2.5,12,.02,.08);
+        addPart('STRUCTURAL RING — TRANSEPT A', V(0,3.5,1.5), V(0,2.5,.5), 3, g => {
+          m(g,G('t',3.3,.08,10,32),MH,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<12;i++){const a=(i/12)*PI*2; m(g,G('b',.05,.05,.1),MD,[Math.cos(a)*3.3,Math.sin(a)*3.3,0]);}
         });
-        addPart('STARBOARD BROADSIDE — BATTERY', V(2.2,.2,-.5), V(3,.5,0), 4.5, g => {
-          m(g,G('b',1,.6,3),MH);
-          for(let z=-1;z<=1;z+=.5) m(g,G('c',.05,.04,1,6),MD,[.52,.1,z],[0,0,PI2]);
-          greeble(g,MD,0,.32,0,.8,.01,2.5,12,.02,.08);
+        addPart('STRUCTURAL RING — TRANSEPT B', V(0,3.5,-1.5), V(0,2.5,-.5), 3, g => {
+          m(g,G('t',3.3,.08,10,32),MH,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<12;i++){const a=(i/12)*PI*2; m(g,G('b',.05,.05,.1),MD,[Math.cos(a)*3.3,Math.sin(a)*3.3,0]);}
         });
-        addPart('DORSAL TURRET A', V(-.8,.8,2), V(-.8,2.5,1), 3.5, g => {
-          m(g,G('c',.4,.5,.2,10),MH); m(g,G('b',.6,.3,.6),MH,[0,.2,0]);
-          m(g,G('c',.05,.04,1.5,6),MD,[.12,.25,.9],[PI2,0,0]); m(g,G('c',.05,.04,1.5,6),MD,[-.12,.25,.9],[PI2,0,0]);
+        addPart('CATHEDRAL GONDOLA — NAVE', V(0,-.5,0), V(0,-3.5,0), 5, g => {
+          m(g,G('b',2.5,1.2,4),MH); m(g,G('b',2.2,.15,3.8),MH,[0,.62,0]); m(g,G('b',2.2,.15,3.8),MH,[0,-.62,0]);
+          m(g,G('b',.15,1,3.8),MH,[1.28,0,0]); m(g,G('b',.15,1,3.8),MH,[-1.28,0,0]);
+          for(let z=-1.5;z<=1.5;z+=.3){m(g,G('s',.02,4,3),MD,[1.3,.3,z]);m(g,G('s',.02,4,3),MD,[-1.3,.3,z]);}
+          greeble(g,MD,0,.62,0,2,.01,3.5,25,.03,.1);
         });
-        addPart('DORSAL TURRET B', V(.8,.8,-2), V(.8,2.5,-1), 3.5, g => {
-          m(g,G('c',.4,.5,.2,10),MH); m(g,G('b',.6,.3,.6),MH,[0,.2,0]);
-          m(g,G('c',.05,.04,1.5,6),MD,[.12,.25,.9],[PI2,0,0]); m(g,G('c',.05,.04,1.5,6),MD,[-.12,.25,.9],[PI2,0,0]);
+        addPart('CATHEDRAL GONDOLA — TRANSEPT', V(0,-.2,0), V(0,-2.5,0), 4, g => {
+          m(g,G('b',3.5,.8,1.5),MH); m(g,G('b',3.2,.1,1.3),MA,[0,.42,0]);
+          greeble(g,MD,0,.42,0,3,.01,1.2,15,.03,.08);
         });
-        addPart('VENTRAL HANGAR', V(0,-.7,1), V(0,-2.5,.5), 4, g => {
-          m(g,G('b',2.5,.5,2),MH); m(g,G('b',1.8,.3,1.5),MD,[0,0,0]); // internal bay
-          m(g,G('b',1.5,.35,.05),MD,[0,-.05,1.02]); // bay opening
-          greeble(g,MD,0,-.25,0,2,.01,1.5,12,.02,.06);
+        addPart('GREAT SPIRE — CENTRAL', V(0,1,.5), V(0,-2,1), 4.5, g => {
+          m(g,G('b',.5,.6,.5),MH); m(g,G('b',.35,1.5,.35),MA,[0,.9,0]); m(g,G('n',.18,1.2,6),MH,[0,2,0]);
+          m(g,G('c',.02,.015,.3,4),MD,[0,2.8,0]); m(g,G('s',.03,4,3),MA,[0,3,0]);
+          greeble(g,MD,0,.5,0,.3,.01,.4,6,.02,.04);
         });
-        addPart('ENGINE BLOCK — PORT', V(-1.2,-.1,-4.5), V(-1.5,-.3,-2), 4, g => {
-          m(g,G('c',.45,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.35,.5,.6,10),MD,[0,0,-1.4],[PI2,0,0]);
-          for(let i=0;i<6;i++){const a=(i/6)*PI*2;m(g,G('b',.02,.1,1),MD,[Math.cos(a)*.4,Math.sin(a)*.4,-.3],[0,0,a]);}
-          greeble(g,MD,0,.35,0,.4,.01,2,10,.02,.06);
+        addPart('SPIRE — PORT TRANSEPT', V(-2,.2,.5), V(-2.5,-1.5,.5), 3.5, g => {
+          m(g,G('b',.3,.4,.3),MH); m(g,G('b',.2,.8,.2),MA,[0,.5,0]); m(g,G('n',.1,.5,6),MH,[0,1.1,0]);
         });
-        addPart('ENGINE BLOCK — STARBOARD', V(1.2,-.1,-4.5), V(1.5,-.3,-2), 4, g => {
-          m(g,G('c',.45,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.35,.5,.6,10),MD,[0,0,-1.4],[PI2,0,0]);
-          for(let i=0;i<6;i++){const a=(i/6)*PI*2;m(g,G('b',.02,.1,1),MD,[Math.cos(a)*.4,Math.sin(a)*.4,-.3],[0,0,a]);}
-          greeble(g,MD,0,.35,0,.4,.01,2,10,.02,.06);
+        addPart('SPIRE — STBD TRANSEPT', V(2,.2,.5), V(2.5,-1.5,.5), 3.5, g => {
+          m(g,G('b',.3,.4,.3),MH); m(g,G('b',.2,.8,.2),MA,[0,.5,0]); m(g,G('n',.1,.5,6),MH,[0,1.1,0]);
         });
-        addPart('ENGINE BLOCK — CENTER', V(0,-.1,-4.5), V(0,-.3,-2.5), 4, g => {
-          m(g,G('c',.5,.45,2.8,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.4,.55,.7,10),MD,[0,0,-1.6],[PI2,0,0]);
-          greeble(g,MD,0,.4,0,.5,.01,2,10,.02,.06);
+        addPart('FLYING BUTTRESS — PORT', V(-2.5,1.5,0), V(-2.5,0,0), 3, g => {
+          m(g,G('b',.08,.08,3),MH,[0,0,0],[0,0,.4]); m(g,G('b',.08,.08,3),MH,[.3,.3,0],[0,0,.4]);
+          for(let z=-1;z<=1;z+=.5) m(g,G('b',.06,.3,.06),MD,[.15,.15,z]);
         });
-        addPart('STERN — AFT SECTION', V(0,0,-4), V(0,0,-2), 3, g => {
-          m(g,G('b',3,1,1.5),MH); m(g,G('b',3.2,1.2,.2),MA,[0,0,-.8]);
-          greeble(g,MD,0,.5,0,2.5,.01,1.2,15,.03,.1);
+        addPart('FLYING BUTTRESS — STBD', V(2.5,1.5,0), V(2.5,0,0), 3, g => {
+          m(g,G('b',.08,.08,3),MH,[0,0,0],[0,0,-.4]); m(g,G('b',.08,.08,3),MH,[-.3,.3,0],[0,0,-.4]);
+          for(let z=-1;z<=1;z+=.5) m(g,G('b',.06,.3,.06),MD,[-.15,.15,z]);
+        });
+        addPart('ROSE WINDOW — FORE', V(0,.2,2.5), V(0,-1.5,2.5), 3, g => {
+          m(g,G('t',.4,.03,8,20),MH,[0,0,0],[PI2,0,0]); m(g,G('t',.25,.02,6,16),MA,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.015,.015,.38),MD,[0,0,0],[Math.cos(a)*.2,Math.sin(a)*.2,a]);}
+        });
+        addPart('PORT TRIPLE ENGINE', V(-3.5,2,-2), V(-3,.5,-1), 5, g => {
+          for(let dy=-.3;dy<=.3;dy+=.3){
+            m(g,G('c',.25,.2,1.5,8),MH,[0,dy,0],[PI2,0,0]);
+            m(g,G('c',.1,.1,.06,6),MD,[0,dy,-.9],[PI2,0,0]);
+            for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.25,.01,.03),MD,[Math.cos(a)*.08,dy+Math.sin(a)*.08,-1],[0,0,a]);}
+          }
+        });
+        addPart('STBD TRIPLE ENGINE', V(3.5,2,-2), V(3,.5,-1), 5, g => {
+          for(let dy=-.3;dy<=.3;dy+=.3){
+            m(g,G('c',.25,.2,1.5,8),MH,[0,dy,0],[PI2,0,0]);
+            m(g,G('c',.1,.1,.06,6),MD,[0,dy,-.9],[PI2,0,0]);
+            for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.25,.01,.03),MD,[Math.cos(a)*.08,dy+Math.sin(a)*.08,-1],[0,0,a]);}
+          }
+        });
+        addPart('BELL TOWER — PORT', V(-1.8,0,-2), V(-2,-2,-1), 3, g => {
+          m(g,G('c',.15,.2,.6,6),MH); m(g,G('n',.18,.3,6),MH,[0,.4,0]);
+          m(g,G('s',.06,6,4),MD,[0,.1,0]);
+        });
+        addPart('BELL TOWER — STBD', V(1.8,0,-2), V(2,-2,-1), 3, g => {
+          m(g,G('c',.15,.2,.6,6),MH); m(g,G('n',.18,.3,6),MH,[0,.4,0]);
+          m(g,G('s',.06,6,4),MD,[0,.1,0]);
+        });
+        addPart('KEEL — PROCESSIONAL WALK', V(0,.8,0), V(0,-1,0), 3, g => {
+          m(g,G('b',.25,.15,8),MH);
+          for(let z=-3.5;z<=3.5;z+=.5) m(g,G('b',.2,.025,.04),MD,[0,-.08,z]);
+          m(g,G('b',.04,.04,7.5),MA,[.1,.06,0]); m(g,G('b',.04,.04,7.5),MA,[-.1,.06,0]);
+        });
+        addPart('CENSER — PORT', V(-1.5,-1.2,1.5), V(-1.5,-2,1), 2.5, g => {
+          m(g,G('c',.015,.015,.5,4),MD,[0,.25,0]); m(g,G('s',.08,6,4),MH);
+          m(g,G('n',.06,.12,6),MH,[0,.1,0]);
+        });
+        addPart('CENSER — STBD', V(1.5,-1.2,1.5), V(1.5,-2,1), 2.5, g => {
+          m(g,G('c',.015,.015,.5,4),MD,[0,.25,0]); m(g,G('s',.08,6,4),MH);
+          m(g,G('n',.06,.12,6),MH,[0,.1,0]);
+        });
+        addPart('RUDDER — CROSS FIN', V(0,3.5,-6.5), V(0,2,-2.5), 3.5, g => {
+          m(g,G('b',.06,2.2,1.5),MH); m(g,G('b',.04,1.8,1.2),MA,[0,.2,0]);
+        });
+        addPart('ELEVATOR — PORT', V(-2,3.5,-6), V(-2,1,-2), 3, g => {
+          m(g,G('b',1.5,.05,1),MH); m(g,G('b',1.3,.03,.8),MA,[0,.03,0]);
+        });
+        addPart('ELEVATOR — STBD', V(2,3.5,-6), V(2,1,-2), 3, g => {
+          m(g,G('b',1.5,.05,1),MH); m(g,G('b',1.3,.03,.8),MA,[0,.03,0]);
+        });
+        addPart('MOORING SPIRE — BOW', V(0,3.5,6), V(0,1,3), 4, g => {
+          m(g,G('n',.5,2,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('t',.45,.04,6,16),MA,[0,0,-.5],[PI2,0,0]);
+          m(g,G('n',.08,.4,6),MH,[0,0,1.2],[PI2,0,0]);
+        });
+        addPart('SIGNAL LANTERN — DORSAL', V(0,7,0), V(0,3,0), 3, g => {
+          m(g,G('c',.06,.06,.2,6),MH); m(g,G('s',.08,6,4),MA,[0,.12,0]);
+          m(g,G('n',.05,.1,6),MH,[0,.2,0]); m(g,G('c',.01,.01,.3,4),MD,[0,-.15,0]);
         });
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 4: NOMAD SURVEY VESSEL
+      // MODEL 4: NOMAD — EXPLORER CLOUDSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildNomad() {
         _seed = 389;
-        addPart('CORE MODULE — CREW HABITAT', V(0,0,0), V(0,0,0), 0, g => {
-          m(g,G('c',.8,.8,3,12),MH,[0,0,0]); m(g,G('c',.85,.85,.3,12),MA,[0,0,0],[0,0,0]);
-          greeble(g,MD,0,.7,0,.8,.01,2,15,.03,.1);
-          for(let i=0;i<8;i++){const a=(i/8)*PI*2;m(g,G('b',.02,.05,2.5),MD,[Math.cos(a)*.82,Math.sin(a)*.82,0]);}
+        addPart('ENVELOPE — BULBOUS MAIN', V(0,2.5,0), V(0,1.5,0), 3.5, g => {
+          m(g,G('s',2.5,14,10),MH,[0,0,0],[0,0,0],[1,.8,1.4]);
+          for(let i=0;i<10;i++){const a=(i/10)*PI*2; m(g,G('b',.015,.015,5),MD,[Math.cos(a)*2.3,Math.sin(a)*1.85,0]);}
+          greeble(g,MD,0,1,0,1.8,.01,4,20,.02,.07);
         });
-        addPart('SENSOR BOOM', V(0,.2,3.5), V(0,.5,3), 5, g => {
-          m(g,G('c',.08,.06,5,6),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('s',.2,8,6),MA,[0,0,2.8]); // sensor head
-          for(let i=0;i<3;i++) m(g,G('c',.015,.015,.4,4),MD,[srr(-.1,.1),srr(-.1,.1),1+i*.8],[srr(-.3,.3),0,0]);
-          greeble(g,MD,0,.08,0,.1,.01,4,8,.02,.05);
+        addPart('ENVELOPE — FORWARD BLISTER', V(0,2.5,4.5), V(0,1,2.5), 4, g => {
+          m(g,G('s',1.8,12,8),MH,[0,0,0],[0,0,0],[1,.75,.8]);
+          greeble(g,MD,0,.5,.3,1,.01,1.2,8,.02,.05);
         });
-        addPart('SENSOR RING', V(0,0,1.5), V(0,1.5,1), 3.5, g => {
-          m(g,G('t',1.2,.04,8,32),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('t',1.2,.06,6,24),MA,[0,0,0],[PI2,0,0]);
-          for(let i=0;i<8;i++){const a=(i/8)*PI*2;m(g,G('b',.06,.04,.12),MD,[Math.cos(a)*1.2,0,Math.sin(a)*1.2],[0,a,0]);}
+        addPart('ENVELOPE — AFT SKIRT', V(0,2.5,-4), V(0,1,-2), 3.5, g => {
+          m(g,G('c',2.2,1.2,3.5,12),MH,[0,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.012,.012,3),MD,[Math.cos(a)*1.5,Math.sin(a)*1.5,-.5]);}
         });
-        addPart('PORT SOLAR PANEL', V(-1.8,.1,.5), V(-3,0,.3), 4.5, g => {
-          m(g,G('b',2,.03,2.5),MH); m(g,G('b',1.8,.02,2.3),MD,[0,.02,0]);
-          for(let x=-.8;x<=.8;x+=.2) m(g,G('b',.01,.01,2.3),MD,[x,.025,0]);
-          m(g,G('b',.08,.06,.3),MA,[.95,0,0]); // hinge
+        addPart('STRUCTURAL RING — EQUATOR', V(0,2.5,.5), V(0,2.5,0), 3, g => {
+          m(g,G('t',2.6,.06,10,28),MH,[0,0,0],[PI2,0,0]); m(g,G('t',2.6,.03,8,24),MA,[0,0,0],[PI2,0,0]);
         });
-        addPart('STARBOARD SOLAR PANEL', V(1.8,.1,.5), V(3,0,.3), 4.5, g => {
-          m(g,G('b',2,.03,2.5),MH); m(g,G('b',1.8,.02,2.3),MD,[0,.02,0]);
-          for(let x=-.8;x<=.8;x+=.2) m(g,G('b',.01,.01,2.3),MD,[x,.025,0]);
-          m(g,G('b',.08,.06,.3),MA,[-.95,0,0]);
+        addPart('OBSERVATORY DOME — DORSAL', V(0,5.5,.5), V(0,3.5,.3), 4.5, g => {
+          m(g,G('s',.8,12,8),MH,[0,0,0],[0,0,0],[1,.45,1]);
+          m(g,G('t',.75,.03,8,20),MA,[0,-.12,0],[PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.02,.25,.02),MD,[Math.cos(a)*.65,0,Math.sin(a)*.65]);}
+          m(g,G('c',.04,.03,.4,4),MD,[0,.35,0]); m(g,G('s',.05,4,3),MA,[0,.55,0]);
         });
-        addPart('LAB MODULE', V(0,.6,-1), V(0,2,-.5), 3.5, g => {
+        addPart('EXPLORER GONDOLA', V(0,-.5,.5), V(0,-3,.5), 4.5, g => {
+          m(g,G('b',1.6,.7,2.5),MH); m(g,G('b',1.4,.12,2.3),MH,[0,.38,0]);
+          for(let z=-.8;z<=.8;z+=.25){m(g,G('s',.015,4,3),MD,[.82,.18,z]);m(g,G('s',.015,4,3),MD,[-.82,.18,z]);}
+          greeble(g,MD,0,.38,0,1.2,.01,2,15,.03,.08);
+        });
+        addPart('KEEL — OBSERVATION WALK', V(0,.6,0), V(0,-1.5,0), 3.5, g => {
+          m(g,G('b',.2,.12,7),MH);
+          for(let z=-3;z<=3;z+=.5) m(g,G('b',.15,.02,.04),MD,[0,-.07,z]);
+          m(g,G('b',.05,.05,6.5),MA,[.08,.04,0]); m(g,G('b',.05,.05,6.5),MA,[-.08,.04,0]);
+        });
+        addPart('PORT SOLAR SAIL', V(-3.5,2,.5), V(-3,.5,.3), 5, g => {
+          m(g,G('b',2.5,.03,3),MH); m(g,G('b',2.3,.02,2.8),MD,[0,.02,0]);
+          for(let x=-.9;x<=.9;x+=.2) m(g,G('b',.01,.01,2.8),MD,[x,.025,0]);
+          m(g,G('b',.08,.06,.3),MA,[1.2,0,0]);
+        });
+        addPart('STBD SOLAR SAIL', V(3.5,2,.5), V(3,.5,.3), 5, g => {
+          m(g,G('b',2.5,.03,3),MH); m(g,G('b',2.3,.02,2.8),MD,[0,.02,0]);
+          for(let x=-.9;x<=.9;x+=.2) m(g,G('b',.01,.01,2.8),MD,[x,.025,0]);
+          m(g,G('b',.08,.06,.3),MA,[-1.2,0,0]);
+        });
+        addPart('SENSOR BOOM — FORWARD', V(0,1.5,5), V(0,.5,3.5), 4.5, g => {
+          m(g,G('c',.06,.04,4,6),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('s',.15,8,6),MA,[0,0,2.2]);
+          for(let i=0;i<3;i++) m(g,G('c',.012,.012,.3,4),MD,[srr(-.1,.1),srr(-.1,.1),.8+i*.6]);
+        });
+        addPart('PORT THRUSTER POD', V(-1.5,1,-4), V(-2,.5,-2), 4, g => {
+          m(g,G('c',.25,.2,1.5,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.3,.25,.15,8),MA,[0,0,.6],[PI2,0,0]);
+          m(g,G('c',.08,.08,.06,6),MD,[0,0,-.9],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.25,.01,.03),MD,[Math.cos(a)*.06,Math.sin(a)*.06,-1],[0,0,a]);}
+        });
+        addPart('STBD THRUSTER POD', V(1.5,1,-4), V(2,.5,-2), 4, g => {
+          m(g,G('c',.25,.2,1.5,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.3,.25,.15,8),MA,[0,0,.6],[PI2,0,0]);
+          m(g,G('c',.08,.08,.06,6),MD,[0,0,-.9],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.25,.01,.03),MD,[Math.cos(a)*.06,Math.sin(a)*.06,-1],[0,0,a]);}
+        });
+        addPart('LAB MODULE — VENTRAL', V(0,-1.2,-1), V(0,-2.5,-.5), 3.5, g => {
           m(g,G('b',.8,.5,1.2),MH); m(g,G('b',.6,.08,1),MA,[0,.28,0]);
           for(let i=-2;i<=2;i++) m(g,G('b',.06,.02,.03),MD,[i*.12,.26,.62]);
           greeble(g,MD,0,.28,0,.6,.01,.8,8,.02,.06);
         });
-        addPart('PROBE LAUNCH BAY', V(0,-.6,.5), V(0,-2,.3), 3, g => {
-          m(g,G('b',.6,.3,1),MH);
-          for(let c=0;c<3;c++) m(g,G('c',.05,.05,.3,6),MD,[-.15+c*.15,-.12,.55],[PI2,0,0]);
-          m(g,G('b',.5,.04,.8),MA,[0,-.16,0]);
+        addPart('COMMS ARRAY — DORSAL', V(.8,5,-.5), V(1.5,3,-.3), 3, g => {
+          m(g,G('s',.3,10,8),MH,[0,0,0],[0,0,0],[1,.25,1]);
+          m(g,G('c',.02,.02,.25,4),MD,[0,.08,0]); m(g,G('s',.03,4,3),MA,[0,.2,0]);
         });
-        addPart('COMMS DISH', V(.7,.8,-1.5), V(1.5,2,-.8), 3, g => {
-          m(g,G('s',.35,10,8),MH,[0,0,0],[0,0,0],[1,.25,1]);
-          m(g,G('c',.02,.02,.3,4),MD,[0,.1,0]); m(g,G('s',.04,4,3),MA,[0,.25,0]);
+        addPart('PROBE BAY — VENTRAL', V(0,-1,.5), V(0,-2.5,.5), 3, g => {
+          m(g,G('b',.5,.25,.8),MH);
+          for(let c=0;c<3;c++) m(g,G('c',.04,.04,.25,6),MD,[-.12+c*.12,-.1,.45],[PI2,0,0]);
+          m(g,G('b',.4,.03,.6),MA,[0,-.13,0]);
         });
-        addPart('PORT THRUSTER', V(-.8,-.3,-2), V(-1.2,-.5,-1.5), 3, g => {
-          m(g,G('c',.2,.15,1,8),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.15,.22,.3,8),MD,[0,0,-.6],[PI2,0,0]);
-          greeble(g,MD,0,.15,0,.2,.01,.8,6,.02,.04);
+        addPart('RUDDER — VERTICAL', V(0,2.5,-6), V(0,1.5,-2.5), 3.5, g => {
+          m(g,G('b',.05,1.5,1.2),MH); m(g,G('b',.04,1.2,1),MA,[0,.15,0]);
         });
-        addPart('STARBOARD THRUSTER', V(.8,-.3,-2), V(1.2,-.5,-1.5), 3, g => {
-          m(g,G('c',.2,.15,1,8),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.15,.22,.3,8),MD,[0,0,-.6],[PI2,0,0]);
-          greeble(g,MD,0,.15,0,.2,.01,.8,6,.02,.04);
+        addPart('ELEVATOR — PORT', V(-1.2,2.5,-5.5), V(-1.2,.5,-2), 3, g => {
+          m(g,G('b',1,.04,.8),MH); m(g,G('b',.8,.03,.6),MA,[0,.025,0]);
         });
-        addPart('SHIELD EMITTER', V(0,.3,2.5), V(0,1,2), 2.5, g => {
-          m(g,G('s',.25,8,6),MH,[0,0,0],[0,0,0],[1,.3,1]); m(g,G('t',.22,.015,6,16),MD,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.03,.03,.3,4),MD,[0,-.18,0]);
+        addPart('ELEVATOR — STBD', V(1.2,2.5,-5.5), V(1.2,.5,-2), 3, g => {
+          m(g,G('b',1,.04,.8),MH); m(g,G('b',.8,.03,.6),MA,[0,.025,0]);
         });
-        addPart('DOCKING PORT', V(0,0,-2.5), V(0,0,-2), 3, g => {
-          m(g,G('c',.4,.4,.4,10),MH,[0,0,0]); m(g,G('c',.3,.3,.1,10),MD,[0,0,-.25]);
-          m(g,G('t',.35,.02,6,16),MA,[0,0,-.2]);
+        addPart('TARTARIAN WEATHER VANE', V(0,5.8,1), V(0,3,.5), 2, g => {
+          m(g,G('c',.015,.012,.5,4),MD); m(g,G('b',.25,.015,.015),MD,[0,.25,0]);
+          m(g,G('n',.04,.12,4),MD,[.12,.25,0],[0,0,-PI2]);
+        });
+        addPart('DOCKING PORT — AFT', V(0,0,-5), V(0,-.5,-3), 3, g => {
+          m(g,G('c',.35,.35,.35,10),MH); m(g,G('c',.25,.25,.08,10),MD,[0,0,-.2]);
+          m(g,G('t',.3,.02,6,16),MA,[0,0,-.15]);
         });
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 5: IRON WASP GUNSHIP
+      // MODEL 5: IRON WASP — ASSAULT HORNET AIRSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildIronWasp() {
         _seed = 503;
-        addPart('HULL — ARMORED FUSELAGE', V(0,0,0), V(0,0,0), 0, g => {
-          m(g,G('b',1.4,.9,3.5),MH); m(g,G('b',1.2,.12,3.2),MH,[0,.5,0]); m(g,G('b',1.2,.12,3.2),MH,[0,-.5,0]);
-          m(g,G('b',.12,.75,3.2),MH,[.72,0,0]); m(g,G('b',.12,.75,3.2),MH,[-.72,0,0]);
-          greeble(g,MD,0,.5,0,1,.01,2.8,20,.03,.12);
-          greeble(g,MD,.72,0,0,.01,.6,2.8,14,.02,.1); greeble(g,MD,-.72,0,0,.01,.6,2.8,14,.02,.1);
-          for(let z=-1.5;z<=1.5;z+=.3){m(g,G('s',.012,4,3),MD,[.65,.35,z]);m(g,G('s',.012,4,3),MD,[-.65,.35,z]);}
+        addPart('ENVELOPE — FORWARD THORAX', V(0,2.5,2.5), V(0,1,2), 4, g => {
+          m(g,G('s',2,12,10),MH,[0,0,0],[0,0,0],[1,.8,1.2]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.015,.015,2.8),MD,[Math.cos(a)*1.8,Math.sin(a)*1.5,0]);}
+          greeble(g,MD,0,.8,0,1.5,.01,2,12,.02,.06);
         });
-        addPart('COCKPIT — ARMORED CANOPY', V(0,.3,2.2), V(0,1.5,1.5), 3, g => {
-          m(g,G('b',.8,.5,1),MH); m(g,G('b',.7,.35,.8),MH,[0,.15,.2]);
-          for(let i=-2;i<=2;i++) m(g,G('b',.08,.02,.03),MD,[i*.12,.38,.55]); // viewports
-          m(g,G('b',.6,.06,.8),MA,[0,.42,0]);
-          greeble(g,MD,0,.42,0,.5,.01,.6,6,.02,.05);
+        addPart('ENVELOPE — WASP WAIST', V(0,2.5,0), V(0,2,0), 3, g => {
+          m(g,G('c',1.2,1.2,2,12),MH);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.012,.012,1.8),MD,[Math.cos(a)*1.22,Math.sin(a)*1.22,0]);}
+          m(g,G('b',.3,.15,1.8),MA,[0,1.22,0]); m(g,G('b',.3,.15,1.8),MA,[0,-1.22,0]);
         });
-        addPart('CHIN ROTARY CANNON', V(0,-.6,2), V(0,-2,2.5), 4.5, g => {
-          m(g,G('b',.25,.2,.4),MA,[0,0,-.2]); // mount
-          m(g,G('c',.12,.1,2.8,10),MD,[0,0,1.2],[PI2,0,0]); // housing
-          for(let i=0;i<6;i++){const a=(i/6)*PI*2;m(g,G('c',.02,.02,1.5,4),MD,[Math.cos(a)*.06,Math.sin(a)*.06,2],[PI2,0,0]);}
-          m(g,G('c',.1,.08,.15,8),MA,[0,0,2.8],[PI2,0,0]); // muzzle
-          m(g,G('c',.1,.1,.25,8),MD,[0,.15,-.5]); // ammo drum
+        addPart('ENVELOPE — AFT ABDOMEN', V(0,2.5,-3), V(0,1,-2), 4, g => {
+          m(g,G('s',2.2,12,10),MH,[0,0,0],[0,0,0],[1,.85,1.5]);
+          m(g,G('n',1.8,2.5,12),MH,[0,0,-2.5],[-PI2,0,0]);
+          greeble(g,MD,0,0,-1,1.5,.01,3,15,.02,.07);
         });
-        addPart('PORT STUB WING', V(-1.2,0,-.3), V(-2,.3,.3), 3.5, g => {
-          m(g,G('b',1.2,.08,1.5),MH); m(g,G('b',1,.05,1.3),MA,[0,.05,0]);
-          m(g,G('b',.08,.2,.25),MD,[-.3,-.12,.3]); m(g,G('b',.08,.2,.25),MD,[.3,-.12,.3]); // pylons
-          greeble(g,MD,0,.05,0,.9,.01,1.2,10,.02,.06);
+        addPart('STRUCTURAL RING — THORAX', V(0,2.5,1.5), V(0,2,.5), 3, g => {
+          m(g,G('t',2.1,.06,10,24),MH,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.04,.04,.06),MD,[Math.cos(a)*2.1,Math.sin(a)*2.1,0]);}
         });
-        addPart('STARBOARD STUB WING', V(1.2,0,-.3), V(2,.3,.3), 3.5, g => {
-          m(g,G('b',1.2,.08,1.5),MH); m(g,G('b',1,.05,1.3),MA,[0,.05,0]);
-          m(g,G('b',.08,.2,.25),MD,[.3,-.12,.3]); m(g,G('b',.08,.2,.25),MD,[-.3,-.12,.3]);
-          greeble(g,MD,0,.05,0,.9,.01,1.2,10,.02,.06);
+        addPart('STRUCTURAL RING — WAIST', V(0,2.5,-.5), V(0,2,0), 3, g => {
+          m(g,G('t',1.3,.05,10,24),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('t',1.3,.025,8,20),MA,[0,0,0],[PI2,0,0]);
         });
-        addPart('PORT ENGINE', V(-1,-.1,-2.5), V(-1.8,-.5,-1.5), 4, g => {
-          m(g,G('c',.35,.3,2,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.3,.4,.5,10),MD,[0,0,-1.2],[PI2,0,0]); // exhaust
-          m(g,G('c',.38,.35,.25,10),MA,[0,0,.8],[PI2,0,0]); // intake
-          greeble(g,MD,0,.3,0,.3,.01,1.5,8,.02,.05);
+        addPart('ARMORED GONDOLA', V(0,-.3,1), V(0,-3,.8), 5, g => {
+          m(g,G('b',1.5,.7,2.5),MH); m(g,G('b',1.3,.12,2.3),MH,[0,.38,0]);
+          m(g,G('b',.12,.6,2.3),MH,[.78,0,0]); m(g,G('b',.12,.6,2.3),MH,[-.78,0,0]);
+          for(let z=-.8;z<=.8;z+=.3){m(g,G('s',.012,4,3),MD,[.72,.2,z]);m(g,G('s',.012,4,3),MD,[-.72,.2,z]);}
+          greeble(g,MD,0,.38,0,1,.01,2,18,.03,.1);
         });
-        addPart('STARBOARD ENGINE', V(1,-.1,-2.5), V(1.8,-.5,-1.5), 4, g => {
-          m(g,G('c',.35,.3,2,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.3,.4,.5,10),MD,[0,0,-1.2],[PI2,0,0]);
-          m(g,G('c',.38,.35,.25,10),MA,[0,0,.8],[PI2,0,0]);
-          greeble(g,MD,0,.3,0,.3,.01,1.5,8,.02,.05);
+        addPart('CHIN TURRET — ROTARY CANNON', V(0,-1.2,2.5), V(0,-3,2.5), 4.5, g => {
+          m(g,G('s',.2,8,6),MH,[0,0,0],[0,0,0],[1,.6,1]); m(g,G('b',.25,.15,.25),MA,[0,-.05,0]);
+          m(g,G('c',.1,.08,2.5,8),MD,[0,-.05,1.5],[PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('c',.015,.015,1.2,4),MD,[Math.cos(a)*.05,-.05+Math.sin(a)*.05,2],[PI2,0,0]);}
+          m(g,G('c',.08,.06,.12,8),MA,[0,-.05,2.6],[PI2,0,0]);
         });
-        addPart('DORSAL TURRET', V(0,.6,-1), V(0,2.5,-.3), 3.5, g => {
-          m(g,G('c',.25,.3,.15,8),MH); m(g,G('b',.4,.2,.4),MH,[0,.12,0]);
-          m(g,G('c',.04,.035,1.2,6),MD,[.1,.15,.7],[PI2,0,0]); m(g,G('c',.04,.035,1.2,6),MD,[-.1,.15,.7],[PI2,0,0]);
-          m(g,G('s',.03,4,3),MD,[0,.25,.15]);
+        addPart('PORT STUB WING', V(-2.2,.8,.5), V(-2.5,.3,.3), 4, g => {
+          m(g,G('b',1.5,.06,1.5),MH); m(g,G('b',1.3,.04,1.3),MA,[0,.04,0]);
+          m(g,G('b',.08,.18,.2),MD,[-.4,-.1,.3]); m(g,G('b',.08,.18,.2),MD,[.4,-.1,.3]);
+          greeble(g,MD,0,.04,0,1.2,.01,1.2,10,.02,.06);
         });
-        addPart('VENTRAL SENSOR', V(0,-.6,.5), V(0,-2,.3), 2.5, g => {
-          m(g,G('s',.2,8,6),MH,[0,0,0],[0,0,0],[1,.5,1]); m(g,G('c',.22,.25,.08,8),MA,[0,-.08,0]);
-          m(g,G('c',.015,.015,.15,4),MD,[0,-.2,0]);
+        addPart('STBD STUB WING', V(2.2,.8,.5), V(2.5,.3,.3), 4, g => {
+          m(g,G('b',1.5,.06,1.5),MH); m(g,G('b',1.3,.04,1.3),MA,[0,.04,0]);
+          m(g,G('b',.08,.18,.2),MD,[.4,-.1,.3]); m(g,G('b',.08,.18,.2),MD,[-.4,-.1,.3]);
+          greeble(g,MD,0,.04,0,1.2,.01,1.2,10,.02,.06);
         });
-        addPart('TAIL BOOM', V(0,.2,-2.5), V(0,.5,-2), 3, g => {
-          m(g,G('c',.08,.06,2,6),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('b',.04,.6,.5),MH,[0,.15,-1]); // vertical stab
-          m(g,G('s',.03,4,3),MD,[0,.48,-1]);
-          greeble(g,MD,0,.08,0,.08,.01,1.5,5,.02,.04);
+        addPart('PORT FORWARD ENGINE', V(-2.8,2,0), V(-2.5,.5,0), 5, g => {
+          m(g,G('c',.4,.3,2,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.45,.4,.2,10),MA,[0,0,.8],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.4,.012,.04),MD,[Math.cos(a)*.15,Math.sin(a)*.15,-1.2],[0,0,a]);}
+          greeble(g,MD,0,.3,0,.3,.01,1.5,6,.02,.04);
         });
-        addPart('PORT MISSILE RACK', V(-1.5,-.15,0), V(-2,-.5,.5), 2.5, g => {
-          m(g,G('b',.3,.2,.8),MH);
-          for(let r=0;r<2;r++)for(let c=0;c<2;c++) m(g,G('c',.04,.04,.4,6),MD,[-.06+c*.12,-.05+r*.1,.5],[PI2,0,0]);
+        addPart('STBD FORWARD ENGINE', V(2.8,2,0), V(2.5,.5,0), 5, g => {
+          m(g,G('c',.4,.3,2,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.45,.4,.2,10),MA,[0,0,.8],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.4,.012,.04),MD,[Math.cos(a)*.15,Math.sin(a)*.15,-1.2],[0,0,a]);}
+          greeble(g,MD,0,.3,0,.3,.01,1.5,6,.02,.04);
         });
-        addPart('STARBOARD MISSILE RACK', V(1.5,-.15,0), V(2,-.5,.5), 2.5, g => {
-          m(g,G('b',.3,.2,.8),MH);
-          for(let r=0;r<2;r++)for(let c=0;c<2;c++) m(g,G('c',.04,.04,.4,6),MD,[-.06+c*.12,-.05+r*.1,.5],[PI2,0,0]);
+        addPart('PORT AFT ENGINE', V(-2.2,2,-3.5), V(-2,.5,-2), 4.5, g => {
+          m(g,G('c',.35,.25,1.8,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.4,.35,.15,10),MA,[0,0,.7],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.35,.01,.03),MD,[Math.cos(a)*.12,Math.sin(a)*.12,-1.1],[0,0,a]);}
+        });
+        addPart('STBD AFT ENGINE', V(2.2,2,-3.5), V(2,.5,-2), 4.5, g => {
+          m(g,G('c',.35,.25,1.8,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.4,.35,.15,10),MA,[0,0,.7],[PI2,0,0]);
+          for(let i=0;i<3;i++){const a=(i/3)*PI*2; m(g,G('b',.35,.01,.03),MD,[Math.cos(a)*.12,Math.sin(a)*.12,-1.1],[0,0,a]);}
+        });
+        addPart('KEEL TRUSS — ARMORED', V(0,.5,.5), V(0,-1.5,0), 3, g => {
+          m(g,G('b',.25,.18,7),MH); m(g,G('b',.2,.04,6.5),MA,[0,.1,0]);
+          for(let z=-3;z<=3;z+=.4) m(g,G('b',.2,.025,.05),MD,[0,-.1,z]);
+        });
+        addPart('PORT MISSILE PYLON', V(-2.8,.5,.5), V(-2.5,-.5,.5), 3, g => {
+          m(g,G('b',.2,.15,.8),MH);
+          for(let c=0;c<2;c++) m(g,G('c',.04,.04,.5,6),MD,[-.06+c*.12,-.08,.5],[PI2,0,0]);
+          m(g,G('c',.06,.04,.12,6),MA,[0,-.08,.8],[PI2,0,0]);
+        });
+        addPart('STBD MISSILE PYLON', V(2.8,.5,.5), V(2.5,-.5,.5), 3, g => {
+          m(g,G('b',.2,.15,.8),MH);
+          for(let c=0;c<2;c++) m(g,G('c',.04,.04,.5,6),MD,[-.06+c*.12,-.08,.5],[PI2,0,0]);
+          m(g,G('c',.06,.04,.12,6),MA,[0,-.08,.8],[PI2,0,0]);
+        });
+        addPart('DORSAL SENSOR DOME', V(0,4.8,-.5), V(0,3,-.3), 3, g => {
+          m(g,G('s',.35,8,6),MH,[0,0,0],[0,0,0],[1,.4,1]);
+          m(g,G('t',.3,.02,6,16),MA,[0,-.05,0],[PI2,0,0]);
+        });
+        addPart('RUDDER — STING TAIL', V(0,2.5,-6), V(0,1.5,-2.5), 3.5, g => {
+          m(g,G('b',.05,1.8,1.2),MH); m(g,G('b',.04,1.5,1),MA,[0,.15,0]);
+          m(g,G('n',.06,.3,6),MH,[0,-.95,0],[PI,0,0]);
+        });
+        addPart('ELEVATOR — PORT', V(-1.3,2.5,-5.5), V(-1.3,.5,-2), 3, g => {
+          m(g,G('b',1.2,.05,.8),MH); m(g,G('b',1,.03,.6),MA,[0,.03,0]);
+        });
+        addPart('ELEVATOR — STBD', V(1.3,2.5,-5.5), V(1.3,.5,-2), 3, g => {
+          m(g,G('b',1.2,.05,.8),MH); m(g,G('b',1,.03,.6),MA,[0,.03,0]);
+        });
+        addPart('AMMO DRUM — VENTRAL', V(0,-1.2,.8), V(0,-2.5,.5), 2.5, g => {
+          m(g,G('c',.15,.15,.3,8),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('b',.06,.06,.2),MD,[0,.12,.12]); m(g,G('c',.03,.03,.4,4),MD,[0,.12,.3],[PI2,0,0]);
         });
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // MODEL 6: VOID HARVESTER — INDUSTRIAL MINING VESSEL
+      // MODEL 6: VOID HARVESTER — INDUSTRIAL TITAN AIRSHIP
       // ═══════════════════════════════════════════════════════════════
       function buildVoidHarvester() {
         _seed = 617;
-        addPart('PROCESSING HULL', V(0,0,0), V(0,0,0), 0, g => {
-          m(g,G('b',2.5,1.5,4),MH); m(g,G('b',2.2,.12,3.8),MH,[0,.78,0]); m(g,G('b',2.2,.12,3.8),MH,[0,-.78,0]);
-          m(g,G('b',.12,1.3,3.8),MH,[1.28,0,0]); m(g,G('b',.12,1.3,3.8),MH,[-1.28,0,0]);
-          greeble(g,MD,0,.78,0,1.8,.01,3,30,.05,.18);
-          greeble(g,MD,1.28,0,0,.01,.9,3,16,.03,.12); greeble(g,MD,-1.28,0,0,.01,.9,3,16,.03,.12);
-          for(let z=-1.5;z<=1.5;z+=.35){m(g,G('s',.02,4,3),MD,[1.2,.55,z]);m(g,G('s',.02,4,3),MD,[-1.2,.55,z]);}
+        addPart('PORT ENVELOPE — GAS CELL', V(-1.8,3,0), V(-1.5,1.5,0), 4, g => {
+          m(g,G('c',1.8,1.8,7,14),MH); m(g,G('s',1.8,12,8),MH,[0,0,3.8],[0,0,0],[1,.85,.5]);
+          m(g,G('n',1.6,3,12),MH,[0,0,-4.5],[-PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.012,.012,6.5),MD,[Math.cos(a)*1.82,Math.sin(a)*1.82,-.3]);}
+          greeble(g,MD,0,1,0,1.2,.01,5,15,.02,.06);
         });
-        addPart('BRIDGE — CONTROL TOWER', V(1,.9,1.5), V(1,2.5,1), 4, g => {
-          m(g,G('b',.8,.6,.8),MH); m(g,G('b',.6,.3,.6),MH,[0,.4,0]);
-          for(let i=-2;i<=2;i++) m(g,G('b',.06,.02,.03),MD,[i*.1,.28,.32]);
-          m(g,G('c',.03,.025,.4,4),MD,[0,.6,0]); m(g,G('s',.04,4,3),MA,[0,.82,0]);
+        addPart('STBD ENVELOPE — GAS CELL', V(1.8,3,0), V(1.5,1.5,0), 4, g => {
+          m(g,G('c',1.8,1.8,7,14),MH); m(g,G('s',1.8,12,8),MH,[0,0,3.8],[0,0,0],[1,.85,.5]);
+          m(g,G('n',1.6,3,12),MH,[0,0,-4.5],[-PI2,0,0]);
+          for(let i=0;i<8;i++){const a=(i/8)*PI*2; m(g,G('b',.012,.012,6.5),MD,[Math.cos(a)*1.82,Math.sin(a)*1.82,-.3]);}
+          greeble(g,MD,0,1,0,1.2,.01,5,15,.02,.06);
+        });
+        addPart('CONNECTING TRUSS — UPPER', V(0,4.5,0), V(0,2.5,0), 3, g => {
+          m(g,G('b',2,.12,6),MH); m(g,G('b',1.8,.06,5.5),MA,[0,.08,0]);
+          for(let z=-2.5;z<=2.5;z+=.5) m(g,G('b',1.6,.03,.06),MD,[0,-.08,z]);
+          greeble(g,MD,0,.08,0,1.5,.01,5,12,.02,.05);
+        });
+        addPart('CONNECTING TRUSS — LOWER', V(0,1.5,0), V(0,-.5,0), 3, g => {
+          m(g,G('b',2,.12,6),MH); m(g,G('b',1.8,.06,5.5),MA,[0,-.08,0]);
+          for(let z=-2.5;z<=2.5;z+=.5) m(g,G('b',1.6,.03,.06),MD,[0,.08,z]);
+        });
+        addPart('STRUCTURAL RING — PORT', V(-1.8,3,1), V(-1.5,2,.3), 3, g => {
+          m(g,G('t',1.85,.06,10,24),MH,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.04,.04,.06),MD,[Math.cos(a)*1.85,Math.sin(a)*1.85,0]);}
+        });
+        addPart('STRUCTURAL RING — STBD', V(1.8,3,-1), V(1.5,2,-.3), 3, g => {
+          m(g,G('t',1.85,.06,10,24),MH,[0,0,0],[PI2,0,0]);
+          for(let i=0;i<6;i++){const a=(i/6)*PI*2; m(g,G('b',.04,.04,.06),MD,[Math.cos(a)*1.85,Math.sin(a)*1.85,0]);}
+        });
+        addPart('CARGO GONDOLA — MAIN', V(0,-.8,0), V(0,-3.5,0), 5, g => {
+          m(g,G('b',3,1.2,4),MH); m(g,G('b',2.8,.15,3.8),MH,[0,.62,0]); m(g,G('b',2.8,.15,3.8),MH,[0,-.62,0]);
+          m(g,G('b',.15,1,3.8),MH,[1.52,0,0]); m(g,G('b',.15,1,3.8),MH,[-1.52,0,0]);
+          for(let z=-1.5;z<=1.5;z+=.35){m(g,G('s',.02,4,3),MD,[1.5,.35,z]);m(g,G('s',.02,4,3),MD,[-1.5,.35,z]);}
+          greeble(g,MD,0,.62,0,2.5,.01,3.5,30,.04,.12);
+        });
+        addPart('BRIDGE — CONTROL TOWER', V(1.2,.4,1.5), V(1.5,-2,1.5), 4, g => {
+          m(g,G('b',.8,.6,.8),MH); m(g,G('b',.6,.35,.6),MH,[0,.45,0]);
+          for(let i=-2;i<=2;i++) m(g,G('b',.06,.02,.03),MD,[i*.1,.3,.32]);
+          m(g,G('c',.03,.025,.4,4),MD,[0,.7,0]); m(g,G('s',.04,4,3),MA,[0,.9,0]);
           greeble(g,MD,0,.3,0,.5,.01,.5,6,.02,.05);
         });
-        addPart('PORT BOOM ARM', V(-2,.3,2.5), V(-3,.5,2), 5, g => {
-          m(g,G('b',.2,.2,4),MH); m(g,G('b',.25,.25,.3),MA,[0,0,2]);
-          for(let i=0;i<6;i++) m(g,G('b',.22,.03,.06),MD,[0,0,-1.7+i*.7]);
-          greeble(g,MD,0,.12,0,.15,.01,3.5,8,.02,.05);
+        addPart('PORT CRANE BOOM', V(-2.5,.5,2.5), V(-3,.8,2), 5, g => {
+          m(g,G('b',.15,.15,4),MH); m(g,G('b',.2,.2,.25),MA,[0,0,2]);
+          for(let i=0;i<6;i++) m(g,G('b',.13,.025,.04),MD,[0,0,-1.7+i*.7]);
+          m(g,G('c',.015,.015,.5,4),MD,[0,-.15,2.1]); m(g,G('b',.1,.08,.08),MD,[0,-.4,2.1]);
+          greeble(g,MD,0,.1,0,.1,.01,3,8,.02,.04);
         });
-        addPart('STARBOARD BOOM ARM', V(2,.3,2.5), V(3,.5,2), 5, g => {
-          m(g,G('b',.2,.2,4),MH); m(g,G('b',.25,.25,.3),MA,[0,0,2]);
-          for(let i=0;i<6;i++) m(g,G('b',.22,.03,.06),MD,[0,0,-1.7+i*.7]);
-          greeble(g,MD,0,.12,0,.15,.01,3.5,8,.02,.05);
+        addPart('STBD CRANE BOOM', V(2.5,.5,2.5), V(3,.8,2), 5, g => {
+          m(g,G('b',.15,.15,4),MH); m(g,G('b',.2,.2,.25),MA,[0,0,2]);
+          for(let i=0;i<6;i++) m(g,G('b',.13,.025,.04),MD,[0,0,-1.7+i*.7]);
+          m(g,G('c',.015,.015,.5,4),MD,[0,-.15,2.1]); m(g,G('b',.1,.08,.08),MD,[0,-.4,2.1]);
+          greeble(g,MD,0,.1,0,.1,.01,3,8,.02,.04);
         });
-        addPart('PORT GRAPPLER CLAW', V(-2,.3,5), V(-2.5,1,3), 3, g => {
-          m(g,G('b',.4,.3,.3),MA); // wrist
-          m(g,G('b',.08,.5,.08),MD,[.12,-.3,.1],[0,0,.2]); m(g,G('b',.08,.5,.08),MD,[-.12,-.3,-.1],[0,0,-.2]);
-          m(g,G('b',.08,.5,.08),MD,[0,-.3,.12],[.2,0,0]);
+        addPart('ORE HOPPER — VENTRAL', V(0,-2.2,0), V(0,-3.5,0), 4, g => {
+          m(g,G('b',2.2,.6,2.5),MH); m(g,G('b',1.8,.4,2),MD);
+          m(g,G('b',2,.04,2.3),MA,[0,-.32,0]);
+          greeble(g,MD,0,-.32,0,1.8,.01,2,12,.03,.08);
         });
-        addPart('STARBOARD GRAPPLER CLAW', V(2,.3,5), V(2.5,1,3), 3, g => {
-          m(g,G('b',.4,.3,.3),MA);
-          m(g,G('b',.08,.5,.08),MD,[.12,-.3,.1],[0,0,.2]); m(g,G('b',.08,.5,.08),MD,[-.12,-.3,-.1],[0,0,-.2]);
-          m(g,G('b',.08,.5,.08),MD,[0,-.3,.12],[.2,0,0]);
+        addPart('REFINERY STACK — PORT', V(-1.5,5.5,-.5), V(-1.5,3,-.3), 3.5, g => {
+          m(g,G('c',.12,.1,.8,6),MH); m(g,G('c',.15,.12,.08,6),MA,[0,0,.35]);
+          m(g,G('c',.1,.08,.08,6),MD,[0,0,-.35]); greeble(g,MD,0,.1,0,.1,.01,.6,4,.02,.03);
         });
-        addPart('ORE HOPPER', V(0,-.9,0), V(0,-3,0), 4, g => {
-          m(g,G('b',2,.6,2.5),MH); m(g,G('b',1.6,.4,2),MD,[0,0,0]);
-          m(g,G('b',1.8,.04,2.3),MA,[0,-.32,0]);
-          greeble(g,MD,0,-.32,0,1.5,.01,2,12,.03,.08);
+        addPart('REFINERY STACK — STBD', V(1.5,5.5,.5), V(1.5,3,.3), 3.5, g => {
+          m(g,G('c',.12,.1,.8,6),MH); m(g,G('c',.15,.12,.08,6),MA,[0,0,.35]);
+          m(g,G('c',.1,.08,.08,6),MD,[0,0,-.35]); greeble(g,MD,0,.1,0,.1,.01,.6,4,.02,.03);
         });
-        addPart('ENGINE — INDUSTRIAL DRIVE', V(0,0,-3), V(0,0,-3), 4.5, g => {
-          m(g,G('c',.6,.5,2,10),MH,[0,0,0],[PI2,0,0]);
-          m(g,G('c',.5,.7,.6,10),MD,[0,0,-1.2],[PI2,0,0]);
-          m(g,G('c',.65,.6,.3,10),MA,[0,0,.8],[PI2,0,0]);
-          for(let i=0;i<6;i++){const a=(i/6)*PI*2;m(g,G('b',.02,.1,1.2),MD,[Math.cos(a)*.55,Math.sin(a)*.55,-.2],[0,0,a]);}
-          greeble(g,MD,0,.5,0,.5,.01,1.5,10,.02,.06);
+        addPart('ENGINE — PORT INDUSTRIAL', V(-3.5,2.5,-3), V(-3,.5,-1.5), 5, g => {
+          m(g,G('c',.5,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.55,.5,.25,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.4,.55,.5,10),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.5,.015,.05),MD,[Math.cos(a)*.2,Math.sin(a)*.2,-1.6],[0,0,a]);}
+          greeble(g,MD,0,.4,0,.4,.01,2,10,.02,.06);
         });
-        addPart('DRILL ARRAY', V(0,-.2,3.5), V(0,-.5,3), 4, g => {
+        addPart('ENGINE — STBD INDUSTRIAL', V(3.5,2.5,-3), V(3,.5,-1.5), 5, g => {
+          m(g,G('c',.5,.4,2.5,10),MH,[0,0,0],[PI2,0,0]);
+          m(g,G('c',.55,.5,.25,10),MA,[0,0,1],[PI2,0,0]);
+          m(g,G('c',.4,.55,.5,10),MD,[0,0,-1.4],[PI2,0,0]);
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('b',.5,.015,.05),MD,[Math.cos(a)*.2,Math.sin(a)*.2,-1.6],[0,0,a]);}
+          greeble(g,MD,0,.4,0,.4,.01,2,10,.02,.06);
+        });
+        addPart('DRILL ARRAY — FORWARD', V(0,.2,4.5), V(0,-.5,3.5), 4.5, g => {
           m(g,G('c',.35,.2,1.5,8),MH,[0,0,0],[PI2,0,0]); m(g,G('n',.15,1,8),MD,[0,0,1.2],[PI2,0,0]);
-          for(let i=0;i<4;i++){const a=(i/4)*PI*2;m(g,G('c',.03,.03,.8,4),MD,[Math.cos(a)*.2,Math.sin(a)*.2,.4],[PI2,0,0]);}
+          for(let i=0;i<4;i++){const a=(i/4)*PI*2; m(g,G('c',.03,.03,.8,4),MD,[Math.cos(a)*.2,Math.sin(a)*.2,.4],[PI2,0,0]);}
         });
-        addPart('RADIATOR ARRAY', V(0,1,-.5), V(0,2.5,0), 3.5, g => {
-          for(let i=0;i<6;i++) m(g,G('b',1.8,.02,.3),MH,[0,i*.08,0]);
-          m(g,G('b',.1,.5,.15),MA,[.85,0,0]); m(g,G('b',.1,.5,.15),MA,[-.85,0,0]);
+        addPart('RADIATOR ARRAY — DORSAL', V(0,5.2,-.5), V(0,3,0), 3.5, g => {
+          for(let i=0;i<6;i++) m(g,G('b',2,.02,.3),MH,[0,i*.08,0]);
+          m(g,G('b',.08,.5,.15),MA,[.95,.2,0]); m(g,G('b',.08,.5,.15),MA,[-.95,.2,0]);
         });
-        addPart('CARGO FRAME', V(0,0,-1.5), V(0,-.5,-1.5), 3, g => {
-          m(g,G('b',.08,.08,2),MH,[1,-.6,0]); m(g,G('b',.08,.08,2),MH,[-1,-.6,0]);
-          m(g,G('b',.08,.08,2),MH,[1,.6,0]); m(g,G('b',.08,.08,2),MH,[-1,.6,0]);
-          m(g,G('b',2.08,.08,.08),MH,[0,.6,1]); m(g,G('b',2.08,.08,.08),MH,[0,.6,-1]);
-          m(g,G('b',2.08,.08,.08),MH,[0,-.6,1]); m(g,G('b',2.08,.08,.08),MH,[0,-.6,-1]);
+        addPart('RUDDER — VERTICAL', V(0,3,-5.5), V(0,2,-2.5), 3.5, g => {
+          m(g,G('b',.06,2,1.5),MH); m(g,G('b',.04,1.6,1.2),MA,[0,.2,0]);
         });
-        addPart('TOWING CLAMP', V(0,0,-4.5), V(0,0,-2.5), 2.5, g => {
+        addPart('ELEVATOR — PORT', V(-1.8,3,-5), V(-1.5,.8,-2), 3, g => {
+          m(g,G('b',1.5,.05,1),MH); m(g,G('b',1.3,.03,.8),MA,[0,.03,0]);
+        });
+        addPart('ELEVATOR — STBD', V(1.8,3,-5), V(1.5,.8,-2), 3, g => {
+          m(g,G('b',1.5,.05,1),MH); m(g,G('b',1.3,.03,.8),MA,[0,.03,0]);
+        });
+        addPart('TOWING CLAMP — AFT', V(0,0,-5.5), V(0,-.5,-3), 2.5, g => {
           m(g,G('b',.5,.4,.3),MA); m(g,G('b',.1,.6,.1),MD,[.2,0,.05],[0,0,.15]); m(g,G('b',.1,.6,.1),MD,[-.2,0,.05],[0,0,-.15]);
+        });
+        addPart('CARGO FRAME — VENTRAL', V(0,-1,-1.5), V(0,-2,-1), 3, g => {
+          m(g,G('b',.06,.06,2),MH,[1.2,-.5,0]); m(g,G('b',.06,.06,2),MH,[-1.2,-.5,0]);
+          m(g,G('b',.06,.06,2),MH,[1.2,.5,0]); m(g,G('b',.06,.06,2),MH,[-1.2,.5,0]);
+          m(g,G('b',2.46,.06,.06),MH,[0,.5,1]); m(g,G('b',2.46,.06,.06),MH,[0,.5,-1]);
+          m(g,G('b',2.46,.06,.06),MH,[0,-.5,1]); m(g,G('b',2.46,.06,.06),MH,[0,-.5,-1]);
         });
       }
 
@@ -601,34 +823,31 @@ export default function MechExploded() {
       // MODEL GALLERY SYSTEM
       // ═══════════════════════════════════════════════════════════════
       const models = [
-        { name: 'LEVIATHAN-IX', sub: 'HEAVY BATTLECRUISER', dwg: 'THI-2847-IX', build: buildLeviathan },
-        { name: 'WHISPERWIND', sub: 'FAST INTERCEPTOR', dwg: 'THI-1103-WW', build: buildWhisperwind },
-        { name: 'CATHEDRAL', sub: 'DREADNOUGHT-CLASS', dwg: 'THI-5520-CT', build: buildCathedral },
-        { name: 'NOMAD', sub: 'SURVEY VESSEL', dwg: 'THI-3391-NM', build: buildNomad },
-        { name: 'IRON WASP', sub: 'ATTACK GUNSHIP', dwg: 'THI-7704-IW', build: buildIronWasp },
-        { name: 'VOID HARVESTER', sub: 'INDUSTRIAL MINING VESSEL', dwg: 'THI-9182-VH', build: buildVoidHarvester },
+        { name: 'LEVIATHAN-IX', sub: 'IMPERIAL DREADNOUGHT AIRSHIP', dwg: 'TIA-2847-IX', build: buildLeviathan },
+        { name: 'WHISPERWIND', sub: 'PHANTOM CORSAIR AIRSHIP', dwg: 'TIA-1103-WW', build: buildWhisperwind },
+        { name: 'CATHEDRAL', sub: 'GRAND BASILICA AIRSHIP', dwg: 'TIA-5520-CT', build: buildCathedral },
+        { name: 'NOMAD', sub: 'EXPLORER CLOUDSHIP', dwg: 'TIA-3391-NM', build: buildNomad },
+        { name: 'IRON WASP', sub: 'ASSAULT HORNET AIRSHIP', dwg: 'TIA-7704-IW', build: buildIronWasp },
+        { name: 'VOID HARVESTER', sub: 'INDUSTRIAL TITAN AIRSHIP', dwg: 'TIA-9182-VH', build: buildVoidHarvester },
       ];
 
       let currentModel = Math.floor(Math.random() * models.length);
-      let explodeAmount = 0, targetExplode = 0;
-      let wireframeMode = false, xrayMode = false, autoSpin = false;
+      let explodeAmount = 0, targetExplode = 1;
+      let wireframeMode = false, xrayMode = false, autoSpin = true;
       let hoveredPart: Part | null = null;
       let modelLoadTime = 0;
 
       function loadModel(idx: number) {
-        // Remove old parts
         parts.forEach(p => {
           p.group.traverse(c => { if (c.userData.isEdge && (c as T.LineSegments).material) ((c as T.LineSegments).material as T.Material).dispose(); });
           scene.remove(p.group);
         });
         parts.length = 0;
 
-        // Build new model
         models[idx].build();
         currentModel = idx;
         modelLoadTime = clock.elapsedTime;
 
-        // Reapply modes
         if (xrayMode) {
           sharedU.xrayAlpha.value = 0.12;
           parts.forEach(p => p.group.traverse(c => { if (c.userData.isEdge) (c as T.LineSegments).material = edgeMatStrong; }));
@@ -640,7 +859,6 @@ export default function MechExploded() {
           }));
         }
 
-        // Update UI
         let tris = 0;
         scene.traverse(c => { const ms = c as T.Mesh; if (ms.isMesh && ms.geometry) tris += (ms.geometry.index ? ms.geometry.index.count / 3 : ms.geometry.attributes.position.count / 3); });
         const elName = document.getElementById('ship-name');
@@ -655,22 +873,18 @@ export default function MechExploded() {
         if (elTris) elTris.textContent = Math.round(tris).toLocaleString();
       }
 
-      // Arrow key handler
       function onKeyDown(e: KeyboardEvent) {
         if (e.key === 'ArrowRight') { e.preventDefault(); loadModel((currentModel + 1) % models.length); }
         if (e.key === 'ArrowLeft') { e.preventDefault(); loadModel((currentModel - 1 + models.length) % models.length); }
       }
       window.addEventListener('keydown', onKeyDown);
 
-      // ── Raycasting ──
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
       function onMouseMove(e: MouseEvent) { mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; }
       window.addEventListener('mousemove', onMouseMove);
 
-      // ── UI button hookups ──
       function setupUI() {
-        const btnA = document.getElementById('mech-btn-assembled');
         const btnE = document.getElementById('mech-btn-exploded');
         const btnW = document.getElementById('mech-btn-wireframe');
         const btnX = document.getElementById('mech-btn-xray');
@@ -679,15 +893,13 @@ export default function MechExploded() {
         const ib = 'rgba(26,26,24,0.08)', ia = 'rgba(26,26,24,0.2)';
 
         function upd() {
-          [btnA,btnE,btnW,btnX,btnS].forEach(b => { if(b) b.style.background = ib; });
-          if(targetExplode===0 && btnA) btnA.style.background = ia;
+          [btnE,btnW,btnX,btnS].forEach(b => { if(b) b.style.background = ib; });
           if(targetExplode===1 && btnE) btnE.style.background = ia;
           if(wireframeMode && btnW) btnW.style.background = ia;
           if(xrayMode && btnX) btnX.style.background = ia;
           if(autoSpin && btnS) btnS.style.background = ia;
         }
-        if(btnA) btnA.onclick=()=>{targetExplode=0;if(slider)slider.value='0';upd();};
-        if(btnE) btnE.onclick=()=>{targetExplode=1;if(slider)slider.value='100';upd();};
+        if(btnE) btnE.onclick=()=>{targetExplode=targetExplode===1?0:1;if(slider)slider.value=targetExplode===1?'100':'0';upd();};
         if(btnW) btnW.onclick=()=>{wireframeMode=!wireframeMode;parts.forEach(p=>p.group.traverse(c=>{if((c as T.Mesh).isMesh){const mt=(c as T.Mesh).material as T.ShaderMaterial;if(mt.wireframe!==undefined)mt.wireframe=wireframeMode;}if(c.userData.isEdge)c.visible=!wireframeMode;}));upd();};
         if(btnX) btnX.onclick=()=>{xrayMode=!xrayMode;sharedU.xrayAlpha.value=xrayMode?0.12:1;parts.forEach(p=>p.group.traverse(c=>{if(c.userData.isEdge)(c as T.LineSegments).material=xrayMode?edgeMatStrong:edgeMat;}));upd();};
         if(btnS) btnS.onclick=()=>{autoSpin=!autoSpin;upd();};
@@ -696,11 +908,9 @@ export default function MechExploded() {
       }
       setTimeout(setupUI, 100);
 
-      // ── Render loop ──
       const clock = new THREE.Clock();
       let animId = 0;
 
-      // Initial load
       loadModel(currentModel);
 
       function animate() {
@@ -714,7 +924,6 @@ export default function MechExploded() {
           p.group.position.copy(p.origin).add(offset);
         });
 
-        // Scale-in animation on model switch
         const sinceLoad = t - modelLoadTime;
         if (sinceLoad < 0.4) {
           const s = Math.min(sinceLoad / 0.3, 1);
@@ -727,7 +936,6 @@ export default function MechExploded() {
         controls.autoRotate = autoSpin;
         controls.autoRotateSpeed = 1.0;
 
-        // Raycasting
         raycaster.setFromCamera(mouse, camera);
         const allMeshes: T.Mesh[] = [];
         parts.forEach(p => p.group.traverse(c => { if ((c as T.Mesh).isMesh) allMeshes.push(c as T.Mesh); }));
@@ -768,31 +976,27 @@ export default function MechExploded() {
       <div ref={containerRef} className="absolute inset-0" />
 
       <div className="absolute inset-0 pointer-events-none z-10" style={{ fontFamily: "'Courier New', monospace", color: '#1a1a18' }}>
-        {/* Top-left — small branding only */}
         <div className="absolute top-20 sm:top-24 left-6 sm:left-10">
           <div style={{ fontSize: '8px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.3 }}>
-            TARTARY HEAVY INDUSTRIES
+            TARTARY IMPERIAL AERONAUTICS
           </div>
           <div style={{ fontSize: '8px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.2, marginTop: '2px' }}>
-            BUREAU OF NAVAL ARCHITECTURE
+            BUREAU OF AIRSHIP ENGINEERING
           </div>
         </div>
 
-        {/* Top-right stats */}
         <div className="absolute top-20 sm:top-24 right-6 sm:right-10 text-right" style={{ fontSize: '8px', letterSpacing: '0.2em', opacity: 0.3 }}>
           DRAG TO ROTATE<br />SCROLL TO ZOOM<br /><br />
           COMPONENTS: <span id="mech-part-count">0</span><br />
           TRIANGLES: <span id="mech-tri-count">0</span>
         </div>
 
-        {/* Part hover label */}
         <div id="mech-part-label" className="absolute left-1/2 -translate-x-1/2" style={{
           bottom: '80px', fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase',
           opacity: 0, transition: 'opacity 0.4s', background: 'rgba(240,235,224,0.9)', padding: '5px 14px',
           border: '1px solid rgba(26,26,24,0.12)',
         }} />
 
-        {/* Bottom-left — ship name + navigation */}
         <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-10">
           <div style={{ fontSize: '7px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.3, marginBottom: '4px' }}>
             ← →&ensp;ARROW KEYS TO BROWSE
@@ -801,17 +1005,15 @@ export default function MechExploded() {
             LEVIATHAN-IX
           </div>
           <div id="ship-subtitle" style={{ fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35, marginTop: '2px' }}>
-            HEAVY BATTLECRUISER — DWG. NO. THI-2847-IX
+            IMPERIAL DREADNOUGHT AIRSHIP — DWG. NO. TIA-2847-IX
           </div>
           <div id="ship-counter" style={{ fontSize: '8px', letterSpacing: '0.15em', opacity: 0.25, marginTop: '4px' }}>
             1 / 6
           </div>
         </div>
 
-        {/* Bottom-center buttons */}
         <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3 pointer-events-auto">
           {[
-            { id: 'mech-btn-assembled', label: 'ASSEMBLED' },
             { id: 'mech-btn-exploded', label: 'EXPLODED' },
             { id: 'mech-btn-wireframe', label: 'WIREFRAME' },
             { id: 'mech-btn-xray', label: 'X-RAY' },
@@ -827,13 +1029,11 @@ export default function MechExploded() {
           ))}
         </div>
 
-        {/* Bottom-right slider */}
         <div className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 flex items-center gap-2 pointer-events-auto">
           <label style={{ fontSize: '7px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35 }}>Separation</label>
-          <input id="mech-sep-slider" type="range" min="0" max="100" defaultValue="0" style={{ width: '90px' }} />
+          <input id="mech-sep-slider" type="range" min="0" max="100" defaultValue="100" style={{ width: '90px' }} />
         </div>
 
-        {/* Drawing border frame */}
         <div className="absolute inset-4 sm:inset-6 pointer-events-none" style={{ border: '1px solid rgba(26,26,24,0.1)' }} />
         <div className="absolute inset-5 sm:inset-7 pointer-events-none" style={{ border: '1px solid rgba(26,26,24,0.05)' }} />
       </div>
