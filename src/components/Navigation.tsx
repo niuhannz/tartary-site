@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from '@/lib/AuthContext;
 
 // ─────────────────────────────── NAV DATA ───────────────────────────────
-interface SubLink {
+interface SubLink 
   href: string;
   label: string;
   external?: boolean;
@@ -60,6 +60,15 @@ const navLinks: NavLink[] = [
     subs: [
       { href: '/publishing', label: 'Featured Works' },
       { href: '/publishing#categories', label: 'Categories' },
+    ],
+  },
+  {
+    href: '/apps',
+    label: 'Apps',
+    subs: [
+      { href: 'https://booken.io', label: 'Booken', external: true, accent: '#c9a96e' },
+      { href: 'https://lifos.app', label: 'lifOS', external: true, accent: '#00d4ff' },
+      { href: '/apps/lucas', label: 'Lucas', accent: '#ff4d00' },
     ],
   },
   {
@@ -493,7 +502,7 @@ export default function Navigation() {
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
                 style={{ fontFamily: 'var(--font-mono)' }}
               >
-                Universe &middot; Cinema &middot; Games &middot; Publishing &middot; Shop
+                Universe &middot; Cinema &middot; Games &middot; Apps &middot; Publishing &middot; Shop
               </span>
               <span
                 className="text-[11px] tracking-[0.15em] uppercase text-ash"
