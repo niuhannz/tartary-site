@@ -63,12 +63,12 @@ const navLinks: NavLink[] = [
     ],
   },
   {
-    href: '/apps',
+    href: '#',
     label: 'Apps',
     subs: [
       { href: 'https://booken.io', label: 'Booken', external: true, accent: '#c9a96e' },
       { href: 'https://lifos.app', label: 'lifOS', external: true, accent: '#00d4ff' },
-      { href: '/apps/lucas', label: 'Lucas', accent: '#ff4d00' },
+      { href: '#', label: 'Lucas', accent: '#ff4d00' },
     ],
   },
   {
