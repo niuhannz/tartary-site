@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/AuthContext;
+import { useAuth } from '@/lib/AuthContext';
 
 // ─────────────────────────────── NAV DATA ───────────────────────────────
-interface SubLink 
+interface SubLink  {
   href: string;
   label: string;
   external?: boolean;
