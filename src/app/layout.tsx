@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import PasswordGate from '@/components/PasswordGate';
+
 import SiteShell from '@/components/SiteShell';
 import { AuthProvider } from '@/lib/AuthContext';
 
@@ -52,9 +52,9 @@ export default function RootLayout({
       </head>
       <body className="grain antialiased">
         <AuthProvider>
-          <PasswordGate>
+          
             <SiteShell>{children}</SiteShell>
-          </PasswordGate>
+          
         </AuthProvider>
       </body>
     </html>
