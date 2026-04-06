@@ -1,115 +1,30 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/AuthContext';
+import { pillars, type Pillar } from '@/lib/theme';
 
-// ─────────────────────────────── NAV DATA ───────────────────────────────
-interface SubLink  {
-  href: string;
-  label: string;
-  external?: boolean;
-  accent?: string;
+// ═══════════════════════════════════════════════════════════════════════════
+// TARTARY NAVIGATION — 5-Pillar Command Interface
+// ═══════════════════════════════════════════════════════════════════════════
+
+function isActive(pillarHref: string, pathname: string): boolean {
+  return pathname === pillarHref || pathname.startsWith(pillarHref + '/');
 }
 
-interface NavLink {
-  href: string;
-  label: string;
-  subs?: SubLink[];
-}
+// ── PILLAR DROPDOWN ─────────────────────────────────────────────────────
 
-const navLinks: NavLink[] = [
-  {
-    href: '/worlds',
-    label: 'Universe',
-    subs: [
-      { href: '/worlds/explore', label: 'Explore the Globe' },
-      { href: '/worlds#heavenfall', label: 'Heavenfall', accent: '#ff4d00' },
-      { href: '/worlds#margin', label: 'Margin', accent: '#d4a574' },
-      { href: '/worlds#xt111', label: 'XT111', accent: '#00d4ff' },
-      { href: '/worlds#the-unrecorded', label: 'The Unrecorded', accent: '#a0886e' },
-      { href: '/characters', label: 'Characters' },
-    ],
-  },
-  {
-    href: '/cinema',
-    label: 'Cinema',
-    subs: [
-      { href: '/cinema', label: 'Featured Films' },
-      { href: '/cinema#services', label: 'Services' },
-      { href: '/cinema#festivals', label: 'Festival Recognition' },
-      { href: '/anime', label: 'Anime', accent: '#c9a96e' },
-      { href: 'https://niji.app', label: 'NIJI.app', external: true, accent: '#c9a96e' },
-    ],
-  },
-  {
-    href: '/games',
-    label: 'Games',
-    subs: [
-      { href: '/games', label: 'Featured Games' },
-      { href: '/games#capabilities', label: 'Capabilities' },
-      { href: '/systems', label: 'Systems', accent: '#d97706' },
-      { href: '/systems#mudflood', label: 'MUDFLOOD', accent: '#d97706' },
-    ],
-  },
-  {
-    href: '/publishing',
-    label: 'Publishing',
-    subs: [
-      { href: '/publishing', label: 'Featured Works' },
-      { href: '/publishing#categories', label: 'Categories' },
-    ],
-  },
-  {
-    href: '#',
-    label: 'Apps',
-    subs: [
-      { href: 'https://booken.io', label: 'Booken', external: true, accent: '#c9a96e' },
-      { href: 'https://lifos.app', label: 'lifOS', external: true, accent: '#00d4ff' },
-      { href: '#', label: 'Lucas', accent: '#ff4d00' },
-    ],
-  },
-  {
-    href: '/shop',
-    label: 'Shop',
-    subs: [
-      { href: '/shop', label: 'All Products' },
-      { href: '/shop#apparel', label: 'Apparel' },
-      { href: '/shop#prints', label: 'Prints' },
-      { href: '/shop#collectibles', label: 'Collectibles' },
-      { href: '/pricing', label: 'Pricing & Membership', accent: '#c9a96e' },
-    ],
-  },
-];
-
-// Collapsed nav groups: map child routes to their parent nav item
-const navActiveRoutes: Record<string, string[]> = {
-  '/worlds': ['/worlds', '/characters'],
-  '/cinema': ['/cinema', '/anime'],
-  '/games': ['/games', '/systems'],
-  '/shop': ['/shop', '/pricing'],
-};
-
-function isNavActive(navHref: string, pathname: string): boolean {
-  const routes = navActiveRoutes[navHref];
-  if (routes) {
-    return routes.some((r) => pathname === r || pathname.startsWith(r + '/'));
-  }
-  return pathname === navHref || pathname.startsWith(navHref + '/');
-}
-
-// ─────────────────────────────── DROPDOWN ───────────────────────────────
-function NavDropdown({
-  link,
-  isActive,
+function PillarDropdown({
+  pillar,
+  active,
   isOpen,
   onOpen,
   onClose,
 }: {
-  link: NavLink;
-  isActive: boolean;
+  pillar: Pillar;
+  active: boolean;
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
@@ -122,28 +37,12 @@ function NavDropdown({
   };
 
   const handleLeave = () => {
-    timeoutRef.current = setTimeout(onClose, 150);
+    timeoutRef.current = setTimeout(onClose, 120);
   };
 
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
   }, []);
-
-  if (!link.subs) {
-    return (
-      <Link
-        href={link.href}
-        className={`text-[13px] tracking-[0.15em] uppercase transition-colors duration-300 link-hover ${
-          isActive ? 'text-gold' : 'text-mist hover:text-foreground'
-        }`}
-        style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}
-      >
-        {link.label}
-      </Link>
-    );
-  }
 
   return (
     <div
@@ -152,86 +51,80 @@ function NavDropdown({
       onMouseLeave={handleLeave}
     >
       <Link
-        href={link.href}
-        className={`text-[13px] tracking-[0.15em] uppercase transition-colors duration-300 link-hover ${
-          isActive ? 'text-gold' : 'text-mist hover:text-foreground'
+        href={pillar.href}
+        className={`flex items-center gap-2 text-[11px] tracking-[0.18em] uppercase transition-colors duration-[80ms] link-hover ${
+          active ? 'text-orange' : 'text-steel hover:text-bone'
         }`}
-        style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}
+        style={{ fontFamily: 'var(--font-mono)', fontWeight: 500 }}
       >
-        {link.label}
+        <span className="text-[9px] text-ash opacity-60">{pillar.idx}</span>
+        {pillar.label}
       </Link>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
-            style={{ minWidth: '220px' }}
+            exit={{ opacity: 0, y: 2 }}
+            transition={{ duration: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            className="absolute top-full left-0 pt-2"
+            style={{ minWidth: '240px' }}
           >
-            <div className="nav-dropdown relative overflow-hidden border border-white/[0.08]">
-              {/* Corner brackets — technical drawing style */}
-              <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-gold/40" />
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-gold/40" />
-              <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-gold/40" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-gold/40" />
-
-              {/* Header label */}
-              <div className="px-4 pt-3 pb-1.5 border-b border-white/[0.06]">
+            <div className="nav-dropdown relative overflow-hidden">
+              {/* Header: command prefix */}
+              <div className="px-4 pt-3 pb-2 border-b border-gunmetal">
                 <span
-                  className="text-[8px] tracking-[0.2em] uppercase text-ash/50 nav-dd-label"
+                  className="text-[9px] tracking-[0.15em] text-orange/60"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 >
-                  SYS:// {link.label}
+                  {pillar.cmdPrefix}
+                </span>
+                <span
+                  className="text-[9px] tracking-[0.08em] text-ash ml-1"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {pillar.tagline}
                 </span>
               </div>
 
-              <div className="py-1.5">
-                {link.subs.map((sub, idx) => {
-                  const isExternal = sub.external;
-                  const Comp = isExternal ? 'a' : Link;
-                  const extraProps = isExternal
+              <div className="py-1">
+                {pillar.products.map((product, idx) => {
+                  const Comp = product.external ? 'a' : Link;
+                  const extraProps = product.external
                     ? { target: '_blank', rel: 'noopener noreferrer' }
                     : {};
 
                   return (
                     <Comp
-                      key={sub.href}
-                      href={sub.href}
+                      key={product.href}
+                      href={product.href}
                       {...(extraProps as Record<string, string>)}
-                      className="group/item flex items-center gap-2.5 px-4 py-2 transition-all duration-150 hover:bg-white/[0.04] nav-dd-item"
+                      className="group/item flex items-center gap-3 px-4 py-2 transition-all duration-[80ms] hover:bg-orange/[0.06]"
                       onClick={onClose}
                     >
-                      {/* Index number */}
+                      {/* Index */}
                       <span
-                        className="text-[8px] tracking-[0.05em] text-ash/30 group-hover/item:text-gold/60 transition-colors duration-150 w-3 shrink-0 nav-dd-idx"
+                        className="text-[8px] text-ash/40 group-hover/item:text-orange/60 transition-colors duration-[80ms] w-4 shrink-0"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
                         {String(idx).padStart(2, '0')}
                       </span>
 
-                      {/* Accent tick */}
-                      <span
-                        className="w-[3px] h-[3px] shrink-0 opacity-50 group-hover/item:opacity-100 transition-opacity duration-150"
-                        style={{
-                          backgroundColor: sub.accent || 'var(--color-gold)',
-                          clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-                        }}
-                      />
+                      {/* Orange dot */}
+                      <span className="w-[3px] h-[3px] bg-orange/30 group-hover/item:bg-orange transition-colors duration-[80ms] shrink-0" />
 
+                      {/* Label */}
                       <span
-                        className="text-[10px] tracking-[0.14em] uppercase text-mist group-hover/item:text-foreground transition-colors duration-150 whitespace-nowrap nav-dd-text"
+                        className="text-[10px] tracking-[0.12em] uppercase text-steel group-hover/item:text-bone transition-colors duration-[80ms] whitespace-nowrap"
                         style={{ fontFamily: 'var(--font-mono)' }}
                       >
-                        {sub.label}
+                        {product.name}
                       </span>
 
-                      {/* External arrow */}
-                      {isExternal && (
+                      {product.external && (
                         <svg
-                          className="w-2.5 h-2.5 text-ash/30 group-hover/item:text-gold/60 transition-colors duration-150 ml-auto shrink-0"
+                          className="w-2.5 h-2.5 text-ash/30 group-hover/item:text-orange/60 transition-colors duration-[80ms] ml-auto shrink-0"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -252,170 +145,81 @@ function NavDropdown({
   );
 }
 
-// ─────────────────────────────── NAVIGATION ───────────────────────────────
-// ─────────────────────────────── USER MENU ───────────────────────────────
-function UserMenu() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+// ── MAIN NAVIGATION ─────────────────────────────────────────────────────
 
-  if (!user) {
-    return (
-      <Link
-        href="/login"
-        className="text-[11px] tracking-[0.12em] uppercase text-ash hover:text-gold transition-colors duration-300 hidden lg:block"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
-        Sign in
-      </Link>
-    );
-  }
-
-  const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'User';
-  const initial = displayName.charAt(0).toUpperCase();
-
-  return (
-    <div
-      className="relative hidden lg:block"
-      onMouseEnter={() => { if (timeoutRef.current) clearTimeout(timeoutRef.current); setOpen(true); }}
-      onMouseLeave={() => { timeoutRef.current = setTimeout(() => setOpen(false), 150); }}
-    >
-      <button
-        className="w-8 h-8 rounded-full border border-gold/30 flex items-center justify-center text-[11px] tracking-wider uppercase text-gold hover:border-gold/60 transition-colors duration-300"
-        style={{ fontFamily: 'var(--font-heading)', fontWeight: 600 }}
-      >
-        {initial}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full right-0 pt-3"
-            style={{ minWidth: '180px' }}
-          >
-            <div className="nav-dropdown relative overflow-hidden border border-white/[0.08]">
-              {/* Corner brackets */}
-              <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-gold/40" />
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-gold/40" />
-              <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-gold/40" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-gold/40" />
-
-              <div className="px-4 pt-3 pb-2 border-b border-white/[0.06]">
-                <p
-                  className="text-[10px] tracking-[0.1em] text-foreground truncate nav-dd-text"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {displayName}
-                </p>
-                <p
-                  className="text-[8px] tracking-[0.05em] text-ash/50 truncate mt-0.5 nav-dd-label"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {user.email}
-                </p>
-              </div>
-              <div className="py-1.5">
-                <button
-                  onClick={async () => {
-                    await signOut();
-                    setOpen(false);
-                    router.push('/');
-                  }}
-                  className="w-full text-left px-4 py-2 text-[10px] tracking-[0.14em] uppercase text-ash hover:text-foreground hover:bg-white/[0.04] transition-all duration-150 nav-dd-text"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ─────────────────────────────── NAVIGATION ───────────────────────────────
 export default function Navigation() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
-    setIsOpen(false);
+    setMobileOpen(false);
     setOpenDropdown(null);
   }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
-  const isHome = pathname === '/';
-  const lightNav = isHome && !scrolled;
+  }, [mobileOpen]);
 
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
           scrolled
-            ? 'bg-carbon/80 backdrop-blur-xl border-b border-white/5'
+            ? 'bg-obsidian/90 backdrop-blur-xl border-b border-gunmetal/50'
             : 'bg-transparent'
         }`}
-        {...(lightNav ? { 'data-light-nav': '' } : {})}
       >
-        <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-          <div className="flex items-center justify-between h-20 md:h-24">
-            <Link href="/" className="relative z-50 logo-glow">
+        <div className="max-w-[1400px] mx-auto px-5 md:px-10">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            {/* ── LOGO ───────────────────────────────── */}
+            <Link href="/" className="relative z-50 flex items-center gap-3">
               <span
-                className="text-xl md:text-2xl tracking-[0.3em] uppercase logo-sheen"
-                style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
+                className="text-lg md:text-xl tracking-[0.35em] uppercase text-bone hover:text-orange transition-colors duration-[80ms]"
+                style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
               >
                 Tartary
               </span>
+              {/* System status dot */}
+              <span className="w-1.5 h-1.5 bg-green rounded-full animate-pulse" />
             </Link>
 
-            {/* Desktop nav with dropdowns */}
-            <nav className="hidden lg:flex items-center gap-10">
-              {navLinks.map((link) => (
-                <NavDropdown
-                  key={link.href}
-                  link={link}
-                  isActive={isNavActive(link.href, pathname)}
-                  isOpen={openDropdown === link.href}
-                  onOpen={() => setOpenDropdown(link.href)}
+            {/* ── DESKTOP NAV ────────────────────────── */}
+            <nav className="hidden lg:flex items-center gap-8">
+              {pillars.map((pillar) => (
+                <PillarDropdown
+                  key={pillar.id}
+                  pillar={pillar}
+                  active={isActive(pillar.href, pathname)}
+                  isOpen={openDropdown === pillar.id}
+                  onOpen={() => setOpenDropdown(pillar.id)}
                   onClose={() => setOpenDropdown(null)}
                 />
               ))}
-              <div className="w-[1px] h-4 bg-white/[0.08]" />
-              <UserMenu />
             </nav>
 
+            {/* ── MOBILE TOGGLE ──────────────────────── */}
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden relative z-50 w-10 h-10 flex flex-col items-center justify-center gap-[6px]"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden relative z-50 w-10 h-10 flex flex-col items-center justify-center gap-[5px]"
               aria-label="Toggle menu"
             >
               <span
-                className={`block w-6 h-[1px] bg-foreground transition-all duration-500 ${
-                  isOpen ? 'rotate-45 translate-y-[3.5px]' : ''
+                className={`block w-5 h-[1.5px] bg-bone transition-all duration-200 ${
+                  mobileOpen ? 'rotate-45 translate-y-[3.25px]' : ''
                 }`}
               />
               <span
-                className={`block w-6 h-[1px] bg-foreground transition-all duration-500 ${
-                  isOpen ? '-rotate-45 -translate-y-[3.5px]' : ''
+                className={`block w-5 h-[1.5px] bg-bone transition-all duration-200 ${
+                  mobileOpen ? '-rotate-45 -translate-y-[3.25px]' : ''
                 }`}
               />
             </button>
@@ -423,93 +227,74 @@ export default function Navigation() {
         </div>
       </header>
 
-      {/* Mobile fullscreen menu with expandable sections */}
+      {/* ── MOBILE FULLSCREEN ──────────────────────── */}
       <AnimatePresence>
-        {isOpen && (
+        {mobileOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed inset-0 z-40 bg-carbon/98 backdrop-blur-2xl flex items-center justify-center overflow-y-auto"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-obsidian/98 backdrop-blur-xl flex flex-col items-start justify-center px-8 overflow-y-auto"
           >
-            <nav className="flex flex-col items-center gap-6 py-24">
-              {navLinks.map((link, i) => (
+            <nav className="flex flex-col gap-6 w-full max-w-md py-20">
+              {pillars.map((pillar, i) => (
                 <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex flex-col items-center"
+                  key={pillar.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ delay: i * 0.04, duration: 0.2 }}
                 >
+                  {/* Pillar heading */}
                   <Link
-                    href={link.href}
-                    className={`text-2xl md:text-3xl tracking-[0.2em] uppercase transition-colors duration-300 ${
-                      isNavActive(link.href, pathname)
-                        ? 'text-gold'
-                        : 'text-mist hover:text-foreground'
-                    }`}
-                    style={{ fontFamily: 'var(--font-heading)', fontWeight: 600 }}
+                    href={pillar.href}
+                    className="flex items-center gap-3 group"
                   >
-                    {link.label}
+                    <span
+                      className="text-[10px] text-orange/50"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {pillar.idx}
+                    </span>
+                    <span
+                      className={`text-2xl tracking-[0.1em] uppercase transition-colors duration-[80ms] ${
+                        isActive(pillar.href, pathname) ? 'text-orange' : 'text-bone group-hover:text-orange'
+                      }`}
+                      style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+                    >
+                      {pillar.label}
+                    </span>
                   </Link>
 
-                  {/* Mobile sub-links */}
-                  {link.subs && (
-                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                      {link.subs.map((sub) => {
-                        const isExternal = sub.external;
-                        return isExternal ? (
-                          <a
-                            key={sub.href}
-                            href={sub.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] tracking-[0.12em] uppercase text-ash/60 hover:text-gold transition-colors duration-200 flex items-center gap-1"
-                            style={{ fontFamily: 'var(--font-mono)' }}
-                          >
-                            {sub.accent && (
-                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: sub.accent }} />
-                            )}
-                            {sub.label}
-                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H7M17 7v10" />
-                            </svg>
-                          </a>
-                        ) : (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            className="text-[10px] tracking-[0.12em] uppercase text-ash/60 hover:text-gold transition-colors duration-200 flex items-center gap-1"
-                            style={{ fontFamily: 'var(--font-mono)' }}
-                          >
-                            {sub.accent && (
-                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: sub.accent }} />
-                            )}
-                            {sub.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* Sub-products */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 ml-8">
+                    {pillar.products.map((product) => (
+                      <Link
+                        key={product.href}
+                        href={product.href}
+                        className="text-[10px] tracking-[0.1em] uppercase text-ash hover:text-orange transition-colors duration-[80ms]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {product.name}
+                      </Link>
+                    ))}
+                  </div>
                 </motion.div>
               ))}
             </nav>
 
-            <div className="absolute bottom-10 left-10 right-10 flex justify-between items-end">
-              <span
-                className="text-[11px] tracking-[0.15em] uppercase text-ash"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Universe &middot; Cinema &middot; Games &middot; Apps &middot; Publishing &middot; Shop
-              </span>
-              <span
-                className="text-[11px] tracking-[0.15em] uppercase text-ash"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                CA &mdash; TN
-              </span>
+            {/* Bottom metadata */}
+            <div className="absolute bottom-8 left-8 right-8">
+              <div className="rule mb-4" />
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] tracking-[0.15em] uppercase text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
+                  TARTARY SYSTEMS v2.0
+                </span>
+                <span className="text-[9px] tracking-[0.15em] uppercase text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
+                  M4 MAX // SOVEREIGN
+                </span>
+              </div>
             </div>
           </motion.div>
         )}

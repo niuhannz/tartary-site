@@ -1,372 +1,367 @@
 'use client';
 
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import SectionReveal from '@/components/SectionReveal';
+import { pillars } from '@/lib/theme';
 
-// Dynamic import for 3D spacecraft technical illustration — no SSR, code-split
-const MechExploded = dynamic(() => import('@/components/MechExploded'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-screen flex items-center justify-center" style={{ background: '#f0ebe0' }}>
-      <div className="text-center">
-        <p
-          className="text-sm tracking-[0.3em] uppercase mb-4"
-          style={{ fontFamily: "'Courier New', monospace", color: '#1a1a18', opacity: 0.5 }}
-        >
-          RENDERING TECHNICAL ILLUSTRATION...
-        </p>
-        <div className="w-48 h-[1px] mx-auto relative overflow-hidden" style={{ background: 'rgba(26,26,24,0.1)' }}>
-          <div className="absolute top-0 left-0 h-full w-1/3 animate-pulse" style={{ background: 'rgba(26,26,24,0.3)' }} />
-        </div>
-      </div>
-    </div>
+// ═══════════════════════════════════════════════════════════════════════════
+// TARTARY LANDING PAGE — Sovereign AI Conglomerate Portal
+// Hero + 5-Pillar Department Grid + System Statement
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── SWINGGANG ICON ──────────────────────────────────────────────────────
+// Man on a swing wearing sunglasses — Vault-Boy style, thick strokes
+const SwinggangIcon = ({ className = '' }: { className?: string }) => (
+  <svg
+    viewBox="0 0 200 240"
+    fill="none"
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Swing frame — A-frame structure */}
+    <line x1="40" y1="10" x2="100" y2="10" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+    <line x1="40" y1="10" x2="55" y2="200" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    <line x1="160" y1="10" x2="100" y2="10" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+    <line x1="160" y1="10" x2="145" y2="200" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+
+    {/* Swing ropes */}
+    <line x1="80" y1="10" x2="75" y2="110" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="120" y1="10" x2="125" y2="110" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+
+    {/* Swing seat */}
+    <rect x="70" y="110" width="60" height="6" rx="3" fill="currentColor" opacity="0.9" />
+
+    {/* ── THE GUY ── */}
+    {/* Head */}
+    <circle cx="100" cy="72" r="18" stroke="currentColor" strokeWidth="3" fill="none" />
+
+    {/* Sunglasses — thick, cool */}
+    <rect x="85" y="67" width="13" height="8" rx="2" fill="currentColor" opacity="0.85" />
+    <rect x="102" y="67" width="13" height="8" rx="2" fill="currentColor" opacity="0.85" />
+    <line x1="98" y1="71" x2="102" y2="71" stroke="currentColor" strokeWidth="2" />
+    <line x1="85" y1="71" x2="80" y2="69" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="115" y1="71" x2="120" y2="69" stroke="currentColor" strokeWidth="1.5" />
+
+    {/* Smile */}
+    <path d="M93 80 Q100 86 107 80" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+
+    {/* Body — sitting on swing */}
+    <line x1="100" y1="90" x2="100" y2="112" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+
+    {/* Arms reaching up to ropes */}
+    <path d="M100 96 Q88 94 78 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+    <path d="M100 96 Q112 94 122 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+    {/* Legs dangling */}
+    <path d="M100 112 Q94 130 85 145" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+    <path d="M100 112 Q106 130 115 145" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+    {/* Feet */}
+    <ellipse cx="83" cy="148" rx="6" ry="3" fill="currentColor" opacity="0.7" />
+    <ellipse cx="117" cy="148" rx="6" ry="3" fill="currentColor" opacity="0.7" />
+  </svg>
+);
+
+// ── PILLAR ICONS — thick-stroke Vault-Boy style ─────────────────────────
+
+const PillarIcons: Record<string, React.ReactNode> = {
+  system: (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+      {/* Chip / processor */}
+      <rect x="12" y="12" width="24" height="24" rx="2" />
+      <rect x="18" y="18" width="12" height="12" rx="1" />
+      {/* Pins */}
+      <line x1="18" y1="8" x2="18" y2="12" /><line x1="24" y1="8" x2="24" y2="12" /><line x1="30" y1="8" x2="30" y2="12" />
+      <line x1="18" y1="36" x2="18" y2="40" /><line x1="24" y1="36" x2="24" y2="40" /><line x1="30" y1="36" x2="30" y2="40" />
+      <line x1="8" y1="18" x2="12" y2="18" /><line x1="8" y1="24" x2="12" y2="24" /><line x1="8" y1="30" x2="12" y2="30" />
+      <line x1="36" y1="18" x2="40" y2="18" /><line x1="36" y1="24" x2="40" y2="24" /><line x1="36" y1="30" x2="40" y2="30" />
+    </svg>
   ),
-});
+  studio: (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+      {/* Film clapperboard */}
+      <path d="M8 14h32v26H8z" />
+      <path d="M8 14l6-6h20l6 6" />
+      <line x1="18" y1="8" x2="14" y2="14" />
+      <line x1="28" y1="8" x2="24" y2="14" />
+      {/* Play triangle */}
+      <path d="M20 24v10l8-5z" fill="currentColor" opacity="0.6" />
+    </svg>
+  ),
+  universe: (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-8 h-8">
+      {/* Star / cosmos */}
+      <circle cx="24" cy="24" r="18" strokeDasharray="4 3" />
+      <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.7" />
+      <circle cx="14" cy="14" r="2" fill="currentColor" opacity="0.5" />
+      <circle cx="36" cy="18" r="1.5" fill="currentColor" opacity="0.4" />
+      <circle cx="16" cy="34" r="1.5" fill="currentColor" opacity="0.4" />
+      <path d="M24 6v4M24 38v4M6 24h4M38 24h4" strokeWidth="1.5" />
+    </svg>
+  ),
+  press: (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+      {/* Book / press */}
+      <path d="M8 8v32c6-3 12-3 16 0V8c-4-3-10-3-16 0z" />
+      <path d="M40 8v32c-6-3-12-3-16 0V8c4-3 10-3 16 0z" />
+      <line x1="14" y1="16" x2="20" y2="16" strokeWidth="1.5" />
+      <line x1="14" y1="22" x2="20" y2="22" strokeWidth="1.5" />
+      <line x1="28" y1="16" x2="34" y2="16" strokeWidth="1.5" />
+      <line x1="28" y1="22" x2="34" y2="22" strokeWidth="1.5" />
+    </svg>
+  ),
+  civilian: (
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+      {/* Person / civilian */}
+      <circle cx="24" cy="14" r="7" />
+      <path d="M12 40c0-7 5-12 12-12s12 5 12 12" />
+      {/* Smile */}
+      <path d="M21 15q3 3 6 0" strokeWidth="1.5" />
+    </svg>
+  ),
+};
 
-const containerVariants = {
+// ── MOTION VARIANTS ─────────────────────────────────────────────────────
+
+const stagger = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1,
-    },
+    transition: { staggerChildren: 0.04, delayChildren: 0.1 },
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.8,
-      ease: 'easeOut' as const,
-    },
-  },
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
-const cardHoverVariants = {
-  rest: {
-    scale: 1,
-    borderColor: 'rgba(201, 169, 110, 0.3)',
-  },
-  hover: {
-    scale: 1.03,
-    borderColor: 'rgba(201, 169, 110, 1)',
-    transition: {
-      duration: 0.3,
-      ease: 'easeOut' as const,
-    },
-  },
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } },
 };
 
-const divisions = [
-  {
-    id: 'worlds',
-    title: 'WORLDS',
-    subtitle: 'Original IP & Universe Creation',
-    description: 'Build universes from the ground up. Craft original intellectual properties that transcend single mediums and create immersive narrative worlds.',
-    href: '/worlds',
-    color: 'from-blue-900/40 to-blue-950/40',
-    accentColor: '#3b82f6',
-    borderAccent: 'group-hover:border-blue-500',
-    bgAccent: 'group-hover:from-blue-900/60 group-hover:to-blue-950/60',
-    icon: 'worlds',
-  },
-  {
-    id: 'cinema',
-    title: 'CINEMA',
-    subtitle: 'Film & Cinematic Production',
-    description: 'Premium film production that captures cinematic vision. From pre-production strategy to final color grade, we deliver award-winning visual narratives.',
-    href: '/cinema',
-    color: 'from-amber-900/40 to-amber-950/40',
-    accentColor: '#b45309',
-    borderAccent: 'group-hover:border-amber-600',
-    bgAccent: 'group-hover:from-amber-900/60 group-hover:to-amber-950/60',
-    icon: 'cinema',
-  },
-  {
-    id: 'anime',
-    title: 'ANIME',
-    subtitle: 'Animation & Anime Production',
-    description: 'Cinematic anime spanning hand-drawn, CG, and mixed-media. Original series, features, and transmedia adaptations that bridge Eastern craft with Western ambition.',
-    href: '/anime',
-    color: 'from-rose-900/40 to-rose-950/40',
-    accentColor: '#e11d48',
-    borderAccent: 'group-hover:border-rose-500',
-    bgAccent: 'group-hover:from-rose-900/60 group-hover:to-rose-950/60',
-    icon: 'anime',
-  },
-  {
-    id: 'games',
-    title: 'GAMES',
-    subtitle: 'Interactive Entertainment',
-    description: 'Next-generation game development. Create engaging interactive experiences that blend narrative, gameplay, and cutting-edge technology.',
-    href: '/games',
-    color: 'from-emerald-900/40 to-emerald-950/40',
-    accentColor: '#059669',
-    borderAccent: 'group-hover:border-emerald-500',
-    bgAccent: 'group-hover:from-emerald-900/60 group-hover:to-emerald-950/60',
-    icon: 'games',
-  },
-  {
-    id: 'publishing',
-    title: 'PUBLISHING',
-    subtitle: 'Books & Print Media',
-    description: 'Beautifully crafted print and digital publications. From concept to distribution, we bring stories to life across every platform.',
-    href: '/publishing',
-    color: 'from-violet-900/40 to-violet-950/40',
-    accentColor: '#7c3aed',
-    borderAccent: 'group-hover:border-violet-500',
-    bgAccent: 'group-hover:from-violet-900/60 group-hover:to-violet-950/60',
-    icon: 'publishing',
-  },
-];
-
-const highlights = [
-  {
-    division: 'CINEMA',
-    project: 'Echoes of Time',
-    description: 'Award-winning narrative film exploring the intersection of memory and perception.',
-    year: '2024',
-  },
-  {
-    division: 'GAMES',
-    project: 'Quantum Realms',
-    description: 'Immersive narrative-driven gaming experience with procedural world-building.',
-    year: '2024',
-  },
-  {
-    division: 'PUBLISHING',
-    project: 'The Tartary Archive',
-    description: 'Limited edition collection documenting the studio\'s creative evolution.',
-    year: '2024',
-  },
-  {
-    division: 'WORLDS',
-    project: 'Meridian Universe',
-    description: 'Expansive transmedia IP spanning film, games, books, and interactive experiences.',
-    year: '2023',
-  },
-];
-
-// Icon components for divisions
-const IconWorlds = () => (
-  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <circle cx="50" cy="50" r="45" strokeWidth="1.5" opacity="0.3" />
-    <circle cx="50" cy="50" r="30" strokeWidth="1.5" opacity="0.5" />
-    <circle cx="50" cy="50" r="15" strokeWidth="2" opacity="0.8" />
-    <path d="M 50 5 Q 75 25 75 50 Q 75 75 50 95 Q 25 75 25 50 Q 25 25 50 5" strokeWidth="1" opacity="0.3" />
-  </svg>
-);
-
-const IconCinema = () => (
-  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <rect x="15" y="25" width="70" height="50" strokeWidth="2" />
-    <line x1="15" y1="35" x2="85" y2="35" strokeWidth="1" opacity="0.4" />
-    <line x1="15" y1="65" x2="85" y2="65" strokeWidth="1" opacity="0.4" />
-    <circle cx="30" cy="50" r="4" fill="currentColor" opacity="0.6" />
-    <circle cx="50" cy="50" r="4" fill="currentColor" opacity="0.6" />
-    <circle cx="70" cy="50" r="4" fill="currentColor" opacity="0.6" />
-  </svg>
-);
-
-const IconGames = () => (
-  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <rect x="20" y="30" width="60" height="40" rx="4" strokeWidth="2" />
-    <circle cx="35" cy="50" r="4" fill="currentColor" opacity="0.7" />
-    <circle cx="65" cy="45" r="3.5" fill="currentColor" opacity="0.5" />
-    <circle cx="65" cy="55" r="3.5" fill="currentColor" opacity="0.5" />
-    <rect x="45" y="70" width="10" height="6" strokeWidth="1.5" opacity="0.6" />
-  </svg>
-);
-
-const IconAnime = () => (
-  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <circle cx="50" cy="40" r="20" strokeWidth="2" />
-    <circle cx="43" cy="36" r="4" fill="currentColor" opacity="0.7" />
-    <circle cx="57" cy="36" r="4" fill="currentColor" opacity="0.7" />
-    <path d="M 42 46 Q 50 52 58 46" strokeWidth="1.5" opacity="0.5" />
-    <path d="M 30 25 L 35 18 L 40 28" strokeWidth="1.5" opacity="0.4" />
-    <path d="M 70 25 L 65 18 L 60 28" strokeWidth="1.5" opacity="0.4" />
-    <path d="M 35 60 L 50 85 L 65 60" strokeWidth="1.5" opacity="0.3" />
-  </svg>
-);
-
-const IconPublishing = () => (
-  <svg className="w-16 h-16 mb-6" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <path d="M 25 20 L 25 80 Q 25 85 30 85 L 75 85 Q 80 85 80 80 L 80 20" strokeWidth="2" />
-    <line x1="35" y1="25" x2="70" y2="25" strokeWidth="1" opacity="0.4" />
-    <line x1="35" y1="35" x2="70" y2="35" strokeWidth="1" opacity="0.4" />
-    <line x1="35" y1="45" x2="70" y2="45" strokeWidth="1" opacity="0.4" />
-    <line x1="35" y1="55" x2="70" y2="55" strokeWidth="1" opacity="0.4" />
-    <line x1="35" y1="65" x2="70" y2="65" strokeWidth="1" opacity="0.4" />
-  </svg>
-);
-
-const getIcon = (iconType: string) => {
-  switch (iconType) {
-    case 'worlds':
-      return <IconWorlds />;
-    case 'cinema':
-      return <IconCinema />;
-    case 'anime':
-      return <IconAnime />;
-    case 'games':
-      return <IconGames />;
-    case 'publishing':
-      return <IconPublishing />;
-    default:
-      return null;
-  }
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// PAGE COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function Home() {
   return (
-    <main className="bg-background text-foreground">
-      {/* ──────────────────────────────────────────── 3D MECH EXPLODED VIEW ─────────────────────────────────────────── */}
-      <MechExploded />
+    <main className="bg-obsidian text-bone">
 
-      {/* ──────────────────────────────────────────── FOUR DIVISIONS GRID ─────────────────────────────────────────── */}
-      <section id="divisions" className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-carbon">
-        <div className="max-w-7xl mx-auto">
-          {/* Section intro */}
-          <SectionReveal delay={0.1}>
-            <motion.div
-              className="mb-20 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
+      {/* ════════════════════════════════════════════════════════════════════
+          HERO SECTION
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="relative min-h-screen flex flex-col justify-center items-center px-5 md:px-10 pt-20 overflow-hidden scanlines">
+        {/* Background radial glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,102,0,0.06) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Grid lines overlay — faint */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,102,0,0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,102,0,0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '80px 80px',
+          }}
+        />
+
+        <motion.div
+          className="relative z-10 text-center max-w-5xl mx-auto"
+          initial="hidden"
+          animate="visible"
+          variants={stagger}
+        >
+          {/* Swinggang icon */}
+          <motion.div variants={fadeIn} className="flex justify-center mb-8">
+            <SwinggangIcon className="w-28 h-32 md:w-36 md:h-40 text-orange" />
+          </motion.div>
+
+          {/* System prefix */}
+          <motion.p
+            variants={fadeUp}
+            className="text-[10px] md:text-[11px] tracking-[0.3em] uppercase text-orange/70 mb-4"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            SYS:// SOVEREIGN AI CONGLOMERATE
+          </motion.p>
+
+          {/* Main headline */}
+          <motion.h1
+            variants={fadeUp}
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[-0.03em] mb-6 text-bone"
+            style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+          >
+            TARTARY
+          </motion.h1>
+
+          {/* Subheadline */}
+          <motion.p
+            variants={fadeUp}
+            className="text-[13px] md:text-[15px] text-steel max-w-xl mx-auto mb-3 leading-relaxed"
+            style={{ fontFamily: 'var(--font-mono)', fontWeight: 400 }}
+          >
+            From the metal to the soul. An entire vertical ecosystem
+            running on a single M4 Max.
+          </motion.p>
+
+          {/* Tagline */}
+          <motion.p
+            variants={fadeUp}
+            className="text-[11px] text-ash tracking-[0.15em] uppercase mb-10"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            OS &rarr; TOOLS &rarr; IP &rarr; PUBLISHING &rarr; APPS
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/system" className="btn-terminal">
+              ENTER SYSTEM
+            </Link>
+            <Link
+              href="#departments"
+              className="btn-terminal !border-gunmetal !text-steel hover:!border-orange hover:!text-orange"
             >
-              <h2
-                className="text-4xl sm:text-5xl lg:text-6xl font-light mb-6 text-foreground"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                Five Divisions of Excellence
-              </h2>
-              <div className="separator w-16 h-0.5 bg-gold mx-auto mb-8 opacity-60" />
-              <p
-                className="text-lg text-mist max-w-2xl mx-auto"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Each division operates as its own creative powerhouse, unified by a singular vision — transformative storytelling across every medium.
-              </p>
-            </motion.div>
-          </SectionReveal>
+              VIEW DEPARTMENTS
+            </Link>
+          </motion.div>
+        </motion.div>
 
-          {/* 2x2 Grid */}
+        {/* Bottom metadata bar */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="absolute bottom-6 left-5 right-5 md:left-10 md:right-10 flex justify-between items-center"
+        >
+          <span className="text-[9px] tracking-[0.15em] uppercase text-ash/40" style={{ fontFamily: 'var(--font-mono)' }}>
+            TARTARY.COM // v2.0
+          </span>
+          <span className="text-[9px] tracking-[0.15em] uppercase text-ash/40" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="text-green/60">●</span> ALL SYSTEMS NOMINAL
+          </span>
+          <span className="text-[9px] tracking-[0.15em] uppercase text-ash/40 hidden sm:block" style={{ fontFamily: 'var(--font-mono)' }}>
+            LOS ANGELES &mdash; NASHVILLE
+          </span>
+        </motion.div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          5-PILLAR DEPARTMENT GRID
+          ════════════════════════════════════════════════════════════════════ */}
+      <section id="departments" className="py-20 md:py-28 px-5 md:px-10 bg-obsidian">
+        <div className="max-w-[1400px] mx-auto">
+          {/* Section header */}
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
-            initial="hidden"
-            whileInView="visible"
-            variants={containerVariants}
+            className="mb-16"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
             viewport={{ once: true }}
           >
-            {divisions.map((division) => (
-              <motion.div
-                key={division.id}
-                variants={itemVariants}
-              >
-                <Link href={division.href}>
-                  <motion.div
-                    className={`group relative h-96 rounded-lg overflow-hidden border-2 border-gold border-opacity-30 transition-all duration-500 cursor-pointer ${division.bgAccent}`}
-                    initial="rest"
-                    whileHover="hover"
-                    variants={cardHoverVariants}
-                  >
-                    {/* Background gradient with division tint */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-br ${division.color} opacity-100 group-hover:opacity-100 transition-opacity duration-500`}
-                    />
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-[9px] tracking-[0.2em] text-orange/50" style={{ fontFamily: 'var(--font-mono)' }}>
+                DIR://
+              </span>
+              <div className="rule-orange flex-1" />
+            </div>
+            <h2
+              className="text-3xl sm:text-4xl md:text-5xl text-bone"
+              style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+            >
+              DEPARTMENTS
+            </h2>
+            <p
+              className="text-[12px] text-steel mt-3 max-w-lg"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              Five divisions. One vertical stack. Everything from infrastructure
+              to narrative, owned and operated on sovereign hardware.
+            </p>
+          </motion.div>
 
-                    {/* Animated accent glow on hover */}
-                    <motion.div
-                      className="absolute -inset-1 rounded-lg opacity-0 group-hover:opacity-20 blur-2xl transition-opacity duration-500"
-                      style={{
-                        background: division.accentColor,
-                      }}
-                    />
-
-                    {/* Content container */}
-                    <div className="relative h-full flex flex-col justify-between p-8 lg:p-10 z-10">
-                      {/* Icon */}
-                      <motion.div
-                        className="text-gold opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-                        style={{
-                          color: division.accentColor,
-                        }}
-                        animate={{
-                          y: [0, -4, 0],
-                        }}
-                        transition={{
-                          duration: 4,
-                          repeat: Infinity,
-                          ease: 'easeInOut' as const,
-                        }}
+          {/* Pillar cards grid */}
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            initial="hidden"
+            whileInView="visible"
+            variants={stagger}
+            viewport={{ once: true }}
+          >
+            {pillars.map((pillar) => (
+              <motion.div key={pillar.id} variants={fadeUp}>
+                <Link href={pillar.href} className="block">
+                  <div className="pillar-card group h-full">
+                    {/* Top row: index + icon */}
+                    <div className="flex items-start justify-between mb-6">
+                      <span
+                        className="text-[10px] text-ash/40 group-hover:text-orange/60 transition-colors duration-[80ms]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
                       >
-                        {getIcon(division.icon)}
-                      </motion.div>
-
-                      {/* Text content */}
-                      <div>
-                        {/* Title */}
-                        <h3
-                          className="text-3xl sm:text-4xl font-bold mb-3 text-foreground group-hover:text-gold-light transition-colors duration-500"
-                          style={{ fontFamily: 'var(--font-heading)' }}
-                        >
-                          {division.title}
-                        </h3>
-
-                        {/* Subtitle */}
-                        <p
-                          className="text-sm uppercase tracking-widest text-ash group-hover:text-mist transition-colors duration-500 mb-6"
-                          style={{ fontFamily: 'var(--font-mono)' }}
-                        >
-                          {division.subtitle}
-                        </p>
-
-                        {/* Description */}
-                        <p
-                          className="text-sm sm:text-base text-mist group-hover:text-foreground transition-colors duration-500 mb-8 line-clamp-3"
-                          style={{ fontFamily: 'var(--font-display)' }}
-                        >
-                          {division.description}
-                        </p>
-
-                        {/* Explore link */}
-                        <motion.div
-                          className="flex items-center gap-2 text-gold group-hover:text-gold-light transition-colors duration-500"
-                          initial={{ x: 0 }}
-                          whileHover={{ x: 4 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <span
-                            className="text-sm font-light tracking-wide"
-                            style={{ fontFamily: 'var(--font-display)' }}
-                          >
-                            Explore
-                          </span>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 7l5 5m0 0l-5 5m5-5H6"
-                            />
-                          </svg>
-                        </motion.div>
+                        {pillar.idx}
+                      </span>
+                      <div className="text-steel group-hover:text-orange transition-colors duration-[80ms]">
+                        {PillarIcons[pillar.id]}
                       </div>
                     </div>
-                  </motion.div>
+
+                    {/* Pillar name */}
+                    <h3
+                      className="text-2xl md:text-3xl text-bone group-hover:text-orange transition-colors duration-[80ms] mb-2"
+                      style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+                    >
+                      {pillar.label}
+                    </h3>
+
+                    {/* Tagline */}
+                    <p
+                      className="text-[11px] text-steel mb-6"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {pillar.tagline}
+                    </p>
+
+                    {/* Product list */}
+                    <div className="border-t border-gunmetal pt-4">
+                      {pillar.products.map((product, i) => (
+                        <div
+                          key={product.href}
+                          className="flex items-center gap-2 py-1 text-[10px] text-ash group-hover:text-steel transition-colors duration-[80ms]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          <span className="text-orange/30 group-hover:text-orange/60 transition-colors duration-[80ms]">
+                            {String(i).padStart(2, '0')}
+                          </span>
+                          <span className="w-[3px] h-[3px] bg-orange/20 group-hover:bg-orange/50 transition-colors duration-[80ms]" />
+                          <span className="tracking-[0.1em] uppercase">{product.name}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Execute link */}
+                    <div className="mt-6 flex items-center gap-2">
+                      <span
+                        className="text-[10px] tracking-[0.15em] uppercase text-ash group-hover:text-orange transition-colors duration-[80ms]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        [ENTER]
+                      </span>
+                      <svg
+                        className="w-3 h-3 text-ash group-hover:text-orange transition-colors duration-[80ms]"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </div>
                 </Link>
               </motion.div>
             ))}
@@ -374,181 +369,79 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ──────────────────────────────────────────── STUDIO STATEMENT ─────────────────────────────────────────── */}
-      <section className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="max-w-5xl mx-auto">
-          <SectionReveal delay={0.1}>
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9 }}
-              viewport={{ once: true }}
-            >
-              {/* Statement quote */}
-              <motion.h2
-                className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-10 text-gold-light"
-                style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 300 }}
-              >
-                One studio. Five dimensions of storytelling.
-              </motion.h2>
+      {/* ════════════════════════════════════════════════════════════════════
+          SYSTEM STATEMENT
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="py-24 md:py-32 px-5 md:px-10 bg-obsidian-mid relative overflow-hidden">
+        {/* Ambient glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center, rgba(255,102,0,0.03) 0%, transparent 60%)' }}
+        />
 
-              {/* Separator */}
-              <div className="separator w-12 h-0.5 bg-gold mx-auto mb-10 opacity-60" />
-
-              {/* Description */}
-              <motion.p
-                className="text-lg sm:text-xl text-mist leading-relaxed mb-8 max-w-3xl mx-auto"
-                style={{ fontFamily: 'var(--font-display)' }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                viewport={{ once: true }}
-              >
-                TARTARY is built on the principle that great stories transcend single mediums. Our five divisions work in concert to create unified creative visions that span original intellectual properties, cinematic productions, anime, interactive experiences, and beautifully crafted publications. Based in California and Tennessee, we collaborate with visionary creators and forward-thinking brands to bring impossible ideas to life.
-              </motion.p>
-            </motion.div>
-          </SectionReveal>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────────────────── RECENT HIGHLIGHTS ─────────────────────────────────────────── */}
-      <section className="py-24 sm:py-40 px-4 sm:px-6 lg:px-8 bg-charcoal">
-        <div className="max-w-7xl mx-auto">
-          <SectionReveal delay={0.1}>
-            <motion.div
-              className="mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <h2
-                className="text-4xl sm:text-5xl font-light mb-4 text-foreground"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                Recent Highlights
-              </h2>
-              <div className="separator w-12 h-0.5 bg-gold opacity-60" />
-            </motion.div>
-          </SectionReveal>
-
-          {/* Highlights scroll container */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            initial="hidden"
-            whileInView="visible"
-            variants={containerVariants}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
             viewport={{ once: true }}
           >
-            {highlights.map((highlight, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                className="group relative p-6 sm:p-8 border border-gold border-opacity-30 hover:border-opacity-100 transition-all duration-500 rounded-lg hover:bg-gold hover:bg-opacity-5"
-              >
-                {/* Division label */}
-                <p
-                  className="text-xs uppercase tracking-widest text-gold mb-4 group-hover:text-gold-light transition-colors duration-500"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {highlight.division}
-                </p>
+            <p
+              className="text-[10px] tracking-[0.25em] uppercase text-orange/50 mb-6"
+              style={{ fontFamily: 'var(--font-mono)' }}
+            >
+              MANIFESTO
+            </p>
 
-                {/* Project name */}
-                <h3
-                  className="text-xl sm:text-2xl font-light text-foreground mb-3 group-hover:text-gold-light transition-colors duration-500"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {highlight.project}
-                </h3>
+            <h2
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-8 text-bone leading-[1.05]"
+              style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+            >
+              ONE MACHINE.<br />
+              <span className="text-orange">INFINITE OUTPUT.</span>
+            </h2>
 
-                {/* Description */}
-                <p
-                  className="text-sm text-mist mb-4 group-hover:text-foreground transition-colors duration-500 line-clamp-2"
-                  style={{ fontFamily: 'var(--font-display)' }}
-                >
-                  {highlight.description}
-                </p>
+            <div className="rule-orange w-16 mx-auto mb-8" />
 
-                {/* Year */}
-                <p
-                  className="text-xs text-ash group-hover:text-mist transition-colors duration-500"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {highlight.year}
-                </p>
-              </motion.div>
-            ))}
+            <p
+              className="text-[13px] md:text-[14px] text-steel leading-relaxed max-w-2xl mx-auto mb-10"
+              style={{ fontFamily: 'var(--font-mono)', fontWeight: 400 }}
+            >
+              TARTARY is a sovereign AI conglomerate. We don't rent cloud. We don't outsource intelligence.
+              Every tool, every film, every book, every app — built from scratch on hardware we own.
+              The M4 Max is the foundry. OpenClaw is the engine. Everything above it is ours.
+            </p>
+
+            <Link href="/system" className="btn-terminal">
+              EXPLORE THE STACK
+            </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* ──────────────────────────────────────────── FINAL CTA SECTION ─────────────────────────────────────────── */}
-      <section className="py-32 sm:py-48 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-carbon relative overflow-hidden">
-        {/* Animated background accent */}
-        <motion.div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background: 'radial-gradient(circle at center, rgba(201, 169, 110, 0.05) 0%, transparent 70%)',
-          }}
-          animate={{
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: 'easeInOut' as const,
-          }}
-        />
-
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <SectionReveal delay={0.1}>
-            <motion.h2
-              className="text-5xl sm:text-6xl lg:text-7xl font-light mb-8 text-foreground leading-tight"
-              style={{ fontFamily: 'var(--font-heading)' }}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9 }}
-              viewport={{ once: true }}
-            >
-              Enter the World of Tartary
-            </motion.h2>
-
-            <motion.p
-              className="text-lg sm:text-xl text-mist mb-12 max-w-2xl mx-auto"
-              style={{ fontFamily: 'var(--font-display)' }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15 }}
-              viewport={{ once: true }}
-            >
-              Whether you're ready to collaborate on an ambitious project or explore what's possible at the intersection of cinema, anime, games, publishing, and original IP — let's talk.
-            </motion.p>
-
-            <motion.div
-              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-            >
-              <Link
-                href="/contact"
-                className="px-10 py-4 border-2 border-gold text-gold hover:bg-gold hover:text-carbon transition-all duration-300 font-light tracking-wider text-lg rounded"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Get in Touch
-              </Link>
-              <Link
-                href="/worlds"
-                className="px-10 py-4 border-2 border-gold border-opacity-40 text-gold hover:border-opacity-100 hover:bg-gold hover:bg-opacity-5 transition-all duration-300 font-light tracking-wider text-lg rounded"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Explore Our Divisions
-              </Link>
-            </motion.div>
-          </SectionReveal>
+      {/* ════════════════════════════════════════════════════════════════════
+          TERMINAL CTA
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="py-20 px-5 md:px-10 bg-obsidian">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            className="terminal-box !p-8 !pl-10 text-center"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.35 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-orange text-[11px] tracking-[0.2em] uppercase mb-4" style={{ fontFamily: 'var(--font-mono)' }}>
+              &gt; TARTARY_CONSOLE
+            </p>
+            <p className="text-steel text-[12px] leading-relaxed mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
+              Want to build with us? Commission a film? License an IP?
+              Partner on sovereign AI infrastructure?
+            </p>
+            <Link href="/contact" className="btn-terminal">
+              INITIATE CONTACT
+            </Link>
+          </motion.div>
         </div>
       </section>
     </main>

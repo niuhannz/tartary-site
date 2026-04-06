@@ -1,106 +1,100 @@
+'use client';
+
 import Link from 'next/link';
+import { pillars } from '@/lib/theme';
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/5">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+    <footer className="relative border-t border-gunmetal/50 bg-obsidian">
+      {/* Top rule — orange accent */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange/20 to-transparent" />
 
-      <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-16 md:py-24">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
           {/* Brand */}
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <span
-              className="text-2xl tracking-[0.3em] uppercase block mb-6"
-              style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}
+              className="text-xl tracking-[0.35em] uppercase block mb-4 text-bone"
+              style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
             >
               Tartary
             </span>
-            <p className="text-ash text-lg max-w-sm leading-relaxed mb-8" style={{ fontFamily: 'var(--font-display)' }}>
-              Building worlds across cinema, anime, games, and publishing. Original IP creation and cinematic storytelling for a new era.
+            <p className="text-steel text-[12px] leading-relaxed max-w-xs mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
+              Metal to soul. A sovereign AI ecosystem spanning hardware, creative tools, original IP, publishing, and civilian applications.
             </p>
-            <div className="flex gap-6">
-              {['Vimeo', 'Instagram', 'IMDb'].map((s) => (
-                <a
-                  key={s}
-                  href="#"
-                  className="text-[11px] tracking-[0.2em] uppercase text-ash hover:text-gold transition-colors duration-300"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {s}
-                </a>
-              ))}
+            <div className="terminal-box inline-block !p-3 !pl-6">
+              <span className="text-orange text-[10px]">STATUS:</span>
+              <span className="text-green text-[10px] ml-2">ONLINE</span>
+              <span className="text-ash text-[10px] ml-4">M4 MAX</span>
             </div>
           </div>
 
-          {/* Divisions */}
-          <div className="md:col-span-3 md:col-start-7">
+          {/* 5 Pillars */}
+          <div className="md:col-span-5 md:col-start-6">
             <span
-              className="text-[11px] tracking-[0.2em] uppercase text-ash block mb-6"
+              className="text-[9px] tracking-[0.2em] uppercase text-orange/60 block mb-5"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              Divisions
+              DEPARTMENTS
             </span>
-            <nav className="flex flex-col gap-3">
-              {[
-                { href: '/worlds', label: 'Worlds' },
-                { href: '/cinema', label: 'Cinema' },
-                { href: '/anime', label: 'Anime' },
-                { href: '/games', label: 'Games' },
-                { href: '/systems', label: 'Systems' },
-                { href: '/publishing', label: 'Publishing' },
-                { href: '/pricing', label: 'Pricing' },
-                { href: '/contact', label: 'Contact' },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-mist hover:text-foreground transition-colors duration-300 text-sm tracking-wide"
-                  style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
-                >
-                  {link.label}
-                </Link>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+              {pillars.map((p) => (
+                <div key={p.id}>
+                  <Link
+                    href={p.href}
+                    className="text-[11px] tracking-[0.12em] uppercase text-bone hover:text-orange transition-colors duration-[80ms] block mb-1"
+                    style={{ fontFamily: 'var(--font-mono)', fontWeight: 500 }}
+                  >
+                    <span className="text-ash/40 mr-2">{p.idx}</span>
+                    {p.label}
+                  </Link>
+                  <p className="text-[9px] text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
+                    {p.tagline}
+                  </p>
+                </div>
               ))}
-            </nav>
+            </div>
           </div>
 
           {/* Contact */}
           <div className="md:col-span-3">
             <span
-              className="text-[11px] tracking-[0.2em] uppercase text-ash block mb-6"
+              className="text-[9px] tracking-[0.2em] uppercase text-orange/60 block mb-5"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
-              Get in Touch
+              CONTACT
             </span>
             <div className="flex flex-col gap-3">
               <a
                 href="mailto:hello@tartary.com"
-                className="text-mist hover:text-gold transition-colors duration-300 text-sm tracking-wide"
-                style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+                className="text-steel hover:text-orange transition-colors duration-[80ms] text-[11px] tracking-wide"
+                style={{ fontFamily: 'var(--font-mono)' }}
               >
                 hello@tartary.com
               </a>
-              <p className="text-ash text-sm" style={{ fontFamily: 'var(--font-display)' }}>
-                Los Angeles, California
+              <p className="text-ash text-[11px]" style={{ fontFamily: 'var(--font-mono)' }}>
+                Los Angeles, CA
               </p>
-              <p className="text-ash text-sm" style={{ fontFamily: 'var(--font-display)' }}>
-                Nashville, Tennessee
+              <p className="text-ash text-[11px]" style={{ fontFamily: 'var(--font-mono)' }}>
+                Nashville, TN
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Bottom bar */}
+        <div className="mt-16 pt-6 border-t border-gunmetal/50 flex flex-col md:flex-row justify-between items-center gap-4">
           <span
-            className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
+            className="text-[9px] tracking-[0.15em] uppercase text-ash/40"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            &copy; {new Date().getFullYear()} Tartary. All rights reserved.
+            &copy; {new Date().getFullYear()} TARTARY SYSTEMS. ALL RIGHTS RESERVED.
           </span>
           <span
-            className="text-[11px] tracking-[0.15em] uppercase text-ash/60"
+            className="text-[9px] tracking-[0.15em] uppercase text-ash/40"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            Universe &middot; Cinema &middot; Games &middot; Publishing &middot; Shop
+            SYSTEM &middot; STUDIO &middot; UNIVERSE &middot; PRESS &middot; CIVILIAN
           </span>
         </div>
       </div>
