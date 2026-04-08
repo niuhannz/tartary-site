@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { pillars } from '@/lib/theme';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TARTARY — Editorial landing page
-// Serif headlines for authority, sans for utility, generous whitespace
+// TARTARY — Cinematic landing page (Runway aesthetic)
+// Single typeface, tight typography, zero shadows, interface retreats
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SwinggangIcon = ({ className = '' }: { className?: string }) => (
@@ -37,58 +37,58 @@ const SwinggangIcon = ({ className = '' }: { className?: string }) => (
 
 const stagger = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 export default function Home() {
   return (
     <main>
       {/* ════════════════════ HERO ════════════════════ */}
-      <section className="relative min-h-screen flex flex-col justify-center items-center px-6 md:px-10 bg-obsidian">
+      <section className="relative min-h-screen flex flex-col justify-center items-center px-6 md:px-10 bg-black">
         <motion.div
           className="relative z-10 text-center max-w-3xl mx-auto"
           initial="hidden"
           animate="visible"
           variants={stagger}
         >
-          <motion.div variants={fadeUp} className="flex justify-center mb-12">
-            <SwinggangIcon className="w-20 h-24 md:w-28 md:h-32 text-orange" />
+          <motion.div variants={fadeUp} className="flex justify-center mb-10">
+            <SwinggangIcon className="w-16 h-20 md:w-24 md:h-28 text-white/30" />
           </motion.div>
 
           <motion.h1
             variants={fadeUp}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.2em] mb-10 logo-sheen"
-            style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, lineHeight: 1.0 }}
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.2em] mb-8"
+            style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, lineHeight: 1.0, color: '#ffffff' }}
           >
             TARTARY
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
-            className="text-[18px] md:text-[20px] text-warm-silver max-w-lg mx-auto mb-14"
-            style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.6 }}
+            className="text-[16px] md:text-[18px] text-cool-slate max-w-md mx-auto mb-12"
+            style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.4, letterSpacing: '-0.16px' }}
           >
             A sovereign AI conglomerate. Every layer owned,
             every tool built in-house.
           </motion.p>
 
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/universe"
-              className="inline-block px-8 py-3.5 bg-orange text-obsidian text-[14px] rounded-lg hover:bg-orange-hot transition-colors duration-150"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600 }}
+              className="inline-block px-7 py-3 bg-white text-black text-[14px] rounded hover:bg-cool-cloud transition-colors duration-150"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.16px' }}
             >
               Explore Universe
             </Link>
             <Link
               href="#departments"
-              className="inline-block px-8 py-3.5 rounded-lg ring-subtle text-warm-silver text-[14px] hover:text-bone transition-all duration-150"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}
+              className="inline-block px-7 py-3 rounded border border-border-dark text-cool-slate text-[14px] hover:text-white hover:border-white/20 transition-all duration-150"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, letterSpacing: '-0.16px' }}
             >
               View Departments
             </Link>
@@ -97,27 +97,31 @@ export default function Home() {
       </section>
 
       {/* ════════════════════ DEPARTMENTS ════════════════════ */}
-      {/* Light/dark alternation — this section is slightly elevated */}
-      <section id="departments" className="py-28 md:py-36 px-6 md:px-10 bg-obsidian-lit">
-        <div className="max-w-[1200px] mx-auto">
+      <section id="departments" className="py-24 md:py-32 px-6 md:px-10 bg-surface">
+        <div className="max-w-[1400px] mx-auto">
           <motion.div
-            className="mb-20 max-w-xl"
-            initial={{ opacity: 0, y: 20 }}
+            className="mb-16 max-w-xl"
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4 }}
             viewport={{ once: true }}
           >
+            <p
+              className="section-label mb-6"
+            >
+              Departments
+            </p>
             <h2
-              className="text-4xl sm:text-5xl md:text-[52px] mb-6"
-              style={{ fontFamily: 'Georgia, serif', fontWeight: 400, lineHeight: 1.15 }}
+              className="text-[36px] sm:text-[40px] md:text-[48px] text-white mb-5"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.0, letterSpacing: '-1.2px' }}
             >
               Five departments.
               <br />
               One vertical stack.
             </h2>
             <p
-              className="text-[16px] text-stone"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.6 }}
+              className="text-[16px] text-cool-slate"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.4, letterSpacing: '-0.16px' }}
             >
               From narrative IP to sovereign infrastructure — everything
               designed, built, and operated under one roof.
@@ -125,7 +129,7 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             initial="hidden"
             whileInView="visible"
             variants={stagger}
@@ -135,36 +139,36 @@ export default function Home() {
               <motion.div key={pillar.id} variants={fadeUp}>
                 <Link href={pillar.href} className="block group">
                   <div
-                    className="bg-obsidian ring-subtle rounded-xl p-8 md:p-9 h-full ring-hover transition-all duration-150 hover:translate-y-[-2px]"
+                    className="bg-black border border-border-dark rounded-lg p-7 md:p-8 h-full hover:border-white/10 transition-all duration-150"
                   >
                     <h3
-                      className="text-[26px] md:text-[28px] text-bone group-hover:text-orange transition-colors duration-150 mb-2"
-                      style={{ fontFamily: 'Georgia, serif', fontWeight: 400, lineHeight: 1.2 }}
+                      className="text-[20px] md:text-[24px] text-white group-hover:text-orange transition-colors duration-150 mb-2"
+                      style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.0 }}
                     >
                       {pillar.label}
                     </h3>
 
                     <p
-                      className="text-[14px] text-stone mb-8"
-                      style={{ fontFamily: 'var(--font-sans)', fontWeight: 400 }}
+                      className="text-[13px] text-mid-slate mb-6"
+                      style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, letterSpacing: '-0.16px', lineHeight: 1.3 }}
                     >
                       {pillar.tagline}
                     </p>
 
-                    <div className="space-y-2 mb-8">
+                    <div className="space-y-1.5 mb-6">
                       {pillar.products.map((product) => (
                         <p
                           key={product.href}
-                          className="text-[14px] text-warm-silver group-hover:text-bone transition-colors duration-150"
-                          style={{ fontFamily: 'var(--font-sans)', fontWeight: 400 }}
+                          className="text-[13px] text-cool-slate group-hover:text-white/80 transition-colors duration-150"
+                          style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, letterSpacing: '-0.16px' }}
                         >
                           {product.name}
                         </p>
                       ))}
                     </div>
 
-                    <div className="text-stone group-hover:text-orange transition-colors duration-150">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <div className="text-mid-slate group-hover:text-orange transition-colors duration-150">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </div>
@@ -176,18 +180,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════════ STATEMENT (dark section) ════════════════════ */}
-      <section className="py-32 md:py-44 px-6 md:px-10 bg-obsidian">
+      {/* ════════════════════ STATEMENT ════════════════════ */}
+      <section className="py-28 md:py-40 px-6 md:px-10 bg-black">
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
             <h2
-              className="text-4xl sm:text-5xl md:text-[56px] mb-8"
-              style={{ fontFamily: 'Georgia, serif', fontWeight: 400, lineHeight: 1.12 }}
+              className="text-[36px] sm:text-[40px] md:text-[48px] text-white mb-6"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.0, letterSpacing: '-1.2px' }}
             >
               One machine.
               <br />
@@ -195,8 +199,8 @@ export default function Home() {
             </h2>
 
             <p
-              className="text-[17px] text-stone max-w-lg mx-auto mb-14"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.65 }}
+              className="text-[16px] text-cool-slate max-w-lg mx-auto mb-12"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.4, letterSpacing: '-0.16px' }}
             >
               We don&apos;t rent cloud. We don&apos;t outsource intelligence.
               Every tool, every film, every book, every app — built from scratch
@@ -205,8 +209,8 @@ export default function Home() {
 
             <Link
               href="/system"
-              className="inline-block px-8 py-3.5 bg-orange text-obsidian text-[14px] rounded-lg hover:bg-orange-hot transition-colors duration-150"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600 }}
+              className="inline-block px-7 py-3 bg-white text-black text-[14px] rounded hover:bg-cool-cloud transition-colors duration-150"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.16px' }}
             >
               See How It Works
             </Link>
@@ -214,25 +218,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════════ CTA (elevated section) ════════════════════ */}
-      <section className="py-24 px-6 md:px-10 bg-obsidian-lit">
+      {/* ════════════════════ CTA ════════════════════ */}
+      <section className="py-20 px-6 md:px-10 bg-surface">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4 }}
             viewport={{ once: true }}
           >
             <p
-              className="text-[17px] text-stone mb-8"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.6 }}
+              className="text-[16px] text-cool-slate mb-8"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.4, letterSpacing: '-0.16px' }}
             >
               Build with us. Commission a film. License an IP.
             </p>
             <Link
               href="/contact"
-              className="inline-block px-8 py-3.5 rounded-lg ring-subtle text-orange text-[14px] ring-hover hover:bg-orange hover:text-obsidian transition-all duration-150"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600 }}
+              className="inline-block px-7 py-3 rounded border border-border-dark text-white text-[14px] hover:border-white/20 transition-all duration-150"
+              style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, letterSpacing: '-0.16px' }}
             >
               Get in Touch
             </Link>
