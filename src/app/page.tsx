@@ -87,48 +87,48 @@ function LivingBackground() {
     <div className="absolute inset-0 overflow-hidden">
       {/* Deep indigo — top left */}
       <AmbientOrb
-        className="w-[900px] h-[900px] -top-[200px] -left-[200px] blur-[120px]"
-        style={{ background: 'radial-gradient(circle, rgba(80,60,180,0.08), transparent 70%)' }}
+        className="w-[1000px] h-[1000px] -top-[250px] -left-[250px] blur-[120px]"
+        style={{ background: 'radial-gradient(circle, rgba(80,60,200,0.25), transparent 70%)' }}
         duration={12}
         delay={0}
         scaleRange={[1, 1.2, 1]}
-        opacityRange={[0.5, 0.8, 0.5]}
+        opacityRange={[0.6, 1, 0.6]}
       />
       {/* Warm amber — right */}
       <AmbientOrb
-        className="w-[800px] h-[800px] top-[10%] -right-[150px] blur-[100px]"
-        style={{ background: 'radial-gradient(circle, rgba(255,140,50,0.06), transparent 70%)' }}
+        className="w-[900px] h-[900px] top-[5%] -right-[200px] blur-[100px]"
+        style={{ background: 'radial-gradient(circle, rgba(255,130,40,0.2), transparent 70%)' }}
         duration={10}
         delay={2}
         scaleRange={[1, 1.15, 1]}
-        opacityRange={[0.4, 0.7, 0.4]}
+        opacityRange={[0.5, 0.9, 0.5]}
       />
       {/* Cool teal — bottom center */}
       <AmbientOrb
-        className="w-[700px] h-[700px] -bottom-[100px] left-[20%] blur-[100px]"
-        style={{ background: 'radial-gradient(circle, rgba(40,180,180,0.05), transparent 70%)' }}
+        className="w-[800px] h-[800px] -bottom-[150px] left-[15%] blur-[100px]"
+        style={{ background: 'radial-gradient(circle, rgba(40,200,200,0.18), transparent 70%)' }}
         duration={14}
         delay={4}
         scaleRange={[1, 1.1, 1]}
-        opacityRange={[0.3, 0.6, 0.3]}
+        opacityRange={[0.4, 0.8, 0.4]}
       />
-      {/* Rose — center left */}
+      {/* Rose / magenta — center left */}
       <AmbientOrb
-        className="w-[600px] h-[600px] top-[40%] left-[5%] blur-[80px]"
-        style={{ background: 'radial-gradient(circle, rgba(200,80,120,0.04), transparent 70%)' }}
+        className="w-[700px] h-[700px] top-[35%] left-[0%] blur-[90px]"
+        style={{ background: 'radial-gradient(circle, rgba(220,60,130,0.15), transparent 70%)' }}
         duration={11}
         delay={1}
         scaleRange={[1, 1.18, 1]}
-        opacityRange={[0.3, 0.5, 0.3]}
+        opacityRange={[0.4, 0.7, 0.4]}
       />
       {/* White core glow — behind the logo */}
       <AmbientOrb
-        className="w-[500px] h-[500px] top-[30%] left-1/2 -translate-x-1/2 blur-[80px]"
-        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.04), transparent 60%)' }}
+        className="w-[600px] h-[600px] top-[25%] left-1/2 -translate-x-1/2 blur-[80px]"
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%)' }}
         duration={8}
         delay={0}
         scaleRange={[1, 1.08, 1]}
-        opacityRange={[0.5, 0.8, 0.5]}
+        opacityRange={[0.6, 1, 0.6]}
       />
     </div>
   );
@@ -442,17 +442,17 @@ export default function Home() {
       <section className="py-36 md:py-48 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
         {/* Subtle orbs for this section */}
         <AmbientOrb
-          className="w-[700px] h-[700px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(80,60,180,0.04), transparent 70%)' }}
+          className="w-[800px] h-[800px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(80,60,200,0.12), transparent 70%)' }}
           duration={10}
-          opacityRange={[0.3, 0.6, 0.3]}
+          opacityRange={[0.4, 0.8, 0.4]}
         />
         <AmbientOrb
-          className="w-[500px] h-[500px] top-[20%] -right-[100px] blur-[80px]"
-          style={{ background: 'radial-gradient(circle, rgba(255,140,50,0.03), transparent 70%)' }}
+          className="w-[600px] h-[600px] top-[20%] -right-[100px] blur-[80px]"
+          style={{ background: 'radial-gradient(circle, rgba(255,130,40,0.1), transparent 70%)' }}
           duration={12}
           delay={3}
-          opacityRange={[0.2, 0.5, 0.2]}
+          opacityRange={[0.3, 0.6, 0.3]}
         />
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
@@ -558,10 +558,10 @@ export default function Home() {
       {/* ═══════ FINAL CTA ═══════ */}
       <section className="py-32 md:py-44 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
         <AmbientOrb
-          className="w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(40,180,180,0.03), transparent 70%)' }}
+          className="w-[700px] h-[700px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(40,200,200,0.1), transparent 70%)' }}
           duration={10}
-          opacityRange={[0.3, 0.5, 0.3]}
+          opacityRange={[0.4, 0.7, 0.4]}
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div
