@@ -47,7 +47,62 @@ const scaleIn = {
   },
 };
 
-/* ── Animated gradient orb (ambient light) ──── */
+/* ── Drifting gradient orb — breathes, drifts, evolves ── */
+function DriftOrb({
+  className = '',
+  color,
+  size,
+  blur,
+  // Animation: separate durations for organic desync
+  scaleDuration = 12,
+  opacityDuration = 8,
+  driftDuration = 20,
+  delay = 0,
+  // Drift range in px
+  driftX = [0, 50, -30, 0] as number[],
+  driftY = [0, -40, 30, 0] as number[],
+  scaleRange = [1, 1.25, 0.95, 1.15, 1] as number[],
+  opacityRange = [0.6, 1, 0.5, 0.9, 0.6] as number[],
+}: {
+  className?: string;
+  color: string;
+  size: number;
+  blur: number;
+  scaleDuration?: number;
+  opacityDuration?: number;
+  driftDuration?: number;
+  delay?: number;
+  driftX?: number[];
+  driftY?: number[];
+  scaleRange?: number[];
+  opacityRange?: number[];
+}) {
+  return (
+    <motion.div
+      className={`absolute rounded-full pointer-events-none ${className}`}
+      style={{
+        width: size,
+        height: size,
+        background: `radial-gradient(circle, ${color}, transparent 70%)`,
+        filter: `blur(${blur}px)`,
+      }}
+      animate={{
+        scale: scaleRange,
+        opacity: opacityRange,
+        x: driftX,
+        y: driftY,
+      }}
+      transition={{
+        scale: { duration: scaleDuration, delay, repeat: Infinity, ease: 'easeInOut' },
+        opacity: { duration: opacityDuration, delay, repeat: Infinity, ease: 'easeInOut' },
+        x: { duration: driftDuration, delay, repeat: Infinity, ease: 'easeInOut' },
+        y: { duration: driftDuration * 0.85, delay, repeat: Infinity, ease: 'easeInOut' },
+      }}
+    />
+  );
+}
+
+/* ── Simple pulsing orb for smaller sections ── */
 function AmbientOrb({
   className = '',
   style,
@@ -67,68 +122,105 @@ function AmbientOrb({
     <motion.div
       className={`absolute rounded-full pointer-events-none ${className}`}
       style={style}
-      animate={{
-        scale: scaleRange,
-        opacity: opacityRange,
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
+      animate={{ scale: scaleRange, opacity: opacityRange }}
+      transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
     />
   );
 }
 
-/* ── Living background — gradient mesh of colored orbs ── */
+/* ── Living background — gradient mesh of drifting orbs ── */
 function LivingBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Deep indigo — top left */}
-      <AmbientOrb
-        className="w-[1000px] h-[1000px] -top-[250px] -left-[250px] blur-[120px]"
-        style={{ background: 'radial-gradient(circle, rgba(80,60,200,0.25), transparent 70%)' }}
-        duration={12}
+      {/* Deep indigo — top left, drifts down-right */}
+      <DriftOrb
+        className="-top-[200px] -left-[200px]"
+        color="rgba(90,60,220,0.45)"
+        size={1000}
+        blur={100}
+        scaleDuration={14}
+        opacityDuration={10}
+        driftDuration={22}
         delay={0}
-        scaleRange={[1, 1.2, 1]}
-        opacityRange={[0.6, 1, 0.6]}
+        driftX={[0, 80, -20, 60, 0]}
+        driftY={[0, 60, -30, 40, 0]}
+        scaleRange={[1, 1.3, 0.95, 1.2, 1]}
+        opacityRange={[0.7, 1, 0.5, 0.85, 0.7]}
       />
-      {/* Warm amber — right */}
-      <AmbientOrb
-        className="w-[900px] h-[900px] top-[5%] -right-[200px] blur-[100px]"
-        style={{ background: 'radial-gradient(circle, rgba(255,130,40,0.2), transparent 70%)' }}
-        duration={10}
+      {/* Warm amber — right, drifts left-down */}
+      <DriftOrb
+        className="top-[0%] -right-[150px]"
+        color="rgba(255,120,30,0.35)"
+        size={900}
+        blur={90}
+        scaleDuration={12}
+        opacityDuration={9}
+        driftDuration={18}
         delay={2}
-        scaleRange={[1, 1.15, 1]}
-        opacityRange={[0.5, 0.9, 0.5]}
+        driftX={[0, -70, 30, -50, 0]}
+        driftY={[0, 50, -20, 70, 0]}
+        scaleRange={[1, 1.2, 0.9, 1.15, 1]}
+        opacityRange={[0.6, 1, 0.4, 0.8, 0.6]}
       />
-      {/* Cool teal — bottom center */}
-      <AmbientOrb
-        className="w-[800px] h-[800px] -bottom-[150px] left-[15%] blur-[100px]"
-        style={{ background: 'radial-gradient(circle, rgba(40,200,200,0.18), transparent 70%)' }}
-        duration={14}
+      {/* Cool teal — bottom, drifts right-up */}
+      <DriftOrb
+        className="-bottom-[100px] left-[10%]"
+        color="rgba(30,210,210,0.3)"
+        size={850}
+        blur={90}
+        scaleDuration={16}
+        opacityDuration={11}
+        driftDuration={25}
         delay={4}
-        scaleRange={[1, 1.1, 1]}
-        opacityRange={[0.4, 0.8, 0.4]}
+        driftX={[0, 60, -40, 30, 0]}
+        driftY={[0, -70, 20, -50, 0]}
+        scaleRange={[1, 1.15, 0.9, 1.1, 1]}
+        opacityRange={[0.5, 0.9, 0.35, 0.75, 0.5]}
       />
-      {/* Rose / magenta — center left */}
-      <AmbientOrb
-        className="w-[700px] h-[700px] top-[35%] left-[0%] blur-[90px]"
-        style={{ background: 'radial-gradient(circle, rgba(220,60,130,0.15), transparent 70%)' }}
-        duration={11}
+      {/* Rose / magenta — mid-left, drifts up-right */}
+      <DriftOrb
+        className="top-[30%] -left-[50px]"
+        color="rgba(230,50,140,0.28)"
+        size={750}
+        blur={80}
+        scaleDuration={13}
+        opacityDuration={8}
+        driftDuration={20}
         delay={1}
-        scaleRange={[1, 1.18, 1]}
-        opacityRange={[0.4, 0.7, 0.4]}
+        driftX={[0, 70, -30, 50, 0]}
+        driftY={[0, -50, 40, -30, 0]}
+        scaleRange={[1, 1.22, 0.92, 1.18, 1]}
+        opacityRange={[0.5, 0.85, 0.3, 0.7, 0.5]}
       />
-      {/* White core glow — behind the logo */}
-      <AmbientOrb
-        className="w-[600px] h-[600px] top-[25%] left-1/2 -translate-x-1/2 blur-[80px]"
-        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 60%)' }}
-        duration={8}
+      {/* White core — center, gentle breathe */}
+      <DriftOrb
+        className="top-[20%] left-1/2 -translate-x-1/2"
+        color="rgba(255,255,255,0.12)"
+        size={650}
+        blur={70}
+        scaleDuration={10}
+        opacityDuration={7}
+        driftDuration={16}
         delay={0}
-        scaleRange={[1, 1.08, 1]}
-        opacityRange={[0.6, 1, 0.6]}
+        driftX={[0, 25, -25, 15, 0]}
+        driftY={[0, -20, 20, -10, 0]}
+        scaleRange={[1, 1.1, 0.95, 1.05, 1]}
+        opacityRange={[0.6, 1, 0.5, 0.8, 0.6]}
+      />
+      {/* Subtle gold — bottom right, slow wanderer */}
+      <DriftOrb
+        className="bottom-[10%] right-[5%]"
+        color="rgba(200,170,60,0.2)"
+        size={600}
+        blur={80}
+        scaleDuration={15}
+        opacityDuration={12}
+        driftDuration={28}
+        delay={3}
+        driftX={[0, -50, 40, -60, 0]}
+        driftY={[0, -40, 30, -20, 0]}
+        scaleRange={[1, 1.18, 0.88, 1.12, 1]}
+        opacityRange={[0.4, 0.75, 0.25, 0.6, 0.4]}
       />
     </div>
   );
@@ -440,19 +532,31 @@ export default function Home() {
 
       {/* ═══════ LARGE STATEMENT ═══════ */}
       <section className="py-36 md:py-48 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
-        {/* Subtle orbs for this section */}
-        <AmbientOrb
-          className="w-[800px] h-[800px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(80,60,200,0.12), transparent 70%)' }}
-          duration={10}
-          opacityRange={[0.4, 0.8, 0.4]}
+        {/* Drifting orbs for this section */}
+        <DriftOrb
+          className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          color="rgba(90,60,220,0.25)"
+          size={800}
+          blur={90}
+          scaleDuration={12}
+          opacityDuration={8}
+          driftDuration={18}
+          driftX={[0, 40, -40, 0]}
+          driftY={[0, -30, 30, 0]}
+          opacityRange={[0.5, 0.9, 0.4, 0.7, 0.5]}
         />
-        <AmbientOrb
-          className="w-[600px] h-[600px] top-[20%] -right-[100px] blur-[80px]"
-          style={{ background: 'radial-gradient(circle, rgba(255,130,40,0.1), transparent 70%)' }}
-          duration={12}
+        <DriftOrb
+          className="top-[20%] -right-[100px]"
+          color="rgba(255,120,30,0.2)"
+          size={600}
+          blur={80}
+          scaleDuration={10}
+          opacityDuration={7}
+          driftDuration={16}
           delay={3}
-          opacityRange={[0.3, 0.6, 0.3]}
+          driftX={[0, -50, 20, 0]}
+          driftY={[0, 30, -20, 0]}
+          opacityRange={[0.4, 0.8, 0.3, 0.6, 0.4]}
         />
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
@@ -557,11 +661,30 @@ export default function Home() {
 
       {/* ═══════ FINAL CTA ═══════ */}
       <section className="py-32 md:py-44 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
-        <AmbientOrb
-          className="w-[700px] h-[700px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(40,200,200,0.1), transparent 70%)' }}
-          duration={10}
-          opacityRange={[0.4, 0.7, 0.4]}
+        <DriftOrb
+          className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          color="rgba(30,210,210,0.2)"
+          size={700}
+          blur={80}
+          scaleDuration={14}
+          opacityDuration={9}
+          driftDuration={20}
+          driftX={[0, 30, -30, 0]}
+          driftY={[0, -25, 25, 0]}
+          opacityRange={[0.4, 0.8, 0.3, 0.6, 0.4]}
+        />
+        <DriftOrb
+          className="top-[30%] -left-[80px]"
+          color="rgba(230,50,140,0.15)"
+          size={500}
+          blur={70}
+          scaleDuration={11}
+          opacityDuration={8}
+          driftDuration={16}
+          delay={2}
+          driftX={[0, 40, -20, 0]}
+          driftY={[0, -30, 20, 0]}
+          opacityRange={[0.3, 0.7, 0.2, 0.5, 0.3]}
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div
