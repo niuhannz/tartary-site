@@ -14,18 +14,18 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-4">
             <span
-              className="text-xl tracking-[0.35em] uppercase block mb-4 text-bone"
-              style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+              className="text-xl tracking-[0.3em] uppercase block mb-4 logo-sheen"
+              style={{ fontFamily: 'var(--font-logo)', fontWeight: 700 }}
             >
               Tartary
             </span>
             <p className="text-steel text-[12px] leading-relaxed max-w-xs mb-6" style={{ fontFamily: 'var(--font-mono)' }}>
-              Metal to soul. A sovereign AI ecosystem spanning hardware, creative tools, original IP, publishing, and civilian applications.
+              A sovereign AI ecosystem spanning original IP, infrastructure, creative tools, publishing, and civilian applications.
             </p>
             <div className="terminal-box inline-block !p-3 !pl-6">
               <span className="text-orange text-[10px]">STATUS:</span>
               <span className="text-green text-[10px] ml-2">ONLINE</span>
-              <span className="text-ash text-[10px] ml-4">M4 MAX</span>
+              <span className="text-ash text-[10px] ml-4">SOVEREIGN</span>
             </div>
           </div>
 
@@ -94,7 +94,7 @@ export default function Footer() {
             className="text-[9px] tracking-[0.15em] uppercase text-ash/40"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            SYSTEM &middot; STUDIO &middot; UNIVERSE &middot; PRESS &middot; CIVILIAN
+            UNIVERSE &middot; SYSTEM &middot; STUDIO &middot; PRESS &middot; CIVILIAN
           </span>
         </div>
       </div>

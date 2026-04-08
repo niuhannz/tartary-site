@@ -115,16 +115,28 @@ export interface Pillar {
 
 export const pillars: Pillar[] = [
   {
+    id: 'universe',
+    label: 'UNIVERSE',
+    tagline: 'Flagship IP — The Narrative Soul',
+    href: '/universe',
+    idx: '01',
+    cmdPrefix: 'UNI://',
+    products: [
+      { name: 'Commandment', href: '/universe#commandment' },
+      { name: 'XT111', href: '/universe#xt111' },
+      { name: 'Triune', href: '/universe#triune' },
+    ],
+  },
+  {
     id: 'system',
     label: 'SYSTEM',
-    tagline: 'Tartary OS & AI-First Hardware',
+    tagline: 'Tartary OS & Mudflood Plugin',
     href: '/system',
-    idx: '01',
+    idx: '02',
     cmdPrefix: 'SYS://',
     products: [
       { name: 'Tartary OS', href: '/system' },
-      { name: 'OpenClaw Engine', href: '/system#openclaw' },
-      { name: 'M4 Metal Layer', href: '/system#metal' },
+      { name: 'Mudflood', href: '/system#mudflood' },
     ],
   },
   {
@@ -132,26 +144,13 @@ export const pillars: Pillar[] = [
     label: 'STUDIO',
     tagline: 'NLE, Cinema Engine, Games, Film Fest',
     href: '/studio',
-    idx: '02',
+    idx: '03',
     cmdPrefix: 'STU://',
     products: [
       { name: 'Swinggang NLE', href: '/studio#swinggang' },
       { name: 'Gelatin Silver', href: '/studio#gelatin' },
       { name: 'Tartary Games', href: '/studio#games' },
       { name: 'AI Film Fest', href: '/studio#filmfest' },
-    ],
-  },
-  {
-    id: 'universe',
-    label: 'UNIVERSE',
-    tagline: 'Flagship IP — The Narrative Soul',
-    href: '/universe',
-    idx: '03',
-    cmdPrefix: 'UNI://',
-    products: [
-      { name: 'Commandment', href: '/universe#commandment' },
-      { name: 'XT111', href: '/universe#xt111' },
-      { name: 'Triune', href: '/universe#triune' },
     ],
   },
   {

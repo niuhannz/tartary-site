@@ -196,8 +196,8 @@ export default function Home() {
           {/* Main headline */}
           <motion.h1
             variants={fadeUp}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[-0.03em] mb-6 text-bone"
-            style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-[0.25em] mb-6 logo-sheen"
+            style={{ fontFamily: 'var(--font-logo)', fontWeight: 700 }}
           >
             TARTARY
           </motion.h1>
@@ -208,8 +208,8 @@ export default function Home() {
             className="text-[13px] md:text-[15px] text-steel max-w-xl mx-auto mb-3 leading-relaxed"
             style={{ fontFamily: 'var(--font-mono)', fontWeight: 400 }}
           >
-            From the metal to the soul. An entire vertical ecosystem
-            running on a single M4 Max.
+            From the metal to the soul. A sovereign vertical ecosystem
+            — every layer owned, every tool built in-house.
           </motion.p>
 
           {/* Tagline */}
@@ -218,7 +218,7 @@ export default function Home() {
             className="text-[11px] text-ash tracking-[0.15em] uppercase mb-10"
             style={{ fontFamily: 'var(--font-mono)' }}
           >
-            OS &rarr; TOOLS &rarr; IP &rarr; PUBLISHING &rarr; APPS
+            UNIVERSE &rarr; SYSTEM &rarr; STUDIO &rarr; PRESS &rarr; CIVILIAN
           </motion.p>
 
           {/* CTA Buttons */}
@@ -409,7 +409,7 @@ export default function Home() {
             >
               TARTARY is a sovereign AI conglomerate. We don't rent cloud. We don't outsource intelligence.
               Every tool, every film, every book, every app — built from scratch on hardware we own.
-              The M4 Max is the foundry. OpenClaw is the engine. Everything above it is ours.
+              The OS is the foundry. The tools are the engine. Everything above it is ours.
             </p>
 
             <Link href="/system" className="btn-terminal">

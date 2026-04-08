@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s — TARTARY',
   },
   description:
-    'Metal to soul. Tartary is a vertical AI ecosystem: OS, Studio, IP, Publishing, and Civilian applications — all running on a single M4 Max.',
+    'Tartary is a sovereign AI conglomerate: Universe, System, Studio, Press, and Civilian — every layer owned, every tool built in-house.',
   keywords: [
     'Tartary',
     'AI conglomerate',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'TARTARY — Sovereign AI Conglomerate',
     description:
-      'Metal to soul. A vertical AI ecosystem spanning OS, Studio, IP, Publishing, and Civilian applications.',
+      'A sovereign AI conglomerate spanning Universe, System, Studio, Press, and Civilian.',
     url: 'https://www.tartary.com',
     siteName: 'TARTARY',
     type: 'website',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TARTARY — Sovereign AI Conglomerate',
     description:
-      'Metal to soul. A vertical AI ecosystem on a single M4 Max.',
+      'A sovereign AI conglomerate — every layer owned, every tool built in-house.',
   },
 };
 
@@ -48,9 +48,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* IBM Plex Mono: technical data, nav, buttons, body copy
-            Inter: headlines at 900 weight — heavy industrial sans-serif */}
+            Inter: headlines at 900 weight — heavy industrial sans-serif
+            Syne: logo wordmark only — distinctive wide tracking */}
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

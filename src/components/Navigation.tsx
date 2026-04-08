@@ -181,10 +181,10 @@ export default function Navigation() {
         <div className="max-w-[1400px] mx-auto px-5 md:px-10">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* ── LOGO ───────────────────────────────── */}
-            <Link href="/" className="relative z-50 flex items-center gap-3">
+            <Link href="/" className="relative z-50 flex items-center gap-3 logo-glow">
               <span
-                className="text-lg md:text-xl tracking-[0.35em] uppercase text-bone hover:text-orange transition-colors duration-[80ms]"
-                style={{ fontFamily: 'var(--font-headline)', fontWeight: 900 }}
+                className="text-xl md:text-2xl tracking-[0.3em] uppercase logo-sheen"
+                style={{ fontFamily: 'var(--font-logo)', fontWeight: 700 }}
               >
                 Tartary
               </span>
@@ -292,7 +292,7 @@ export default function Navigation() {
                   TARTARY SYSTEMS v2.0
                 </span>
                 <span className="text-[9px] tracking-[0.15em] uppercase text-ash" style={{ fontFamily: 'var(--font-mono)' }}>
-                  M4 MAX // SOVEREIGN
+                  BUILT IN-HOUSE
                 </span>
               </div>
             </div>
