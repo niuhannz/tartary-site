@@ -37,10 +37,10 @@ function PillarDropdown({
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       <Link
         href={pillar.href}
-        className={`text-[14px] transition-colors duration-150 ${
+        className={`text-[13px] transition-colors duration-150 ${
           active ? 'text-white' : 'text-cool-slate hover:text-white'
         }`}
-        style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, letterSpacing: '0.35px', textTransform: 'uppercase' as const }}
+        style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' as const }}
       >
         {pillar.label}
       </Link>
@@ -170,10 +170,10 @@ export default function Navigation() {
                 >
                   <Link
                     href={pillar.href}
-                    className={`block text-2xl mb-1.5 transition-colors duration-150 ${
+                    className={`block text-xl mb-2 transition-colors duration-150 ${
                       isActive(pillar.href, pathname) ? 'text-white' : 'text-cool-slate hover:text-white'
                     }`}
-                    style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, letterSpacing: '-0.5px', lineHeight: '1.0' }}
+                    style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, letterSpacing: '0.18em', lineHeight: '1.0' }}
                   >
                     {pillar.label}
                   </Link>
