@@ -322,9 +322,9 @@ h1, h2, h3, h4, h5, h6 {
 .logo-sheen {
   background: linear-gradient(
     120deg,
-    #E8E4DC 0%, #E8E4DC 35%,
-    #FF8533 42%, #FF6600 48%, #FF8533 52%,
-    #E8E4DC 58%, #E8E4DC 100%
+    #e8e4dc 0%, #e8e4dc 35%,
+    #f5ecd7 42%, #ffd98e 48%, #c9a96e 50%, #ffd98e 52%, #f5ecd7 58%,
+    #e8e4dc 65%, #e8e4dc 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -335,12 +335,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .logo-glow {
-  filter: drop-shadow(0 0 8px rgba(255, 102, 0, 0.15));
+  filter: drop-shadow(0 0 8px rgba(201, 169, 110, 0.15));
   transition: filter 0.3s ease;
 }
 
 .logo-glow:hover {
-  filter: drop-shadow(0 0 16px rgba(255, 102, 0, 0.35));
+  filter: drop-shadow(0 0 16px rgba(201, 169, 110, 0.35));
 }
 
 /* ── RESPONSIVE UTILITIES ──────────────────────────── */
