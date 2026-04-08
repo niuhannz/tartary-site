@@ -125,6 +125,8 @@ export const pillars: Pillar[] = [
       { name: 'Commandment', href: '/universe#commandment' },
       { name: 'XT111', href: '/universe#xt111' },
       { name: 'Triune', href: '/universe#triune' },
+      { name: 'Baseborn', href: '/universe#baseborn' },
+      { name: 'Heavenfall', href: '/universe#heavenfall' },
     ],
   },
   {
