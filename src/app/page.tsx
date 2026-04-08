@@ -48,21 +48,89 @@ const scaleIn = {
 };
 
 /* ── Animated gradient orb (ambient light) ──── */
-function AmbientOrb({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
+function AmbientOrb({
+  className = '',
+  style,
+  duration = 8,
+  delay = 0,
+  scaleRange = [1, 1.15, 1] as [number, number, number],
+  opacityRange = [0.4, 0.7, 0.4] as [number, number, number],
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+  duration?: number;
+  delay?: number;
+  scaleRange?: [number, number, number];
+  opacityRange?: [number, number, number];
+}) {
   return (
     <motion.div
       className={`absolute rounded-full pointer-events-none ${className}`}
       style={style}
       animate={{
-        scale: [1, 1.1, 1],
-        opacity: [0.15, 0.25, 0.15],
+        scale: scaleRange,
+        opacity: opacityRange,
       }}
       transition={{
-        duration: 8,
+        duration,
+        delay,
         repeat: Infinity,
         ease: 'easeInOut',
       }}
     />
+  );
+}
+
+/* ── Living background — gradient mesh of colored orbs ── */
+function LivingBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Deep indigo — top left */}
+      <AmbientOrb
+        className="w-[900px] h-[900px] -top-[200px] -left-[200px] blur-[120px]"
+        style={{ background: 'radial-gradient(circle, rgba(80,60,180,0.08), transparent 70%)' }}
+        duration={12}
+        delay={0}
+        scaleRange={[1, 1.2, 1]}
+        opacityRange={[0.5, 0.8, 0.5]}
+      />
+      {/* Warm amber — right */}
+      <AmbientOrb
+        className="w-[800px] h-[800px] top-[10%] -right-[150px] blur-[100px]"
+        style={{ background: 'radial-gradient(circle, rgba(255,140,50,0.06), transparent 70%)' }}
+        duration={10}
+        delay={2}
+        scaleRange={[1, 1.15, 1]}
+        opacityRange={[0.4, 0.7, 0.4]}
+      />
+      {/* Cool teal — bottom center */}
+      <AmbientOrb
+        className="w-[700px] h-[700px] -bottom-[100px] left-[20%] blur-[100px]"
+        style={{ background: 'radial-gradient(circle, rgba(40,180,180,0.05), transparent 70%)' }}
+        duration={14}
+        delay={4}
+        scaleRange={[1, 1.1, 1]}
+        opacityRange={[0.3, 0.6, 0.3]}
+      />
+      {/* Rose — center left */}
+      <AmbientOrb
+        className="w-[600px] h-[600px] top-[40%] left-[5%] blur-[80px]"
+        style={{ background: 'radial-gradient(circle, rgba(200,80,120,0.04), transparent 70%)' }}
+        duration={11}
+        delay={1}
+        scaleRange={[1, 1.18, 1]}
+        opacityRange={[0.3, 0.5, 0.3]}
+      />
+      {/* White core glow — behind the logo */}
+      <AmbientOrb
+        className="w-[500px] h-[500px] top-[30%] left-1/2 -translate-x-1/2 blur-[80px]"
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.04), transparent 60%)' }}
+        duration={8}
+        delay={0}
+        scaleRange={[1, 1.08, 1]}
+        opacityRange={[0.5, 0.8, 0.5]}
+      />
+    </div>
   );
 }
 
@@ -131,10 +199,9 @@ function ParallaxHero() {
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   return (
-    <section ref={ref} className="relative min-h-[110vh] flex flex-col justify-center items-center px-6 md:px-10 bg-black overflow-hidden">
-      {/* Ambient orbs */}
-      <AmbientOrb className="w-[600px] h-[600px] -top-40 -right-40 blur-3xl" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.04), transparent)' }} />
-      <AmbientOrb className="w-[500px] h-[500px] -bottom-32 -left-32 blur-3xl" style={{ background: 'radial-gradient(circle, rgba(255,102,0,0.03), transparent)' }} />
+    <section ref={ref} className="relative min-h-[110vh] flex flex-col justify-center items-center px-6 md:px-10 overflow-hidden" style={{ background: '#050507' }}>
+      {/* Living gradient background */}
+      <LivingBackground />
 
       <motion.div
         className="relative z-10 text-center max-w-4xl mx-auto"
@@ -145,38 +212,57 @@ function ParallaxHero() {
           animate="visible"
           variants={staggerContainer}
         >
-          {/* OS badge */}
-          <motion.div variants={fadeIn} className="mb-8">
-            <span
-              className="inline-block px-4 py-1.5 rounded-full border border-border-dark text-[11px] text-cool-slate"
-              style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, letterSpacing: '0.35px', textTransform: 'uppercase' as const }}
-            >
-              Introducing Tartary OS
-            </span>
-          </motion.div>
-
-          {/* Hero headline */}
-          <motion.h1
-            variants={fadeInSlow}
-            className="text-[48px] sm:text-[64px] md:text-[80px] lg:text-[96px] text-white mb-6"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 400,
-              lineHeight: 0.95,
-              letterSpacing: '-3px',
-            }}
-          >
-            One click.
-            <br />
-            <span className="text-orange">Everything</span>{' '}
-            <span className="text-cool-slate">generates.</span>
-          </motion.h1>
-
-          {/* Subline */}
+          {/* Introducing label */}
           <motion.p
             variants={fadeIn}
-            className="text-[18px] md:text-[20px] text-cool-slate max-w-xl mx-auto mb-10"
-            style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.4, letterSpacing: '-0.3px' }}
+            className="text-[13px] text-cool-slate mb-6"
+            style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, letterSpacing: '0.35px', textTransform: 'uppercase' as const }}
+          >
+            Introducing
+          </motion.p>
+
+          {/* TARTARY OS — logo-scale */}
+          <motion.h1
+            variants={fadeInSlow}
+            className="mb-8"
+          >
+            <span
+              className="block text-[64px] sm:text-[88px] md:text-[112px] lg:text-[140px] tracking-[0.15em]"
+              style={{
+                fontFamily: 'var(--font-logo)',
+                fontWeight: 700,
+                lineHeight: 0.9,
+                color: '#ffffff',
+              }}
+            >
+              TARTARY
+            </span>
+            <span
+              className="block text-[40px] sm:text-[56px] md:text-[72px] lg:text-[88px] tracking-[0.4em] text-cool-slate mt-1"
+              style={{
+                fontFamily: 'var(--font-logo)',
+                fontWeight: 700,
+                lineHeight: 1.0,
+              }}
+            >
+              OS
+            </span>
+          </motion.h1>
+
+          {/* Tagline */}
+          <motion.p
+            variants={fadeIn}
+            className="text-[18px] md:text-[22px] text-cool-slate max-w-lg mx-auto mb-4"
+            style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.3, letterSpacing: '-0.3px' }}
+          >
+            One click. Everything generates.
+          </motion.p>
+
+          {/* Sub-description */}
+          <motion.p
+            variants={fadeIn}
+            className="text-[14px] md:text-[16px] text-mid-slate max-w-md mx-auto mb-10"
+            style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, lineHeight: 1.5, letterSpacing: '-0.16px' }}
           >
             The first sovereign AI operating system for macOS and visionOS.
             Generate anything. Own everything.
@@ -276,7 +362,7 @@ export default function Home() {
       <ParallaxHero />
 
       {/* ═══════ PRODUCT SHOWCASE ═══════ */}
-      <section className="py-32 md:py-44 px-6 md:px-10 bg-black relative overflow-hidden">
+      <section className="py-32 md:py-44 px-6 md:px-10 relative overflow-hidden" style={{ background: '#030305' }}>
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial="hidden"
@@ -353,8 +439,21 @@ export default function Home() {
       </section>
 
       {/* ═══════ LARGE STATEMENT ═══════ */}
-      <section className="py-36 md:py-48 px-6 md:px-10 bg-black relative overflow-hidden">
-        <AmbientOrb className="w-[800px] h-[800px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-3xl" style={{ background: 'radial-gradient(circle, rgba(255,102,0,0.02), transparent)' }} />
+      <section className="py-36 md:py-48 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
+        {/* Subtle orbs for this section */}
+        <AmbientOrb
+          className="w-[700px] h-[700px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(80,60,180,0.04), transparent 70%)' }}
+          duration={10}
+          opacityRange={[0.3, 0.6, 0.3]}
+        />
+        <AmbientOrb
+          className="w-[500px] h-[500px] top-[20%] -right-[100px] blur-[80px]"
+          style={{ background: 'radial-gradient(circle, rgba(255,140,50,0.03), transparent 70%)' }}
+          duration={12}
+          delay={3}
+          opacityRange={[0.2, 0.5, 0.2]}
+        />
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
           <motion.div
@@ -457,7 +556,13 @@ export default function Home() {
       </section>
 
       {/* ═══════ FINAL CTA ═══════ */}
-      <section className="py-32 md:py-44 px-6 md:px-10 bg-black relative overflow-hidden">
+      <section className="py-32 md:py-44 px-6 md:px-10 relative overflow-hidden" style={{ background: '#050507' }}>
+        <AmbientOrb
+          className="w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(40,180,180,0.03), transparent 70%)' }}
+          duration={10}
+          opacityRange={[0.3, 0.5, 0.3]}
+        />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <motion.div
             initial="hidden"
