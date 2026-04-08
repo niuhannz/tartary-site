@@ -145,3 +145,9 @@ h3 { letter-spacing: -0.5px; }
 .border-runway {
   border: 1px solid #27272a;
 }
+
+/* ── AMBIENT ORB — radial gradient utility ──── */
+
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-from, transparent), var(--tw-gradient-to, transparent));
+}
