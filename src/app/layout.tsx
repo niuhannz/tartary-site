@@ -47,11 +47,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* IBM Plex Mono: technical data, nav, buttons, body copy
-            Inter: headlines at 900 weight — heavy industrial sans-serif
-            Syne: logo wordmark only — distinctive wide tracking */}
+        {/* Inter: body text, UI, buttons (utility)
+            Syne: logo wordmark only
+            Georgia: system serif for headlines (editorial authority) */}
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

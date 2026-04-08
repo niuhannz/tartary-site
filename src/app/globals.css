@@ -2,41 +2,47 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TARTARY — Sovereign AI Conglomerate
-   Global stylesheet: Obsidian / Safety Orange / Clean & Bold
+   Design System: Editorial warmth meets sovereign tech
+   Principles from Anthropic's DESIGN.md adapted for dark brand
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── Surface colors ──────────────────────────────── */
-  --color-obsidian:     #0A0A0A;
-  --color-obsidian-lit: #111111;
-  --color-obsidian-mid: #1A1A1A;
+  /* ── Surface: warm-tinted darks (olive undertone, never pure black) ──── */
+  --color-obsidian:     #141413;
+  --color-obsidian-lit: #1c1c1a;
+  --color-obsidian-mid: #242422;
+  --color-surface:      #2a2a27;
 
   /* ── Accent: Safety Orange ───────────────────────── */
   --color-orange:       #FF6600;
   --color-orange-hot:   #FF8533;
   --color-orange-dim:   #CC5200;
+  --color-orange-muted: #e8822e;
 
-  /* ── Neutrals ────────────────────────────────────── */
+  /* ── Warm neutrals (every gray has yellow-brown undertone) ──── */
   --color-bone:         #E8E4DC;
+  --color-ivory:        #faf9f5;
   --color-chalk:        #F5F0E8;
-  --color-steel:        #8A8A8A;
-  --color-ash:          #555555;
-  --color-gunmetal:     #2A2A2A;
+  --color-warm-silver:  #b0aea5;
+  --color-stone:        #87867f;
+  --color-olive:        #5e5d59;
+  --color-charcoal:     #4d4c48;
+  --color-gunmetal:     #30302e;
 
-  /* ── Semantic ────────────────────────────────────── */
-  --color-green:        #00CC66;
-  --color-red:          #FF3333;
-  --color-cyan:         #00D4FF;
+  /* ── Borders: warm cream-tinted ──────────────────── */
+  --color-border-dark:  #30302e;
+  --color-border-subtle: #242422;
 
   /* ── Typography ──────────────────────────────────── */
-  --font-mono:      'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
-  --font-headline:  'Inter', 'Helvetica Neue', 'Arial Black', sans-serif;
+  --font-serif:     'Georgia', 'Times New Roman', serif;
+  --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
   --font-logo:      'Syne', 'Inter', sans-serif;
+  --font-mono:      'IBM Plex Mono', 'SF Mono', monospace;
 }
 
 :root {
-  --bg:  #0A0A0A;
-  --fg:  #E8E4DC;
+  --bg:     #141413;
+  --fg:     #E8E4DC;
   --accent: #FF6600;
 }
 
@@ -45,16 +51,16 @@
 html {
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: #FF6600 #0A0A0A;
+  scrollbar-color: #FF6600 #141413;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: 'Syne', 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 400;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.60;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -62,20 +68,26 @@ body {
 
 ::selection {
   background: #FF6600;
-  color: #0A0A0A;
+  color: #141413;
 }
 
-/* ── TYPOGRAPHY ────────────────────────────────────── */
+/* ── TYPOGRAPHY — Editorial hierarchy ─────────────── */
+/* Serif for authority (headlines), Sans for utility (body/UI) */
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.0;
-  text-transform: uppercase;
+h1, h2, h3 {
+  font-family: 'Georgia', serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
-/* ── GRAIN OVERLAY ─────────────────────────────────── */
+h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* ── SUBTLE GRAIN ──────────────────────────────────── */
 
 .grain::after {
   content: '';
@@ -83,7 +95,7 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.025;
+  opacity: 0.018;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 200px;
@@ -91,23 +103,23 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── SCROLLBAR ─────────────────────────────────────── */
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0A0A0A; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #141413; }
+::-webkit-scrollbar-thumb { background: #30302e; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #FF6600; }
 
 /* ── CURSOR GLOW ──────────────────────────────────── */
 
 .cursor-glow {
   position: fixed;
-  width: 400px;
-  height: 400px;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(circle, rgba(255, 102, 0, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 102, 0, 0.025) 0%, transparent 70%);
   transform: translate(-50%, -50%);
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease;
 }
 
 /* ── LOGO SHEEN ────────────────────────────────────── */
@@ -141,8 +153,17 @@ h1, h2, h3, h4, h5, h6 {
   filter: drop-shadow(0 0 16px rgba(201, 169, 110, 0.35));
 }
 
-/* ── RESPONSIVE ────────────────────────────────────── */
+/* ── RING SHADOWS (Anthropic-style depth) ──────────── */
+/* Ring shadows instead of hard borders — softer, more modern */
 
-@media (max-width: 768px) {
-  body { font-size: 14px; }
+.ring-subtle {
+  box-shadow: 0px 0px 0px 1px #30302e;
+}
+
+.ring-hover:hover {
+  box-shadow: 0px 0px 0px 1px rgba(255, 102, 0, 0.3);
+}
+
+.whisper-shadow {
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 4px 24px;
 }
