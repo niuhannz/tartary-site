@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
 
 export default function MagneticCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
@@ -12,31 +11,47 @@ export default function MagneticCursor() {
     const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
     if (isTouch) return;
 
-    const dot = dotRef.current!;
-    const ring = ringRef.current!;
+    const dot = dotRef.current;
+    const ring = ringRef.current;
+    if (!dot || !ring) return;
 
-    const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-    const dotPos = { x: mouse.x, y: mouse.y };
-    const ringPos = { x: mouse.x, y: mouse.y };
+    const initX = window.innerWidth / 2;
+    const initY = window.innerHeight / 2;
+    const mouse = { x: initX, y: initY };
+    const dotPos = { x: initX, y: initY };
+    const ringPos = { x: initX, y: initY };
 
-    gsap.set(dot, { x: mouse.x, y: mouse.y, opacity: 0 });
-    gsap.set(ring, { x: mouse.x, y: mouse.y, opacity: 0 });
+    // Make the cursor visible immediately, positioned at window center until mouse moves
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+    dot.style.transform = `translate3d(${initX}px, ${initY}px, 0) translate(-50%, -50%)`;
+    ring.style.transform = `translate3d(${initX}px, ${initY}px, 0) translate(-50%, -50%)`;
+
+    const showTimer = window.setTimeout(() => {
+      dot.style.opacity = '1';
+      ring.style.opacity = '1';
+    }, 2100);
 
     const onMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
+      if (dot.style.opacity === '0') {
+        dot.style.opacity = '1';
+        ring.style.opacity = '1';
+      }
+    };
+    const onLeaveDoc = () => {
+      dot.style.opacity = '0';
+      ring.style.opacity = '0';
+    };
+    const onEnterDoc = () => {
+      dot.style.opacity = '1';
+      ring.style.opacity = '1';
     };
 
-    const onEnter = () => {
-      gsap.to([dot, ring], { opacity: 1, duration: 0.4 });
-    };
-    const onLeave = () => {
-      gsap.to([dot, ring], { opacity: 0, duration: 0.4 });
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseenter', onEnter);
-    document.documentElement.addEventListener('mouseleave', onLeave);
+    window.addEventListener('mousemove', onMove, { passive: true });
+    document.documentElement.addEventListener('mouseleave', onLeaveDoc);
+    document.documentElement.addEventListener('mouseenter', onEnterDoc);
 
     let rafId = 0;
     const tick = () => {
@@ -44,41 +59,41 @@ export default function MagneticCursor() {
       dotPos.y += (mouse.y - dotPos.y) * 0.55;
       ringPos.x += (mouse.x - ringPos.x) * 0.18;
       ringPos.y += (mouse.y - ringPos.y) * 0.18;
-      gsap.set(dot, { x: dotPos.x, y: dotPos.y });
-      gsap.set(ring, { x: ringPos.x, y: ringPos.y });
+      dot.style.transform = `translate3d(${dotPos.x}px, ${dotPos.y}px, 0) translate(-50%, -50%)`;
+      ring.style.transform = `translate3d(${ringPos.x}px, ${ringPos.y}px, 0) translate(-50%, -50%)`;
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
 
-    const handleTarget = (e: Event, enter: boolean) => {
+    // Hover-state handling for interactive targets
+    const handleEnter = (e: Event) => {
       const el = e.currentTarget as HTMLElement;
-      const state = el.dataset.cursor ?? 'hover';
-      ring.dataset.state = enter ? state : '';
+      ring.dataset.state = el.dataset.cursor ?? 'hover';
+    };
+    const handleLeave = () => {
+      ring.dataset.state = '';
     };
 
-    const bind = () => {
-      const targets = document.querySelectorAll<HTMLElement>(
-        'a, button, [data-cursor]'
-      );
-      targets.forEach((el) => {
-        el.addEventListener('mouseenter', (e) => handleTarget(e, true));
-        el.addEventListener('mouseleave', (e) => handleTarget(e, false));
+    const bindTargets = () => {
+      document.querySelectorAll<HTMLElement>('a, button, [data-cursor]').forEach((el) => {
+        el.removeEventListener('mouseenter', handleEnter);
+        el.removeEventListener('mouseleave', handleLeave);
+        el.addEventListener('mouseenter', handleEnter);
+        el.addEventListener('mouseleave', handleLeave);
       });
     };
-    const bindTimer = window.setTimeout(bind, 400);
-    const mo = new MutationObserver(() => {
-      window.clearTimeout(bindTimer);
-      window.setTimeout(bind, 200);
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
+    const bindTimer = window.setTimeout(bindTargets, 400);
+    // Rebind periodically rather than via MutationObserver (which thrashes under GSAP)
+    const reBindInterval = window.setInterval(bindTargets, 2500);
 
     return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseenter', onEnter);
-      document.documentElement.removeEventListener('mouseleave', onLeave);
-      cancelAnimationFrame(rafId);
+      window.clearTimeout(showTimer);
       window.clearTimeout(bindTimer);
-      mo.disconnect();
+      window.clearInterval(reBindInterval);
+      window.removeEventListener('mousemove', onMove);
+      document.documentElement.removeEventListener('mouseleave', onLeaveDoc);
+      document.documentElement.removeEventListener('mouseenter', onEnterDoc);
+      cancelAnimationFrame(rafId);
     };
   }, []);
 

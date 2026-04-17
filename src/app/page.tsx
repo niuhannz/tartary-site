@@ -6,9 +6,11 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitReveal from '@/components/SplitReveal';
-import Marquee from '@/components/Marquee';
 import Magnetic from '@/components/Magnetic';
-import { pillars } from '@/lib/theme';
+import TextScramble from '@/components/TextScramble';
+import ScrollMarquee from '@/components/ScrollMarquee';
+import PinnedReveal from '@/components/PinnedReveal';
+import PillarsHorizontal from '@/components/PillarsHorizontal';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -300,13 +302,13 @@ function HeroCinematic() {
         >
           <Magnetic>
             <Link href="/system" data-cursor="hover" className="btn-orange">
-              Get Tartary OS
+              <TextScramble>Get Tartary OS</TextScramble>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7H13M13 7L7 1M13 7L7 13" stroke="currentColor" strokeWidth="1.4" /></svg>
             </Link>
           </Magnetic>
           <Magnetic>
             <Link href="#features" data-cursor="hover" className="btn-ghost">
-              See what it does
+              <TextScramble>See what it does</TextScramble>
             </Link>
           </Magnetic>
         </motion.div>
@@ -367,28 +369,6 @@ function HeroCinematic() {
 }
 
 /* ── Big marquee band ───────────────────────────────────────── */
-function BigMarqueeBand() {
-  return (
-    <section className="relative py-6 md:py-8 border-y hairline overflow-hidden" style={{ background: 'var(--color-ink)' }}>
-      <Marquee speed={55}>
-        <div className="flex items-center gap-10 whitespace-nowrap">
-          {['One click', 'Everything generates', 'Local first', 'Film-grade', 'Spatial native', 'Open Claw', 'Mudflood', 'Gen 1 · 2026'].map((w, i) => (
-            <span key={i} className="flex items-center gap-10">
-              <span
-                className="text-[6vw] md:text-[4.5vw] leading-none text-bone"
-                style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, letterSpacing: '-0.02em' }}
-              >
-                {w}
-              </span>
-              <span className="text-[6vw] md:text-[4.5vw] leading-none" style={{ color: 'var(--color-orange)' }}>·</span>
-            </span>
-          ))}
-        </div>
-      </Marquee>
-    </section>
-  );
-}
-
 /* ── Philosophy statement ──────────────────────────────────── */
 function Philosophy() {
   return (
@@ -537,56 +517,6 @@ function FeaturesGrid() {
   );
 }
 
-/* ── Grand statement ──────────────────────────────────────── */
-function GrandStatement() {
-  return (
-    <section className="py-36 md:py-52 px-6 md:px-10 relative overflow-hidden" style={{ background: '#0a0705' }}>
-      <DriftOrb
-        className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        color="rgba(255, 102, 0, 0.18)"
-        size={850}
-        blur={95}
-        scaleDuration={12}
-        opacityDuration={8}
-        driftDuration={18}
-        driftX={[0, 40, -40, 0]}
-        driftY={[0, -30, 30, 0]}
-        opacityRange={[0.3, 0.65, 0.2, 0.5, 0.3]}
-      />
-      <DriftOrb
-        className="top-[20%] -right-[100px]"
-        color="rgba(201, 166, 121, 0.22)"
-        size={620}
-        blur={85}
-        scaleDuration={10}
-        opacityDuration={7}
-        driftDuration={16}
-        delay={3}
-        driftX={[0, -50, 20, 0]}
-        driftY={[0, 30, -20, 0]}
-        opacityRange={[0.3, 0.65, 0.2, 0.5, 0.3]}
-      />
-
-      <div className="max-w-6xl mx-auto text-center relative z-10">
-        <SplitReveal
-          as="h2"
-          split="words"
-          stagger={0.09}
-          className="text-[clamp(2.75rem,8vw,7rem)] text-bone leading-[0.95]"
-        >
-          <span style={{ letterSpacing: '-0.035em' }}>Your imagination.</span>
-          <br />
-          <span className="font-editorial-italic" style={{ color: 'var(--color-orange)', letterSpacing: '-0.015em' }}>
-            Your machine.
-          </span>
-          <br />
-          <span style={{ color: 'var(--color-warm-silver)', letterSpacing: '-0.035em' }}>Your rules.</span>
-        </SplitReveal>
-      </div>
-    </section>
-  );
-}
-
 /* ── Specs + what you get ────────────────────────────────── */
 function SpecsSection() {
   return (
@@ -652,123 +582,6 @@ function SpecsSection() {
   );
 }
 
-/* ── Conglomerate band (5 pillars) ────────────────────────── */
-function ConglomerateBand() {
-  const rootRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const ctx = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>('.pillar-card').forEach((card, i) => {
-        gsap.fromTo(
-          card,
-          { y: 60, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 1.1,
-            ease: 'expo.out',
-            scrollTrigger: { trigger: card, start: 'top 88%' },
-            delay: i * 0.06,
-          }
-        );
-      });
-    }, el);
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <section ref={rootRef} className="py-28 md:py-40 px-6 md:px-10 relative overflow-hidden" style={{ background: 'var(--color-ink)' }}>
-      <div className="max-w-[1480px] mx-auto">
-        <div className="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-          <div>
-            <div className="t-micro mb-4" style={{ color: 'var(--color-orange)' }}>— The conglomerate</div>
-            <SplitReveal
-              as="h2"
-              split="words"
-              stagger={0.06}
-              className="text-[clamp(2.25rem,6vw,5rem)] text-bone leading-[1.0]"
-            >
-              <span style={{ letterSpacing: '-0.03em' }}>Tartary OS is one of </span>
-              <span className="font-editorial-italic" style={{ color: 'var(--color-gold)' }}>five departments.</span>
-            </SplitReveal>
-          </div>
-          <p
-            className="max-w-sm text-[15px]"
-            style={{ fontFamily: 'var(--font-sans)', color: 'var(--color-warm-silver)', lineHeight: 1.55 }}
-          >
-            Every layer owned. Every tool built in-house. From the operating system that generates it to the cinema it runs on.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-          {pillars.map((pillar) => (
-            <Link
-              key={pillar.id}
-              href={pillar.href}
-              data-cursor="view"
-              className="pillar-card group relative block h-[300px] md:h-[360px] rounded-sm overflow-hidden border hairline p-6 transition-all duration-500 hover:border-orange/60"
-              style={{ background: pillar.id === 'system' ? 'linear-gradient(170deg, rgba(255,102,0,0.14), rgba(13,10,8,0.9))' : 'var(--color-surface-alt)' }}
-            >
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
-                style={{ background: 'radial-gradient(80% 80% at 50% 30%, rgba(255,102,0,0.12), transparent 60%)' }}
-              />
-              <div className="relative h-full flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between mb-8">
-                    <span className="t-micro tabular-nums" style={{ color: 'var(--color-orange)' }}>{pillar.idx}</span>
-                    {pillar.id === 'system' && (
-                      <span className="t-micro" style={{ color: 'var(--color-orange)' }}>• Active</span>
-                    )}
-                  </div>
-                  <h3
-                    className="text-2xl md:text-3xl text-bone mb-3"
-                    style={{ fontFamily: 'var(--font-logo)', fontWeight: 700, letterSpacing: '0.05em' }}
-                  >
-                    {pillar.label}
-                  </h3>
-                  <p
-                    className="text-[13.5px]"
-                    style={{ fontFamily: 'var(--font-editorial)', fontStyle: 'italic', color: 'var(--color-parchment)', lineHeight: 1.35 }}
-                  >
-                    {pillar.tagline}
-                  </p>
-                </div>
-
-                <div>
-                  <div className="t-micro mb-3" style={{ color: 'var(--color-warm-slate)' }}>Products</div>
-                  <div className="space-y-1">
-                    {pillar.products.slice(0, 3).map((prod) => (
-                      <div
-                        key={prod.href}
-                        className="text-[13px] group-hover:text-bone transition-colors duration-500"
-                        style={{ fontFamily: 'var(--font-sans)', color: 'var(--color-warm-silver)' }}
-                      >
-                        {prod.name}
-                      </div>
-                    ))}
-                    {pillar.products.length > 3 && (
-                      <div className="text-[12px] mt-1" style={{ color: 'var(--color-warm-slate)' }}>
-                        +{pillar.products.length - 3} more
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-5 flex items-center gap-2 text-orange opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500">
-                    <span className="t-micro" style={{ color: 'var(--color-orange)' }}>Enter</span>
-                    <span className="h-px w-8" style={{ background: 'var(--color-orange)' }} />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ── Final CTA ─────────────────────────────────────────────── */
 function FinalCTA() {
   return (
@@ -822,13 +635,13 @@ function FinalCTA() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Magnetic>
             <Link href="/system" data-cursor="hover" className="btn-orange">
-              Join Waitlist
+              <TextScramble>Join Waitlist</TextScramble>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7H13M13 7L7 1M13 7L7 13" stroke="currentColor" strokeWidth="1.4" /></svg>
             </Link>
           </Magnetic>
           <Magnetic>
             <Link href="/universe" data-cursor="hover" className="btn-ghost">
-              Explore the Universe
+              <TextScramble>Explore the Universe</TextScramble>
             </Link>
           </Magnetic>
         </div>
@@ -838,16 +651,35 @@ function FinalCTA() {
 }
 
 /* ── Main page ─────────────────────────────────────────────── */
+function MarqueeBand() {
+  return (
+    <section className="relative py-6 md:py-8 border-y hairline" style={{ background: 'var(--color-ink)' }}>
+      <ScrollMarquee
+        words={[
+          'One click',
+          'Everything generates',
+          'Local first',
+          'Film-grade',
+          'Spatial native',
+          'Open Claw',
+          'Mudflood',
+          'Gen 1 · 2026',
+        ]}
+      />
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <>
       <HeroCinematic />
-      <BigMarqueeBand />
+      <MarqueeBand />
       <Philosophy />
       <FeaturesGrid />
-      <GrandStatement />
+      <PinnedReveal />
       <SpecsSection />
-      <ConglomerateBand />
+      <PillarsHorizontal />
       <FinalCTA />
     </>
   );
