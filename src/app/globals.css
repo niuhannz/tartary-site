@@ -99,11 +99,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  cursor: none;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  body { cursor: auto; }
 }
 
 ::selection {

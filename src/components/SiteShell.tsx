@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import Navigation from './Navigation';
 import Footer from './Footer';
 import SmoothScroll from './SmoothScroll';
-import MagneticCursor from './MagneticCursor';
 import LoadingCurtain from './LoadingCurtain';
 
 const MINIMAL_ROUTES = ['/login'];
@@ -20,7 +19,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <LoadingCurtain />
-      <MagneticCursor />
       <SmoothScroll>
         <Navigation />
         <main className="min-h-screen">{children}</main>
