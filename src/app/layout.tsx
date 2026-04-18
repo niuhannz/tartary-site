@@ -23,7 +23,6 @@ export default function RootLayout({
         />
       </head>
       <body className="grain antialiased min-h-screen">
-
         {children}
       </body>
     </html>

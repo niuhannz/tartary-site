@@ -17,6 +17,16 @@ export interface Pillar {
 export const pillars: Pillar[] = [
   {
     index: "01",
+    label: "SYSTEM",
+    cmdPrefix: "sys",
+    href: "/systems",
+    subProducts: [
+      { label: "Tartary OS", href: "/systems", description: "Cinematic spatial operating system" },
+      { label: "Mudflood", href: "/systems#mudflood", description: "Game creation engine for Vision Pro" },
+    ],
+  },
+  {
+    index: "02",
     label: "UNIVERSE",
     cmdPrefix: "uni",
     href: "/universe",
@@ -26,16 +36,6 @@ export const pillars: Pillar[] = [
       { label: "Triune", href: "/universe/triune", description: "Mythology epic" },
       { label: "Baseborn", href: "/universe/baseborn", description: "Dark fantasy saga" },
       { label: "Heavenfall", href: "/universe/heavenfall", description: "Cosmic horror" },
-    ],
-  },
-  {
-    index: "02",
-    label: "SYSTEM",
-    cmdPrefix: "sys",
-    href: "/systems",
-    subProducts: [
-      { label: "Tartary OS", href: "/systems", description: "Cinematic spatial operating system" },
-      { label: "Mudflood", href: "/systems#mudflood", description: "Game creation engine for Vision Pro" },
     ],
   },
   {
