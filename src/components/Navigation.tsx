@@ -1,147 +1,368 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { pillars, type Pillar } from "@/lib/theme";
 
-const NAV_ITEMS = [
-  { label: "Home", href: "/" },
-  { label: "Systems", href: "/systems" },
-  { label: "Cinema", href: "/cinema" },
-  { label: "Games", href: "/games" },
-  { label: "Worlds", href: "/worlds" },
-  { label: "Work", href: "/work" },
-  { label: "About", href: "/about" },
-  { label: "News", href: "/news" },
-  { label: "Contact", href: "/contact" },
-];
+/* ── Helper ── */
+function isActive(href: string, pathname: string): boolean {
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
+/* ═══════════════════════════════════════════════════════
+   PillarLink — desktop nav item with hover dropdown
+   ═══════════════════════════════════════════════════════ */
+function PillarLink({
+  pillar,
+  active,
+  isOpen,
+  onOpen,
+  onClose,
+}: {
+  pillar: Pillar;
+  active: boolean;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    onOpen();
+  };
+  const handleLeave = () => {
+    timeoutRef.current = setTimeout(onClose, 160);
+  };
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    },
+    []
+  );
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
+      {/* ── Pillar Label ── */}
+      <Link
+        href={pillar.href}
+        className="group flex items-center gap-1.5 px-3 py-2 transition-colors duration-200"
+      >
+        <span
+          className="text-[10px] tabular-nums transition-colors duration-200"
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: active ? "var(--color-orange)" : "var(--color-ash)",
+          }}
+        >
+          {pillar.index}
+        </span>
+        <span
+          className="text-[11px] font-semibold tracking-[0.18em] transition-colors duration-200"
+          style={{
+            fontFamily: "var(--font-logo)",
+            color: active ? "var(--color-bone)" : "var(--color-parchment)",
+          }}
+        >
+          {pillar.label}
+        </span>
+      </Link>
+
+      {/* ── Dropdown Panel ── */}
+      <AnimatePresence>
+        {isOpen && pillar.subProducts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-0 mt-2 min-w-[220px] z-50"
+          >
+            <div
+              className="p-2 rounded-lg"
+              style={{
+                background: "var(--color-obsidian-warm)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              {pillar.subProducts.map((sp) => (
+                <Link
+                  key={sp.href}
+                  href={sp.href}
+                  className="block px-3 py-2 rounded-md transition-colors duration-150 hover:bg-white/5"
+                >
+                  <span
+                    className="block text-xs font-medium"
+                    style={{
+                      fontFamily: "var(--font-sans)",
+                      color: "var(--color-bone)",
+                    }}
+                  >
+                    {sp.label}
+                  </span>
+                  {sp.description && (
+                    <span
+                      className="block text-[10px] mt-0.5"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--color-ash)",
+                      }}
+                    >
+                      {sp.description}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Navigation — main header with desktop + mobile
+   ═══════════════════════════════════════════════════════ */
 export default function Navigation() {
   const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [clock, setClock] = useState("");
+
+  /* ── Scroll listener ── */
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* ── Live clock ── */
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setClock(
+        now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      );
+    };
+    tick();
+    const id = setInterval(tick, 10_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <>
-      {/* ── Desktop Navigation ── */}
+      {/* ═══ Desktop Header ═══ */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-        className="fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden md:block"
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+        className="fixed top-0 left-0 right-0 z-50 hidden md:block transition-colors duration-300"
+        style={{
+          background: scrolled
+            ? "rgba(10, 8, 8, 0.85)"
+            : "transparent",
+          backdropFilter: scrolled ? "blur(20px)" : "none",
+          borderBottom: scrolled
+            ? "1px solid var(--border)"
+            : "1px solid transparent",
+        }}
       >
-        <nav className="glass-nav px-2 py-1.5 flex items-center gap-1">
-          {/* Logo */}
+        <div className="max-w-[1400px] mx-auto px-8 h-14 flex items-center justify-between">
+          {/* ── Left: Wordmark ── */}
           <Link
             href="/"
-            className="px-4 py-2 font-semibold tracking-wider text-sm"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="flex items-center gap-3"
           >
-            TARTARY
+            <span
+              className="text-sm font-bold tracking-[0.32em]"
+              style={{
+                fontFamily: "var(--font-logo)",
+                color: "var(--color-bone)",
+              }}
+            >
+              TARTARY
+            </span>
           </Link>
 
-          <div className="w-px h-5 bg-white/10 mx-1" />
+          {/* ── Center: Pillar Nav ── */}
+          <nav className="flex items-center gap-0.5">
+            {pillars.map((pillar) => (
+              <PillarLink
+                key={pillar.index}
+                pillar={pillar}
+                active={isActive(pillar.href, pathname)}
+                isOpen={openDropdown === pillar.index}
+                onOpen={() => setOpenDropdown(pillar.index)}
+                onClose={() => setOpenDropdown(null)}
+              />
+            ))}
+          </nav>
 
-          {/* Nav Items */}
-          {NAV_ITEMS.filter((item) => item.label !== "Home").map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="relative px-3.5 py-2 text-[13px] font-medium transition-colors duration-200 rounded-full"
-                style={{
-                  color: isActive
-                    ? "var(--color-text-primary)"
-                    : "var(--color-text-secondary)",
-                }}
-              >                {isActive && (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: "oklch(1 0 0 / 0.08)",
-                      border: "1px solid oklch(1 0 0 / 0.06)",
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 380,
-                      damping: 30,
-                    }}
-                  />
-                )}
-                <span className="relative z-10">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+          {/* ── Right: Clock + Contact ── */}
+          <div className="flex items-center gap-4">
+            <span className="t-micro flex items-center gap-2">
+              <span
+                className="w-1.5 h-1.5 rounded-full inline-block"
+                style={{ background: "var(--color-orange)" }}
+              />
+              {clock}
+            </span>
+            <Link
+              href="/contact"
+              className="t-label link-under"
+              style={{ color: "var(--color-parchment)" }}
+            >
+              CONTACT
+            </Link>
+          </div>
+        </div>
       </motion.header>
 
-      {/* ── Mobile Navigation ── */}
+      {/* ═══ Mobile Header ═══ */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-4 left-4 right-4 z-50 md:hidden"
-      >        <div className="glass-nav px-5 py-3 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-semibold tracking-wider text-sm"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            TARTARY
+        className="fixed top-0 left-0 right-0 z-50 md:hidden"
+        style={{
+          background: "rgba(10, 8, 8, 0.9)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <div className="px-5 h-14 flex items-center justify-between">
+          <Link href="/">
+            <span
+              className="text-sm font-bold tracking-[0.32em]"
+              style={{
+                fontFamily: "var(--font-logo)",
+                color: "var(--color-bone)",
+              }}
+            >
+              TARTARY
+            </span>
           </Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="w-8 h-8 flex flex-col items-center justify-center gap-1.5"
+            className="w-10 h-10 flex flex-col items-center justify-center gap-1.5"
             aria-label="Toggle menu"
           >
             <motion.span
-              animate={mobileOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-              className="w-5 h-px bg-white/70 block"
+              animate={
+                mobileOpen ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }
+              }
+              className="w-5 h-px block"
+              style={{ background: "var(--color-parchment)" }}
             />
             <motion.span
               animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }}
-              className="w-5 h-px bg-white/70 block"
+              className="w-5 h-px block"
+              style={{ background: "var(--color-parchment)" }}
             />
             <motion.span
               animate={
                 mobileOpen ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }
               }
-              className="w-5 h-px bg-white/70 block"
+              className="w-5 h-px block"
+              style={{ background: "var(--color-parchment)" }}
             />
           </button>
         </div>
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              transition={{ duration: 0.25 }}
-              className="glass-panel mt-2 p-4 flex flex-col gap-1"
-            >
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-3 rounded-xl text-sm font-medium transition-colors"
-                  style={{
-                    background:
-                      pathname === item.href ? "oklch(1 0 0 / 0.06)" : "transparent",
-                    color:
-                      pathname === item.href
-                        ? "var(--color-text-primary)"
-                        : "var(--color-text-secondary)",
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.header>
+
+      {/* ═══ Mobile Curtain Menu ═══ */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ clipPath: "inset(0 0 100% 0)" }}
+            animate={{ clipPath: "inset(0 0 0% 0)" }}
+            exit={{ clipPath: "inset(0 0 100% 0)" }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            className="fixed inset-0 z-40 md:hidden overflow-y-auto"
+            style={{
+              background: "var(--color-obsidian)",
+            }}
+          >
+            <div className="pt-24 pb-12 px-6">
+              {pillars.map((pillar) => (
+                <div key={pillar.index} className="mb-8">
+                  {/* Pillar heading */}
+                  <Link
+                    href={pillar.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 mb-3"
+                  >
+                    <span
+                      className="text-[11px] tabular-nums"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--color-orange)",
+                      }}
+                    >
+                      {pillar.index}
+                    </span>
+                    <span
+                      className="text-2xl font-bold tracking-[0.2em]"
+                      style={{
+                        fontFamily: "var(--font-logo)",
+                        color: isActive(pillar.href, pathname)
+                          ? "var(--color-bone)"
+                          : "var(--color-parchment)",
+                      }}
+                    >
+                      {pillar.label}
+                    </span>
+                  </Link>
+
+                  {/* Sub-products */}
+                  <div className="pl-8 flex flex-col gap-1">
+                    {pillar.subProducts.map((sp) => (
+                      <Link
+                        key={sp.href}
+                        href={sp.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="py-1.5 transition-colors duration-150"
+                        style={{
+                          fontFamily: "var(--font-sans)",
+                          fontSize: "0.85rem",
+                          color: "var(--color-ash)",
+                        }}
+                      >
+                        {sp.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Contact link at bottom */}
+              <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
+                <Link
+                  href="/contact"
+                  onClick={() => setMobileOpen(false)}
+                  className="t-label"
+                  style={{ color: "var(--color-orange)" }}
+                >
+                  CONTACT
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

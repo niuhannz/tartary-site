@@ -4,30 +4,52 @@ export default function ContactPage() {
   return (
     <StudioPageShell
       eyebrow="Contact"
-      title="Let's build together."
-      subtitle="Whether you're a creator, developer, investor, or just curious — we'd love to hear from you."
+      title="Reach us."
+      subtitle="For press inquiries, partnership proposals, or general questions — we read everything."
     >
       <div className="space-y-8">
         <div>
-          <h3 className="text-sm font-semibold tracking-wider uppercase mb-2" style={{ color: "var(--color-text-muted)" }}>
+          <h3
+            className="t-label mb-2"
+            style={{ color: "var(--color-ash)" }}
+          >
             General Inquiries
           </h3>
-          <a href="mailto:hello@tartary.com" className="text-lg hover:underline" style={{ color: "var(--color-accent-primary)" }}>
+          <a
+            href="mailto:hello@tartary.com"
+            className="text-lg link-under"
+            style={{ color: "var(--color-orange)" }}
+          >
             hello@tartary.com
           </a>
         </div>
         <div>
-          <h3 className="text-sm font-semibold tracking-wider uppercase mb-2" style={{ color: "var(--color-text-muted)" }}>
+          <h3
+            className="t-label mb-2"
+            style={{ color: "var(--color-ash)" }}
+          >
             Partnerships
-          </h3>          <a href="mailto:partners@tartary.com" className="text-lg hover:underline" style={{ color: "var(--color-accent-primary)" }}>
+          </h3>
+          <a
+            href="mailto:partners@tartary.com"
+            className="text-lg link-under"
+            style={{ color: "var(--color-orange)" }}
+          >
             partners@tartary.com
           </a>
         </div>
         <div>
-          <h3 className="text-sm font-semibold tracking-wider uppercase mb-2" style={{ color: "var(--color-text-muted)" }}>
+          <h3
+            className="t-label mb-2"
+            style={{ color: "var(--color-ash)" }}
+          >
             Press
           </h3>
-          <a href="mailto:press@tartary.com" className="text-lg hover:underline" style={{ color: "var(--color-accent-primary)" }}>
+          <a
+            href="mailto:press@tartary.com"
+            className="text-lg link-under"
+            style={{ color: "var(--color-orange)" }}
+          >
             press@tartary.com
           </a>
         </div>

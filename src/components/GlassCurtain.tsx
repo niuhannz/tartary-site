@@ -3,8 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+/*
+ * ── Glass Curtain ──────────────────────────────────────────────
+ * A fullscreen frosted-glass overlay that obscures the site
+ * until the visitor enters a passphrase. On success, the glass
+ * dissolves with a visionOS-style animation and a cookie is set
+ * so they won't see it again for 30 days.
+ *
+ * To disable the curtain entirely (e.g. at launch), set the
+ * environment variable:  NEXT_PUBLIC_CURTAIN_ENABLED=false
+ * ───────────────────────────────────────────────────────────────
+ */
+
 const COOKIE_NAME = "tartary_preview_access";
 const COOKIE_DAYS = 30;
+// Change this passphrase to whatever you want
 const PASSPHRASE = "tartary2026";
 
 function setCookie(name: string, value: string, days: number) {
@@ -18,23 +31,28 @@ function getCookie(name: string): string | null {
 }
 
 export default function GlassCurtain() {
-  const [visible, setVisible] = useState<boolean | null>(null);
+  const [visible, setVisible] = useState<boolean | null>(null); // null = loading
   const [input, setInput] = useState("");
   const [error, setError] = useState(false);
   const [dissolving, setDissolving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Check if curtain is disabled via env var
     if (process.env.NEXT_PUBLIC_CURTAIN_ENABLED === "false") {
       setVisible(false);
-      return;    }
+      return;
+    }
+    // Check for existing access cookie
     const hasAccess = getCookie(COOKIE_NAME) === "granted";
     setVisible(!hasAccess);
   }, []);
 
   useEffect(() => {
     if (visible) {
+      // Lock scroll while curtain is showing
       document.body.style.overflow = "hidden";
+      // Focus the input after animation
       setTimeout(() => inputRef.current?.focus(), 600);
     }
     return () => {
@@ -48,15 +66,19 @@ export default function GlassCurtain() {
       setError(false);
       setDissolving(true);
       setCookie(COOKIE_NAME, "granted", COOKIE_DAYS);
+      // Let dissolve animation play, then hide
       setTimeout(() => setVisible(false), 1200);
     } else {
       setError(true);
       setInput("");
+      // Shake animation resets
       setTimeout(() => setError(false), 600);
     }
   };
 
+  // Don't render anything while checking cookie (prevents flash)
   if (visible === null || visible === false) return null;
+
   return (
     <AnimatePresence>
       {visible && (
@@ -87,6 +109,7 @@ export default function GlassCurtain() {
               background: "oklch(0.06 0.015 260 / 0.85)",
             }}
           />
+
           {/* Ambient glow */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -115,7 +138,8 @@ export default function GlassCurtain() {
               <h1
                 className="text-4xl sm:text-5xl font-bold tracking-tight mb-2 glass-text-glow"
                 style={{ fontFamily: "var(--font-display)" }}
-              >                TARTARY
+              >
+                TARTARY
               </h1>
               <p
                 className="text-sm tracking-widest uppercase mb-12"
@@ -143,7 +167,8 @@ export default function GlassCurtain() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Enter passphrase"
-                  className="w-full px-6 py-4 rounded-2xl text-center text-sm font-medium outline-none transition-all duration-300 placeholder:text-white/20"                  style={{
+                  className="w-full px-6 py-4 rounded-2xl text-center text-sm font-medium outline-none transition-all duration-300 placeholder:text-white/20"
+                  style={{
                     background: "oklch(0.15 0.01 260 / 0.6)",
                     border: error
                       ? "1px solid oklch(0.7 0.2 25 / 0.5)"
@@ -171,6 +196,7 @@ export default function GlassCurtain() {
                 Enter
               </motion.button>
             </motion.form>
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

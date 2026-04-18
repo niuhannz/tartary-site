@@ -26,8 +26,9 @@ export default function StudioPageShell({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
-              className="text-xs font-semibold tracking-widest uppercase block mb-4"
-              style={{ color: "var(--color-text-muted)" }}            >
+              className="t-micro block mb-4"
+              style={{ color: "var(--color-orange)" }}
+            >
               {eyebrow}
             </motion.span>
           )}
@@ -36,7 +37,7 @@ export default function StudioPageShell({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-logo)" }}
           >
             {title}
           </motion.h1>
@@ -46,7 +47,7 @@ export default function StudioPageShell({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               className="mt-4 text-lg max-w-2xl leading-relaxed"
-              style={{ color: "var(--color-text-secondary)" }}
+              style={{ fontFamily: "var(--font-editorial)", color: "var(--color-parchment)", fontStyle: "italic" }}
             >
               {subtitle}
             </motion.p>
@@ -56,19 +57,17 @@ export default function StudioPageShell({
 
       {children && (
         <section className="px-6 pb-32">
-          <div className="max-w-4xl mx-auto">{children}</div>        </section>
+          <div className="max-w-4xl mx-auto">{children}</div>
+        </section>
       )}
 
       {/* Footer */}
       <footer className="px-6 pb-12">
         <div className="max-w-6xl mx-auto">
-          <div
-            className="h-px w-full mb-8"
-            style={{ background: "var(--color-glass-border)" }}
-          />
+          <div className="hairline w-full mb-8" />
           <div
             className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
-            style={{ color: "var(--color-text-muted)" }}
+            style={{ color: "var(--color-ash)" }}
           >
             <span>© 2026 Tartary LLC. All rights reserved.</span>
             <div className="flex items-center gap-6">

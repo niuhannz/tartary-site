@@ -10,7 +10,9 @@ const ease = [0.23, 1, 0.32, 1];
 export default function HomePage() {
   return (
     <div className="relative">
-      {/* ═══ HERO SECTION ═══ */}
+      {/* ════════════════════════════════════════════
+          HERO SECTION
+      ════════════════════════════════════════════ */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Orbital rings decoration */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -26,7 +28,8 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2, ease }}
-          >            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide uppercase glass-panel">
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide uppercase glass-panel">
               <span
                 className="w-1.5 h-1.5 rounded-full"
                 style={{ background: "var(--color-accent-cyan)" }}
@@ -55,6 +58,7 @@ export default function HomePage() {
               OS
             </span>
           </motion.h1>
+
           {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -83,7 +87,8 @@ export default function HomePage() {
                 color: "white",
                 boxShadow: "0 8px 32px oklch(0.75 0.15 250 / 0.3)",
               }}
-            >              Explore Systems
+            >
+              Explore Systems
               <svg
                 width="16"
                 height="16"
@@ -112,14 +117,17 @@ export default function HomePage() {
 
         {/* Bottom fade */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"          style={{
+          className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+          style={{
             background:
               "linear-gradient(to top, var(--color-bg-void), transparent)",
           }}
         />
       </section>
 
-      {/* ═══ SYSTEMS PREVIEW CARDS ═══ */}
+      {/* ════════════════════════════════════════════
+          SYSTEMS PREVIEW CARDS
+      ════════════════════════════════════════════ */}
       <section className="relative px-6 pb-32 -mt-16">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -141,7 +149,8 @@ export default function HomePage() {
                     x="4"
                     y="6"
                     width="24"
-                    height="16"                    rx="3"
+                    height="16"
+                    rx="3"
                     stroke="currentColor"
                     strokeWidth="1.5"
                   />
@@ -170,7 +179,8 @@ export default function HomePage() {
                   <path
                     d="M7 10L16 5L25 10V20L16 25L7 20V10Z"
                     stroke="currentColor"
-                    strokeWidth="1.5"                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
                   />
                   <path
                     d="M16 15V25"
@@ -194,12 +204,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ VISION STATEMENT ═══ */}
+      {/* ════════════════════════════════════════════
+          VISION STATEMENT
+      ════════════════════════════════════════════ */}
       <section className="relative px-6 pb-40">
         <div className="max-w-4xl mx-auto text-center">
           <motion.p
             initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}            viewport={{ once: true, margin: "-100px" }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1.2, ease }}
             className="text-3xl sm:text-4xl md:text-5xl font-semibold leading-snug tracking-tight"
             style={{ fontFamily: "var(--font-display)" }}
@@ -219,7 +232,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ FOOTER ═══ */}
+      {/* ════════════════════════════════════════════
+          FOOTER
+      ════════════════════════════════════════════ */}
       <footer className="relative px-6 pb-12">
         <div className="max-w-6xl mx-auto">
           <div
@@ -228,7 +243,8 @@ export default function HomePage() {
           />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
             style={{ color: "var(--color-text-muted)" }}
-          >            <span>© 2026 Tartary LLC. All rights reserved.</span>
+          >
+            <span>© 2026 Tartary LLC. All rights reserved.</span>
             <div className="flex items-center gap-6">
               <Link href="/contact" className="hover:text-white/60 transition-colors">
                 Contact

@@ -27,7 +27,8 @@ export default function GlassCard({
         whileHover={{ y: -4, scale: 1.01 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="glass-panel relative overflow-hidden p-8 sm:p-10 h-full"
-      >        {/* Accent glow */}
+      >
+        {/* Accent glow */}
         <div
           className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl"
           style={{ background: accentColor }}
@@ -56,7 +57,8 @@ export default function GlassCard({
           className="text-2xl sm:text-3xl font-bold tracking-tight mb-3"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {title}        </h3>
+          {title}
+        </h3>
         <p
           className="text-sm leading-relaxed max-w-md"
           style={{ color: "var(--color-text-secondary)" }}

@@ -3,9 +3,9 @@ import GlassCurtain from "@/components/GlassCurtain";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TARTARY — Spatial Computing Studio",
+  title: "TARTARY — Sovereign AI Conglomerate",
   description:
-    "Building the future of cinematic and interactive content for Apple Vision Pro.",
+    "Universe. System. Studio. Press. Civilian.",
 };
 
 export default function RootLayout({
@@ -14,12 +14,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
-        <link rel="preconnect" href="https://rsms.me/" />
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&family=Syne:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body className="min-h-screen bg-bg-void text-text-primary">
+      <body className="grain antialiased min-h-screen">
         <GlassCurtain />
         {children}
       </body>

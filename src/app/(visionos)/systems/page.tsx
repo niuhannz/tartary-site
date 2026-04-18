@@ -27,7 +27,8 @@ function FeatureItem({ title, description, accentColor }: FeatureItemProps) {
       <h4
         className="text-lg font-semibold mb-2 tracking-tight"
         style={{ fontFamily: "var(--font-display)" }}
-      >        {title}
+      >
+        {title}
       </h4>
       <p
         className="text-sm leading-relaxed"
@@ -42,7 +43,9 @@ function FeatureItem({ title, description, accentColor }: FeatureItemProps) {
 export default function SystemsPage() {
   return (
     <div className="relative">
-      {/* ═══ HEADER ═══ */}
+      {/* ════════════════════════════════════════════
+          HEADER
+      ════════════════════════════════════════════ */}
       <section className="pt-32 sm:pt-40 pb-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.span
@@ -56,7 +59,8 @@ export default function SystemsPage() {
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}            transition={{ duration: 1, delay: 0.2, ease }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2, ease }}
             className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[0.95] glass-text-glow"
             style={{ fontFamily: "var(--font-display)" }}
           >
@@ -78,14 +82,17 @@ export default function SystemsPage() {
         </div>
       </section>
 
-      {/* ═══ TARTARY OS — Cinematic Content Creation ═══ */}
+      {/* ════════════════════════════════════════════
+          TARTARY OS — Cinematic Content Creation
+      ════════════════════════════════════════════ */}
       <section id="tartary-os" className="px-6 pb-32 scroll-mt-32">
         <div className="max-w-6xl mx-auto">
           <motion.div
             {...fadeUp}
             transition={{ duration: 1, ease }}
             className="glass-panel relative overflow-hidden p-10 sm:p-14 mb-10"
-          >            {/* Background accent */}
+          >
+            {/* Background accent */}
             <div
               className="absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-10"
               style={{ background: "var(--color-accent-primary)" }}
@@ -114,7 +121,8 @@ export default function SystemsPage() {
                       height="16"
                       rx="3"
                       stroke="currentColor"
-                      strokeWidth="1.5"                    />
+                      strokeWidth="1.5"
+                    />
                     <path
                       d="M13 11L20 14.5L13 18V11Z"
                       fill="currentColor"
@@ -143,6 +151,7 @@ export default function SystemsPage() {
                   </h2>
                 </div>
               </div>
+
               <p
                 className="text-xl leading-relaxed max-w-3xl mb-4"
                 style={{ color: "var(--color-text-secondary)" }}
@@ -171,7 +180,8 @@ export default function SystemsPage() {
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             <FeatureItem
-              title="Spatial Direction"              description="Use hand gestures and gaze to compose shots, place cameras, and direct actors in volumetric space."
+              title="Spatial Direction"
+              description="Use hand gestures and gaze to compose shots, place cameras, and direct actors in volumetric space."
               accentColor="var(--color-accent-primary)"
             />
             <FeatureItem
@@ -199,7 +209,8 @@ export default function SystemsPage() {
               description="Render to Apple Immersive Video, stereoscopic 3D, or flat cinema formats. One project, every screen."
               accentColor="var(--color-accent-primary)"
             />
-          </motion.div>        </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Divider */}
@@ -210,7 +221,9 @@ export default function SystemsPage() {
         />
       </div>
 
-      {/* ═══ MUDFLOOD — Game Creation ═══ */}
+      {/* ════════════════════════════════════════════
+          MUDFLOOD — Game Creation
+      ════════════════════════════════════════════ */}
       <section id="mudflood" className="px-6 py-32 scroll-mt-32">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -227,7 +240,8 @@ export default function SystemsPage() {
             <div className="relative z-10">
               <div className="flex items-center gap-4 mb-8">
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center"                  style={{
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{
                     background: "oklch(0.7 0.18 290 / 0.12)",
                     border: "1px solid oklch(0.7 0.18 290 / 0.2)",
                   }}
@@ -256,7 +270,8 @@ export default function SystemsPage() {
                       strokeWidth="1.5"
                     />
                     <path
-                      d="M16 15L7 10"                      stroke="currentColor"
+                      d="M16 15L7 10"
+                      stroke="currentColor"
                       strokeWidth="1.5"
                     />
                   </svg>
@@ -284,7 +299,8 @@ export default function SystemsPage() {
                 AI-powered spatial game creation for visionOS. Build
                 interactive worlds, design game mechanics, and playtest — all
                 in the space around you.
-              </p>              <p
+              </p>
+              <p
                 className="text-base leading-relaxed max-w-3xl"
                 style={{ color: "var(--color-text-muted)" }}
               >
@@ -312,7 +328,8 @@ export default function SystemsPage() {
               title="Spatial World Building"
               description="Sculpt terrain, place objects, and design environments using hand gestures in your physical space."
               accentColor="var(--color-accent-violet)"
-            />            <FeatureItem
+            />
+            <FeatureItem
               title="Procedural Generation"
               description="AI-driven procedural systems for terrain, vegetation, architecture, and NPC behavior that evolve with your design intent."
               accentColor="var(--color-accent-violet)"
@@ -336,11 +353,14 @@ export default function SystemsPage() {
         </div>
       </section>
 
-      {/* ═══ BOTTOM CTA ═══ */}
+      {/* ════════════════════════════════════════════
+          BOTTOM CTA
+      ════════════════════════════════════════════ */}
       <section className="px-6 pb-32">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            {...fadeUp}            transition={{ duration: 1, ease }}
+            {...fadeUp}
+            transition={{ duration: 1, ease }}
             className="glass-panel p-12 sm:p-16"
           >
             <h3
@@ -368,7 +388,8 @@ export default function SystemsPage() {
                 }}
               >
                 Get in Touch
-              </Link>              <Link
+              </Link>
+              <Link
                 href="/work"
                 className="glass-panel glass-panel-hover inline-flex items-center px-7 py-3.5 rounded-full text-sm font-semibold"
                 style={{ color: "var(--color-text-secondary)" }}
@@ -396,7 +417,8 @@ export default function SystemsPage() {
               <Link
                 href="/contact"
                 className="hover:text-white/60 transition-colors"
-              >                Contact
+              >
+                Contact
               </Link>
               <a
                 href="https://twitter.com/tartary"
