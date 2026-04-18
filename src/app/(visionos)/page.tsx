@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Text,
   TartaryOrnament,
-  TartarySidebar,
+  ProductCarousel,
   VisionEnvironment,
 } from "@/components/vision";
 import { ShimmerButton } from "@/components/magicui/ShimmerButton";
@@ -20,43 +20,43 @@ export default function HomePage() {
       </div>
 
       {/* ── Main spatial layout ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-5xl xl:max-w-6xl mx-auto">
-        {/* Wordmark above the window */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-6xl xl:max-w-7xl mx-auto">
+        {/* Wordmark above the carousel */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.1, ease }}
-          className="mb-6 text-center"
+          className="mb-2 text-center"
         >
           <h1
-            className="text-2xl sm:text-3xl font-bold tracking-[0.32em] uppercase glass-text-glow"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-[0.32em] uppercase glass-text-glow"
             style={{ fontFamily: "var(--font-display)" }}
           >
             TARTARY
           </h1>
-          <Text size="caption1" variant="tertiary" as="p" className="mt-1 tracking-widest uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+          <Text size="caption1" variant="tertiary" as="p" className="mt-2 tracking-widest uppercase" style={{ fontFamily: "var(--font-mono)" }}>
             Sovereign AI Conglomerate
           </Text>
         </motion.div>
 
-        {/* Main window — Finder-style Sidebar */}
+        {/* ── 3D Product Carousel ── */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.3, ease }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: 0.3, ease }}
           className="w-full"
         >
-          <TartarySidebar />
+          <ProductCarousel />
         </motion.div>
 
-        {/* Tagline + CTA below the window */}
+        {/* Tagline + CTA below the carousel */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.8 }}
-          className="mt-8 text-center flex flex-col items-center gap-4"
+          className="mt-4 text-center flex flex-col items-center gap-4"
         >
-          <Text size="footnote" variant="tertiary" as="p" className="max-w-md mx-auto">
+          <Text size="footnote" variant="tertiary" as="p" className="max-w-lg mx-auto">
             Spatial computing is the final canvas — where cinema, games, and reality converge.
           </Text>
           <ShimmerButton

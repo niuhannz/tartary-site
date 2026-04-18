@@ -15,3 +15,4 @@ export { WindowControls } from "./WindowControls";
 export { TartaryOrnament } from "./TartaryOrnament";
 export { TartarySidebar } from "./TartarySidebar";
 export { VisionEnvironment } from "./VisionEnvironment";
+export { ProductCarousel } from "./ProductCarousel";
