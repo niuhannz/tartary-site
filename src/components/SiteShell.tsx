@@ -2,9 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import Navigation from './Navigation';
-import Footer from './Footer';
-import VisionCursor from './VisionCursor';
-import GlassOrnament from './GlassOrnament';
 
 const MINIMAL_ROUTES = ['/login', '/gate'];
 
@@ -18,11 +15,8 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <VisionCursor />
       <Navigation />
-      <GlassOrnament />
       <main className="min-h-screen">{children}</main>
-      <Footer />
     </>
   );
 }
