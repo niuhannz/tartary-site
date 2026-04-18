@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import GlassCurtain from "@/components/GlassCurtain";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body className="grain antialiased min-h-screen">
-        <GlassCurtain />
+
         {children}
       </body>
     </html>
