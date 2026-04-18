@@ -5,16 +5,19 @@ import { cn } from "@/lib/utils";
 
 /* ═══════════════════════════════════════════════════
    WindowControls — visionOS window chrome
-   Close button (pill) + grabber bar, positioned at
-   the bottom of a window panel.
+
+   Close button (pill) + grabber bar. The grabber bar
+   can be connected to Framer Motion drag controls via
+   onStartDrag, enabling OS-like window dragging.
    ═══════════════════════════════════════════════════ */
 
 interface WindowControlsProps {
   onClose?: () => void;
+  onStartDrag?: (e: React.PointerEvent) => void;
   className?: string;
 }
 
-export function WindowControls({ onClose, className }: WindowControlsProps) {
+export function WindowControls({ onClose, onStartDrag, className }: WindowControlsProps) {
   return (
     <motion.div
       className={cn(
@@ -58,11 +61,15 @@ export function WindowControls({ onClose, className }: WindowControlsProps) {
           </svg>
         </span>
       </button>
+
+      {/* Grab bar — triggers window drag when connected */}
       <div
+        onPointerDown={onStartDrag}
         className={cn(
           "relative h-3.5 w-[136px] rounded-[100px] bg-white/30 backdrop-blur-[20px]",
           "transition-all duration-300",
-          "peer-hover/close-btn:ml-[10px] peer-hover/close-btn:w-[126px] peer-hover/close-btn:bg-white/50"
+          "peer-hover/close-btn:ml-[10px] peer-hover/close-btn:w-[126px] peer-hover/close-btn:bg-white/50",
+          onStartDrag && "cursor-grab active:cursor-grabbing hover:bg-white/40"
         )}
         aria-hidden="true"
       />

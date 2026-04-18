@@ -7,6 +7,7 @@ import {
   TartarySidebar,
   VisionEnvironment,
 } from "@/components/vision";
+import { ShimmerButton } from "@/components/magicui/ShimmerButton";
 
 const ease = [0.23, 1, 0.32, 1];
 
@@ -48,16 +49,30 @@ export default function HomePage() {
           <TartarySidebar />
         </motion.div>
 
-        {/* Tagline below the window */}
+        {/* Tagline + CTA below the window */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.8 }}
-          className="mt-8 text-center"
+          className="mt-8 text-center flex flex-col items-center gap-4"
         >
           <Text size="footnote" variant="tertiary" as="p" className="max-w-md mx-auto">
             Spatial computing is the final canvas — where cinema, games, and reality converge.
           </Text>
+          <ShimmerButton
+            shimmerColor="#FF6600"
+            background="rgba(10, 8, 8, 0.75)"
+            shimmerDuration="3s"
+            className="text-sm font-medium tracking-wide"
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" opacity="0.6" />
+              </svg>
+              Watch Spatial Demo
+            </span>
+          </ShimmerButton>
         </motion.div>
       </div>
 
