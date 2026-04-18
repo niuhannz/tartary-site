@@ -7,10 +7,11 @@ export default function VisionOSLayout({
 }) {
   return (
     <div className="relative min-h-screen">
-      {/* Ambient background glow */}
+      {/* Ambient background glow (visible on Systems page scroll) */}
       <div className="fixed inset-0 gradient-radial-hero pointer-events-none" />
       <div className="fixed inset-0 noise-overlay pointer-events-none" />
 
+      {/* Navigation floats above everything */}
       <Navigation />
 
       <main>{children}</main>

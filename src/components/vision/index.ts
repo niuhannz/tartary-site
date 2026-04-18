@@ -11,3 +11,7 @@ export { VisionButton } from "./VisionButton";
 export type { VisionButtonProps } from "./VisionButton";
 
 export { WindowControls } from "./WindowControls";
+
+export { TartaryOrnament } from "./TartaryOrnament";
+export { TartarySidebar } from "./TartarySidebar";
+export { VisionEnvironment } from "./VisionEnvironment";
