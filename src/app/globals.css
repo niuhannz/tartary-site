@@ -134,6 +134,7 @@ body {
    VISIONOS GLASS UTILITIES (Home + Systems pages)
    ═══════════════════════════════════════════════════ */
 
+/* Legacy glass-panel kept for backward compat */
 .glass-panel {
   background: var(--color-glass-bg);
   border: 1px solid var(--color-glass-border);
@@ -172,6 +173,22 @@ body {
 
 .glass-text-glow {
   text-shadow: 0 0 80px oklch(0.75 0.15 250 / 0.3);
+}
+
+/* ── vision-ui Hoverable Effect ──
+   Adds a subtle background reveal on hover,
+   matching the visionOS spatial interaction model. */
+.vision-pro-ui-hoverable {
+  --btn-bg-translate-x: 0px;
+  --btn-bg-translate-y: 0px;
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+.vision-pro-ui-hoverable:hover {
+  transform: scale(1.02);
+}
+.vision-pro-ui-hoverable:active {
+  transform: scale(0.98);
 }
 
 /* ── Gradient Overlays ── */
