@@ -13,8 +13,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip gate if no SITE_PASSWORD is set (gate disabled)
-  const sitePassword = process.env.SITE_PASSWORD;
-  if (!sitePassword) {
+  // Hardcoded fallback ensures the gate works even if the env var
+  // fails to inline at build time (Vercel edge runtime quirk).
+  const sitePassword = process.env.SITE_PASSWORD || 'tartary2025';
+  if (sitePassword === '__DISABLED__') {
     return NextResponse.next();
   }
 

@@ -3,12 +3,9 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { password } = await request.json();
-    const sitePassword = process.env.SITE_PASSWORD;
-
-    if (!sitePassword) {
-      // Gate disabled — let through
-      return NextResponse.json({ ok: true });
-    }
+    // Hardcoded fallback mirrors middleware — ensures gate works
+    // even if the env var fails to inline at build time.
+    const sitePassword = process.env.SITE_PASSWORD || 'tartary2025';
 
     if (password !== sitePassword) {
       return NextResponse.json(
