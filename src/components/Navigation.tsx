@@ -53,19 +53,10 @@ function PillarLink({
       {/* ── Pillar Label ── */}
       <Link
         href={pillar.href}
-        className="group flex items-center gap-1.5 px-3 py-2 transition-colors duration-200"
+        className="group flex items-center px-4 py-2 transition-colors duration-200"
       >
         <span
-          className="text-[10px] tabular-nums transition-colors duration-200"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: active ? "var(--color-orange)" : "var(--color-ash)",
-          }}
-        >
-          {pillar.index}
-        </span>
-        <span
-          className="text-[11px] font-semibold tracking-[0.18em] transition-colors duration-200"
+          className="text-[13px] font-semibold tracking-[0.2em] transition-colors duration-200"
           style={{
             fontFamily: "var(--font-logo)",
             color: active ? "var(--color-bone)" : "var(--color-parchment)",
@@ -136,30 +127,12 @@ export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [clock, setClock] = useState("");
 
   /* ── Scroll listener ── */
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  /* ── Live clock ── */
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setClock(
-        now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })
-      );
-    };
-    tick();
-    const id = setInterval(tick, 10_000);
-    return () => clearInterval(id);
   }, []);
 
   return (
@@ -180,14 +153,14 @@ export default function Navigation() {
             : "1px solid transparent",
         }}
       >
-        <div className="max-w-[1400px] mx-auto px-8 h-14 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-8 h-16 flex items-center justify-between">
           {/* ── Left: Wordmark ── */}
           <Link
             href="/"
-            className="flex items-center gap-3"
+            className="flex items-center"
           >
             <span
-              className="text-sm font-bold tracking-[0.32em]"
+              className="text-lg font-bold tracking-[0.32em]"
               style={{
                 fontFamily: "var(--font-logo)",
                 color: "var(--color-bone)",
@@ -198,7 +171,7 @@ export default function Navigation() {
           </Link>
 
           {/* ── Center: Pillar Nav ── */}
-          <nav className="flex items-center gap-0.5">
+          <nav className="flex items-center gap-1">
             {pillars.map((pillar) => (
               <PillarLink
                 key={pillar.index}
@@ -211,19 +184,15 @@ export default function Navigation() {
             ))}
           </nav>
 
-          {/* ── Right: Clock + Contact ── */}
-          <div className="flex items-center gap-4">
-            <span className="t-micro flex items-center gap-2">
-              <span
-                className="w-1.5 h-1.5 rounded-full inline-block"
-                style={{ background: "var(--color-orange)" }}
-              />
-              {clock}
-            </span>
+          {/* ── Right ── */}
+          <div className="flex items-center">
             <Link
               href="/contact"
-              className="t-label link-under"
-              style={{ color: "var(--color-parchment)" }}
+              className="text-[13px] font-semibold tracking-[0.2em] transition-colors duration-200"
+              style={{
+                fontFamily: "var(--font-logo)",
+                color: "var(--color-parchment)",
+              }}
             >
               CONTACT
             </Link>
@@ -243,10 +212,10 @@ export default function Navigation() {
           borderBottom: "1px solid var(--border)",
         }}
       >
-        <div className="px-5 h-14 flex items-center justify-between">
+        <div className="px-5 h-16 flex items-center justify-between">
           <Link href="/">
             <span
-              className="text-sm font-bold tracking-[0.32em]"
+              className="text-lg font-bold tracking-[0.32em]"
               style={{
                 fontFamily: "var(--font-logo)",
                 color: "var(--color-bone)",
@@ -303,17 +272,8 @@ export default function Navigation() {
                   <Link
                     href={pillar.href}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 mb-3"
+                    className="block mb-3"
                   >
-                    <span
-                      className="text-[11px] tabular-nums"
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        color: "var(--color-orange)",
-                      }}
-                    >
-                      {pillar.index}
-                    </span>
                     <span
                       className="text-2xl font-bold tracking-[0.2em]"
                       style={{
