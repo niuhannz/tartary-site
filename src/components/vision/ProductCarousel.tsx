@@ -74,9 +74,9 @@ const products: ProductCard[] = [
     label: "World",
     eyebrow: "IP Universe",
     accentColor: "#7B68EE",
-    headline: "Five sovereign IP universes. One mythology.",
+    headline: "Two sovereign worlds. One mythology.",
     description:
-      "Commandment, XT111, Triune, Baseborn, Heavenfall — interconnected narrative worlds spanning spatial cinema, games, and print.",
+      "Heavenfall and On the Water's Margin — interconnected narrative worlds spanning spatial cinema, games, and print.",
     href: "/world",
     icon: (
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -86,11 +86,8 @@ const products: ProductCard[] = [
       </svg>
     ),
     features: [
-      { title: "Commandment", desc: "Flagship cinematic franchise" },
-      { title: "XT111", desc: "Sci-fi thriller IP" },
-      { title: "Triune", desc: "Mythology epic" },
-      { title: "Baseborn", desc: "Dark fantasy saga" },
-      { title: "Heavenfall", desc: "Cosmic horror" },
+      { title: "Heavenfall", desc: "The World of Heavenfall" },
+      { title: "On the Water's Margin", desc: "The World of On the Water's Margin" },
     ],
   },
   {

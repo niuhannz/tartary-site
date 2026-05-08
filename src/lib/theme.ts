@@ -21,11 +21,8 @@ export const pillars: Pillar[] = [
     cmdPrefix: "wld",
     href: "/world",
     subProducts: [
-      { label: "Commandment", href: "/world/commandment", description: "Flagship cinematic franchise" },
-      { label: "XT111", href: "/world/xt111", description: "Sci-fi thriller IP" },
-      { label: "Triune", href: "/world/triune", description: "Mythology epic" },
-      { label: "Baseborn", href: "/world/baseborn", description: "Dark fantasy saga" },
-      { label: "Heavenfall", href: "/world/heavenfall", description: "Cosmic horror" },
+      { label: "Heavenfall", href: "/world/heavenfall", description: "The World of Heavenfall" },
+      { label: "On the Water's Margin", href: "/world/waters-margin", description: "The World of On the Water's Margin" },
     ],
   },
   {
