@@ -70,63 +70,14 @@ interface ProductCard {
 
 const products: ProductCard[] = [
   {
-    id: "tartary-os",
-    label: "Tartary OS",
-    eyebrow: "System",
-    accentColor: "#FF6600",
-    headline: "AI-native cinematic creation for visionOS.",
-    description:
-      "Direct immersive films with spatial audio, volumetric scenes, and AI-driven cinematography — all from within Apple Vision Pro.",
-    href: "/systems",
-    icon: (
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="4" width="20" height="14" rx="3" />
-        <path d="M10 9L15 11.5L10 14V9Z" fill="currentColor" opacity="0.4" />
-        <path d="M8 22H16" />
-      </svg>
-    ),
-    features: [
-      { title: "Spatial Direction", desc: "Hand gestures + gaze for composing shots" },
-      { title: "AI Cinematography", desc: "Natural language → camera, lighting, composition" },
-      { title: "Volumetric Rendering", desc: "Real-time PBR for Vision Pro" },
-      { title: "Spatial Audio", desc: "Positional sound design" },
-      { title: "Scene Intelligence", desc: "AI continuity and transitions" },
-      { title: "Export Pipeline", desc: "Apple Immersive Video, stereo 3D, flat cinema" },
-    ],
-  },
-  {
-    id: "mudflood",
-    label: "Mudflood",
-    eyebrow: "System",
-    accentColor: "#9B59FF",
-    headline: "AI-powered spatial game creation for visionOS.",
-    description:
-      "Build interactive worlds, design game mechanics, and playtest — all in the space around you.",
-    href: "/systems#mudflood",
-    icon: (
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 8L12 4L19 8V16L12 20L5 16V8Z" />
-        <path d="M12 12V20" /><path d="M12 12L19 8" /><path d="M12 12L5 8" />
-      </svg>
-    ),
-    features: [
-      { title: "Natural Language Design", desc: "Describe worlds → playable prototypes" },
-      { title: "Spatial World Building", desc: "Sculpt with hand gestures" },
-      { title: "Procedural Generation", desc: "AI terrain, architecture, NPCs" },
-      { title: "Physics Engine", desc: "Spatial physics for mixed reality" },
-      { title: "Multiplayer", desc: "SharePlay collaborative experiences" },
-      { title: "App Store Pipeline", desc: "One-click visionOS export" },
-    ],
-  },
-  {
-    id: "commandment",
-    label: "Commandment",
-    eyebrow: "Universe",
+    id: "world",
+    label: "World",
+    eyebrow: "IP Universe",
     accentColor: "#7B68EE",
-    headline: "The flagship cinematic franchise.",
+    headline: "Five sovereign IP universes. One mythology.",
     description:
-      "An epic narrative spanning spatial cinema, interactive episodes, and immersive world-building — Tartary's anchor IP.",
-    href: "/universe/commandment",
+      "Commandment, XT111, Triune, Baseborn, Heavenfall — interconnected narrative worlds spanning spatial cinema, games, and print.",
+    href: "/world",
     icon: (
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -135,71 +86,81 @@ const products: ProductCard[] = [
       </svg>
     ),
     features: [
-      { title: "Spatial Cinema", desc: "Immersive feature-length experience" },
-      { title: "Interactive Episodes", desc: "Choose-your-path narrative arcs" },
-      { title: "World Bible", desc: "Deep lore and mythology" },
+      { title: "Commandment", desc: "Flagship cinematic franchise" },
+      { title: "XT111", desc: "Sci-fi thriller IP" },
+      { title: "Triune", desc: "Mythology epic" },
+      { title: "Baseborn", desc: "Dark fantasy saga" },
+      { title: "Heavenfall", desc: "Cosmic horror" },
     ],
   },
   {
-    id: "tartary-studio",
-    label: "Studio",
-    eyebrow: "Creative",
+    id: "films",
+    label: "Films",
+    eyebrow: "Cinema",
+    accentColor: "#FF6600",
+    headline: "Spatial cinema. Immersive production.",
+    description:
+      "From film to animation to virtual production — our studios craft immersive narratives for Vision Pro and beyond.",
+    href: "/films",
+    icon: (
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="14" rx="3" />
+        <path d="M10 9L15 11.5L10 14V9Z" fill="currentColor" opacity="0.4" />
+        <path d="M8 22H16" />
+      </svg>
+    ),
+    features: [
+      { title: "Gelatin Silver", desc: "Film production arm" },
+      { title: "Swing Gang", desc: "Virtual production unit" },
+      { title: "Niji", desc: "Animation studio" },
+      { title: "Cineschool", desc: "Film education platform" },
+    ],
+  },
+  {
+    id: "artifacts",
+    label: "Artifacts",
+    eyebrow: "Products",
     accentColor: "#E6B450",
-    headline: "World-class spatial storytelling.",
+    headline: "Tools that build worlds.",
     description:
-      "Our in-house creative studio producing immersive films, interactive narratives, and spatial experiences.",
-    href: "/studio",
+      "Creation engines, reading platforms, and publishing infrastructure — the instruments of sovereign storytelling.",
+    href: "/artifacts",
     icon: (
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
       </svg>
     ),
     features: [
-      { title: "Immersive Films", desc: "Spatial cinema for Vision Pro" },
-      { title: "Interactive Narratives", desc: "Choose-your-own spatial stories" },
-      { title: "Brand Experiences", desc: "Enterprise spatial installations" },
+      { title: "Tartary OS", desc: "Cinematic spatial operating system" },
+      { title: "Mudflood", desc: "Game creation engine for Vision Pro" },
+      { title: "Readen", desc: "Reading platform" },
+      { title: "Publishing", desc: "Books & print" },
     ],
   },
   {
-    id: "tartary-press",
-    label: "Press",
-    eyebrow: "Media",
+    id: "lab",
+    label: "Lab",
+    eyebrow: "Experimental",
     accentColor: "#4ECDC4",
-    headline: "News and updates from the frontier.",
+    headline: "Where AI meets narrative intelligence.",
     description:
-      "Coverage, announcements, and dispatches from Tartary — the sovereign AI conglomerate building the spatial future.",
-    href: "/press",
+      "Experimental AI companions, narrative engines, and interactive R&D — pushing the boundary of what stories can do.",
+    href: "/lab",
     icon: (
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2" />
-        <path d="M18 14h-8" /><path d="M15 18h-5" /><rect x="10" y="6" width="8" height="5" rx="1" />
+        <path d="M9 3h6v5l4 8H5l4-8V3z" />
+        <path d="M9 3h6" />
+        <circle cx="13" cy="14" r="1.2" fill="currentColor" opacity="0.5" />
+        <circle cx="10" cy="16" r="0.8" fill="currentColor" opacity="0.5" />
       </svg>
     ),
     features: [
-      { title: "Announcements", desc: "Product launches and updates" },
-      { title: "Coverage", desc: "Media features and interviews" },
-      { title: "Research", desc: "Technical papers and findings" },
-    ],
-  },
-  {
-    id: "tartary-civilian",
-    label: "Civilian",
-    eyebrow: "Community",
-    accentColor: "#FF6B9D",
-    headline: "Join the spatial revolution.",
-    description:
-      "Community, careers, and ways to participate in Tartary's mission to build the spatial computing future.",
-    href: "/civilian",
-    icon: (
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    ),
-    features: [
-      { title: "Community", desc: "Developer forums and events" },
-      { title: "Careers", desc: "Build the spatial future with us" },
-      { title: "Programs", desc: "Creator grants and partnerships" },
+      { title: "Lucas", desc: "Personal AI companion" },
+      { title: "Fatestack", desc: "Narrative decision engine" },
+      { title: "Invisible Friend", desc: "Ambient intelligence" },
+      { title: "Game Studio", desc: "Interactive experiences R&D" },
     ],
   },
 ];

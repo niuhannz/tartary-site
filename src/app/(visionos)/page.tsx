@@ -16,7 +16,7 @@ export default function HomePage() {
     <VisionEnvironment>
       {/* ── Ornament: floating left pillar nav ── */}
       <div className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 hidden md:block">
-        <TartaryOrnament activeHref="/systems" />
+        <TartaryOrnament activeHref="/world" />
       </div>
 
       {/* ── Main spatial layout ── */}
@@ -78,7 +78,7 @@ export default function HomePage() {
 
       {/* ── Mobile ornament (bottom bar) ── */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 md:hidden">
-        <TartaryOrnament activeHref="/systems" className="!flex-row" />
+        <TartaryOrnament activeHref="/world" className="!flex-row" />
       </div>
     </VisionEnvironment>
   );

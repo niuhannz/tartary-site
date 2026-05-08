@@ -13,12 +13,12 @@ import { MotionView } from "./View";
    TartaryOrnament — visionOS-style floating tab bar
 
    A collapsed pill on the left that expands on hover
-   to reveal the 5 Tartary pillars. Each tab links to
+   to reveal the 4 Tartary pillars. Each tab links to
    its respective section/page.
    ═══════════════════════════════════════════════════ */
 
 interface OrnamentTab {
-  index: string;   // "01" – "05"
+  index: string;   // "01" – "04"
   label: string;
   href: string;
   icon: React.ReactNode;
@@ -42,52 +42,44 @@ const ORNAMENT_VARIANTS = {
 };
 
 /* ── Pillar Icons (simple SVGs) ── */
-const UniverseIcon = () => (
+const WorldIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
-    <ellipse cx="12" cy="12" rx="10" ry="4" />
-    <line x1="12" y1="2" x2="12" y2="22" />
+    <path d="M2 12h20" />
+    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
   </svg>
 );
 
-const SystemIcon = () => (
+const FilmsIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="4" width="20" height="14" rx="3" />
-    <path d="M10 10L15 12.5L10 15V10Z" fill="currentColor" opacity="0.5" />
+    <path d="M10 9L15 11.5L10 14V9Z" fill="currentColor" opacity="0.4" />
     <path d="M8 22H16" />
   </svg>
 );
 
-const StudioIcon = () => (
+const ArtifactsIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 8V4h16v4" />
-    <path d="M4 16v4h16v-4" />
-    <rect x="7" y="8" width="10" height="8" rx="1" />
+    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+    <path d="M2 17l10 5 10-5" />
+    <path d="M2 12l10 5 10-5" />
   </svg>
 );
 
-const PressIcon = () => (
+const LabIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 4h16v16H4z" />
-    <path d="M8 8h8" />
-    <path d="M8 12h8" />
-    <path d="M8 16h4" />
-  </svg>
-);
-
-const CivilianIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4" />
-    <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+    <path d="M9 3h6v5l4 8H5l4-8V3z" />
+    <path d="M9 3h6" />
+    <circle cx="13" cy="14" r="1" fill="currentColor" opacity="0.5" />
+    <circle cx="10" cy="16" r="0.7" fill="currentColor" opacity="0.5" />
   </svg>
 );
 
 const TABS: OrnamentTab[] = [
-  { index: "01", label: "Universe",  href: "/universe",  icon: <UniverseIcon /> },
-  { index: "02", label: "System",    href: "/systems",   icon: <SystemIcon /> },
-  { index: "03", label: "Studio",    href: "/studio",    icon: <StudioIcon /> },
-  { index: "04", label: "Press",     href: "/press",     icon: <PressIcon /> },
-  { index: "05", label: "Civilian",  href: "/civilian",  icon: <CivilianIcon /> },
+  { index: "01", label: "World",     href: "/world",     icon: <WorldIcon /> },
+  { index: "02", label: "Films",     href: "/films",     icon: <FilmsIcon /> },
+  { index: "03", label: "Artifacts", href: "/artifacts",  icon: <ArtifactsIcon /> },
+  { index: "04", label: "Lab",       href: "/lab",       icon: <LabIcon /> },
 ];
 
 interface TartaryOrnamentProps {
