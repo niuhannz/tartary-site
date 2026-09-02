@@ -72,7 +72,19 @@ function seedFromId(id: string): number {
     h = (h ^ id.charCodeAt(i)) >>> 0;
     h = (h * 16777619) >>> 0;
   }
-  return ((h % 10000) + 10000) % 10000;
+  return (((h % 100000) + 100000) % 100000) / 100000; // [0,1)
+}
+
+/* winding river centerline (horizontal, flows along local X, winds in local Y) */
+function riverCenterY(x: number, size: number, seed: number): number {
+  const f1 = 1.8 / size;
+  const f2 = 4.3 / size;
+  const f3 = 9.5 / size;
+  return (
+    Math.sin(f1 * x + seed * 40.0) * size * 0.3 +
+    Math.sin(f2 * x + seed * 61.0) * size * 0.11 +
+    Math.sin(f3 * x + seed * 87.0) * size * 0.045
+  );
 }
 
 /* ── canvas label texture ── */
@@ -102,6 +114,59 @@ function makeLabelTexture(text: string, glowColor: string): THREE.CanvasTexture 
   return tex;
 }
 
+/* ── river ribbon: flat water strip following riverCenterY ── */
+function buildRiverRibbon(
+  size: number,
+  seed: number,
+  water: THREE.Color,
+  level: number,
+  width: number
+): THREE.Mesh {
+  const half = size * 0.88;
+  const n = 48;
+  const positions = new Float32Array((n + 1) * 2 * 3);
+  const indices: number[] = [];
+  for (let i = 0; i <= n; i++) {
+    const x = -half + (i / n) * 2 * half;
+    const cy = riverCenterY(x, size, seed);
+    const d = 0.0001;
+    const ty = (riverCenterY(x + d, size, seed) - cy) / d;
+    const len = Math.hypot(1, ty);
+    const nx = -ty / len;
+    const ny = 1 / len;
+    const j = i * 6;
+    positions[j] = x + nx * width;
+    positions[j + 1] = cy + ny * width;
+    positions[j + 2] = level;
+    positions[j + 3] = x - nx * width;
+    positions[j + 4] = cy - ny * width;
+    positions[j + 5] = level;
+    if (i < n) {
+      const a = i * 2;
+      const b = i * 2 + 1;
+      const c = i * 2 + 2;
+      const dd = i * 2 + 3;
+      indices.push(a, c, b, b, c, dd);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({
+    color: water,
+    roughness: 0.06,
+    metalness: 0.55,
+    transparent: true,
+    opacity: 0.92,
+    emissive: water,
+    emissiveIntensity: 0.08,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  return mesh;
+}
+
 /* ── terrain builder: real heightmap with vertex colors ── */
 function buildTerrain(
   marker: UniverseMarker,
@@ -113,9 +178,9 @@ function buildTerrain(
 ): THREE.Group {
   const g = new THREE.Group();
   const { terrain } = marker;
-  const seed = seedFromId(marker.id);
-  const ox = seed * 7.31;
-  const oy = seed * 13.7;
+  const seed = seedFromId(marker.id); // [0,1)
+  const ox = seed * 100;
+  const oy = seed * 173;
 
   const seg = 56;
   const half = size * 0.88; // terrain radius (within plinth r = 0.95*size)
@@ -128,18 +193,53 @@ function buildTerrain(
   const sand = new THREE.Color(0xc2a877);
   const grass = new THREE.Color(0x3a5a3a);
   const deepWater = new THREE.Color(0x06141a);
+  const riverWater = new THREE.Color(0x2a6a75); // teal river water for mountains / plains
 
   /* per-terrain params */
-  const cfg = (() => {
+  type TerrainCfg = {
+    amp: number;
+    freq: number;
+    flat: boolean;
+    water: boolean;
+    contrast: number;
+    dome: number;
+    tilt?: number;
+    river?: { width: number; level: number };
+  };
+  const cfg: TerrainCfg = (() => {
     switch (terrain) {
       case "mountains":
-        return { amp: size * 0.72, freq: 1.25, flat: true, water: false, contrast: 1.35, dome: 0.35 };
+        return {
+          amp: size * 0.72,
+          freq: 1.25,
+          flat: true,
+          water: false,
+          contrast: 1.35,
+          dome: 0.35,
+          river: { width: size * 0.06, level: -size * 0.055 },
+        };
       case "plains":
-        return { amp: size * 0.1, freq: 0.9, flat: false, water: false, contrast: 1.0, dome: 0.0 };
+        return {
+          amp: size * 0.1,
+          freq: 0.9,
+          flat: false,
+          water: false,
+          contrast: 1.0,
+          dome: 0.0,
+          river: { width: size * 0.09, level: -size * 0.02 },
+        };
       case "marsh":
         return { amp: size * 0.05, freq: 1.1, flat: false, water: true, contrast: 1.0, dome: 0.0 };
       case "coast":
-        return { amp: size * 0.26, freq: 1.0, flat: true, water: true, contrast: 1.1, dome: 0.0, tilt: 0.42 };
+        return {
+          amp: size * 0.26,
+          freq: 1.0,
+          flat: true,
+          water: true,
+          contrast: 1.1,
+          dome: 0.0,
+          tilt: 0.42,
+        };
       case "city":
         return { amp: size * 0.02, freq: 0.8, flat: false, water: false, contrast: 1.0, dome: 0.0 };
     }
@@ -179,6 +279,19 @@ function buildTerrain(
     // city: keep very flat
     if (terrain === "city") disp *= 0.6;
 
+    // carve the winding river channel into mountains / plains
+    if (cfg.river) {
+      const cy = riverCenterY(lx, size, seed);
+      const distRiver = Math.abs(ly - cy);
+      const rim = cfg.river.width * 1.8;
+      if (distRiver < rim) {
+        const t = THREE.MathUtils.clamp(distRiver / rim, 0, 1);
+        const floor = cfg.river.level - size * 0.014; // slightly below the water plane
+        const valley = mix(floor, disp, smooth01(t));
+        disp = Math.min(disp, valley);
+      }
+    }
+
     pos.setZ(i, disp);
 
     /* color by elevation + position */
@@ -203,6 +316,11 @@ function buildTerrain(
       // city ground
       c.copy(base).lerp(ridge, 0.25);
     }
+    // river: tint the submerged channel floor toward water
+    if (cfg.river && disp < cfg.river.level) {
+      c.lerp(riverWater, 0.6);
+    }
+
     // edge tint toward plinth dark
     c.lerp(new THREE.Color(0x0a0908), Math.max(0, (rNorm - 0.7) / 0.3) * 0.7);
 
@@ -224,6 +342,11 @@ function buildTerrain(
   const terrainMesh = new THREE.Mesh(plane, mat);
   terrainMesh.rotation.x = -Math.PI / 2; // lie flat in XZ
   g.add(terrainMesh);
+
+  /* winding river (mountains / plains) */
+  if (cfg.river) {
+    g.add(buildRiverRibbon(size, seed, riverWater, cfg.river.level, cfg.river.width));
+  }
 
   /* water plane for marsh / coast */
   if (cfg.water) {
@@ -426,7 +549,7 @@ function buildDiorama(marker: UniverseMarker) {
     marker,
     beacon,
     baseY: 0,
-    phase: (seedFromId(marker.id) % 1000) / 1000 * Math.PI * 2,
+    phase: seedFromId(marker.id) * Math.PI * 2,
   };
 
   return { group, hit, beacon, label, labelTex, glow };
