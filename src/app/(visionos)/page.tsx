@@ -7,28 +7,6 @@ const ease = [0.23, 1, 0.32, 1] as const;
 export default function HomePage() {
   return (
     <div className="relative w-full h-screen overflow-hidden" style={{ background: "#0A0808" }}>
-      {/* ── Fullscreen Video ── */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        poster="/hero-poster.jpg"
-      >
-        {/* Replace src when video is ready */}
-        <source src="/hero.mp4" type="video/mp4" />
-      </video>
-
-      {/* ── Gradient overlay for readability ── */}
-      <div
-        className="absolute inset-0 z-[1]"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(10,8,8,0.4) 0%, rgba(10,8,8,0.1) 40%, rgba(10,8,8,0.3) 70%, rgba(10,8,8,0.8) 100%)",
-        }}
-      />
-
       {/* ── Center wordmark ── */}
       <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center">
         <motion.h1
