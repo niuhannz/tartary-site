@@ -27,6 +27,13 @@ export default function UniverseExplorer() {
 
   useEffect(() => {
     setWebgl(supportsWebGL());
+    // optional deep-link: /universe?focus=<id> flies straight to that world
+    const q = new URLSearchParams(window.location.search);
+    const f = q.get("focus") ?? q.get("w");
+    if (f) {
+      const m = universeMarkers.find((x) => x.id === f);
+      if (m) setSelected(m);
+    }
   }, []);
 
   const handleSelect = useCallback((m: UniverseMarker) => {

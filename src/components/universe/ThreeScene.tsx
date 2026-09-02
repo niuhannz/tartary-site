@@ -40,6 +40,10 @@ function hash2(x: number, y: number): number {
 }
 const smooth01 = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+/* tiny THREE.Color helpers (non-mutating) */
+const shadeOf = (c: THREE.Color, f: number) => new THREE.Color(c.r * f, c.g * f, c.b * f);
+const blendOf = (a: THREE.Color, b: THREE.Color, t: number) => new THREE.Color().lerpColors(a, b, t);
+const hexOf = (c: THREE.Color) => `#${c.getHexString()}`;
 function valueNoise2(x: number, y: number): number {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
@@ -242,6 +246,157 @@ function makeLabelTexture(text: string, glowColor: string): THREE.CanvasTexture 
   return tex;
 }
 
+/* ── procedural city street-grid texture (satellite urban fabric) ──
+   Draws a Manhattan-style grid with concrete blocks, dark asphalt streets,
+   occasional park/plaza blocks, and a couple of diagonal boulevards.
+   Emissive map lights up the major avenues so the city reads at night. */
+function makeCityTexture(
+  seed: number,
+  glow: THREE.Color,
+  blockHex = "#4b4f57",
+  streetHex = "#1d1f26"
+): { map: THREE.CanvasTexture; emissiveMap: THREE.CanvasTexture } {
+  const S = 512;
+  const rand = mulberry32((seed * 2654435761) >>> 0);
+  const cx = S / 2;
+  const cy = S / 2;
+  const R = S * 0.46;
+  const darken = (hex: string, f: number) => {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, Math.floor(((n >> 16) & 255) * f));
+    const g = Math.min(255, Math.floor(((n >> 8) & 255) * f));
+    const b = Math.min(255, Math.floor((n & 255) * f));
+    return `rgb(${r},${g},${b})`;
+  };
+
+  const canvas = (): { c: HTMLCanvasElement; ctx: CanvasRenderingContext2D } => {
+    const c = document.createElement("canvas");
+    c.width = S;
+    c.height = S;
+    return { c, ctx: c.getContext("2d")! };
+  };
+  const col = canvas();
+  const gl = canvas();
+
+  const clip = (ctx: CanvasRenderingContext2D) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+  };
+  // soften the island rim: fade alpha to 0 toward the edge of the circle
+  const fade = (ctx: CanvasRenderingContext2D) => {
+    const g = ctx.createRadialGradient(cx, cy, R * 0.8, cx, cy, R);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+    ctx.globalCompositeOperation = "source-over";
+  };
+
+  /* street line positions (minor grid, slightly jittered) */
+  const minor = 24;
+  const majorEvery = 5;
+  const base: number[] = [];
+  for (let p = -R; p <= R; p += minor) base.push(p);
+  const xs = base.map((p) => p + (rand() - 0.5) * minor * 0.22);
+  const ys = base.map((p) => p + (rand() - 0.5) * minor * 0.22);
+  const majorXs = xs.filter((_, i) => i % majorEvery === 0);
+  const majorYs = ys.filter((_, i) => i % majorEvery === 0);
+
+  /* diagonal boulevards (shared between albedo & emissive passes) */
+  const boulevards: { dx: number; dy: number; sx: number; sy: number }[] = [];
+  for (let k = 0; k < 2; k++) {
+    const a = rand() * Math.PI - Math.PI / 2;
+    const off = (rand() - 0.5) * R * 0.8;
+    const dx = Math.cos(a);
+    const dy = Math.sin(a);
+    boulevards.push({ dx, dy, sx: cx - dy * off, sy: cy + dx * off });
+  }
+
+  /* ── albedo: concrete blocks + dark streets ── */
+  col.ctx.save();
+  clip(col.ctx);
+  col.ctx.fillStyle = blockHex;
+  col.ctx.fillRect(0, 0, S, S);
+
+  // rooftop grain — translucent speckles that keep the world tint underneath
+  for (let gy = -R; gy < R; gy += 4) {
+    for (let gx = -R; gx < R; gx += 4) {
+      const t = rand();
+      col.ctx.fillStyle =
+        t < 0.5
+          ? `rgba(255,255,255,${(0.03 + t * 0.12).toFixed(3)})`
+          : `rgba(0,0,0,${(0.05 + (t - 0.5) * 0.28).toFixed(3)})`;
+      col.ctx.fillRect(cx + gx, cy + gy, 3, 3);
+    }
+  }
+
+  // occasional parks (green) & plazas (tan)
+  for (let i = 0; i < xs.length - 1; i++) {
+    for (let j = 0; j < ys.length - 1; j++) {
+      if (rand() > 0.055) continue;
+      col.ctx.fillStyle =
+        rand() < 0.6 ? "rgba(56,82,50,0.85)" : "rgba(122,110,88,0.8)";
+      col.ctx.fillRect(
+        cx + xs[i],
+        cy + ys[j],
+        xs[i + 1] - xs[i],
+        ys[j + 1] - ys[j]
+      );
+    }
+  }
+
+  // minor streets
+  col.ctx.fillStyle = streetHex;
+  for (const p of xs) col.ctx.fillRect(cx + p - 0.8, cy - R, 1.6, 2 * R);
+  for (const p of ys) col.ctx.fillRect(cx - R, cy + p - 0.8, 2 * R, 1.6);
+
+  // major avenues
+  col.ctx.fillStyle = darken(streetHex, 0.8);
+  for (const p of majorXs) col.ctx.fillRect(cx + p - 1.8, cy - R, 3.6, 2 * R);
+  for (const p of majorYs) col.ctx.fillRect(cx - R, cy + p - 1.8, 2 * R, 3.6);
+
+  // diagonal boulevards
+  col.ctx.strokeStyle = darken(streetHex, 0.88);
+  col.ctx.lineWidth = 5;
+  for (const b of boulevards) {
+    col.ctx.beginPath();
+    col.ctx.moveTo(b.sx - b.dx * R * 1.5, b.sy - b.dy * R * 1.5);
+    col.ctx.lineTo(b.sx + b.dx * R * 1.5, b.sy + b.dy * R * 1.5);
+    col.ctx.stroke();
+  }
+  col.ctx.restore();
+  fade(col.ctx);
+
+  /* ── emissive: glowing avenues only ── */
+  gl.ctx.save();
+  clip(gl.ctx);
+  gl.ctx.clearRect(0, 0, S, S);
+  gl.ctx.fillStyle = "#ffffff";
+  for (const p of majorXs) gl.ctx.fillRect(cx + p - 1.2, cy - R, 2.4, 2 * R);
+  for (const p of majorYs) gl.ctx.fillRect(cx - R, cy + p - 1.2, 2 * R, 2.4);
+  gl.ctx.strokeStyle = "#ffffff";
+  gl.ctx.lineWidth = 3;
+  for (const b of boulevards) {
+    gl.ctx.beginPath();
+    gl.ctx.moveTo(b.sx - b.dx * R * 1.5, b.sy - b.dy * R * 1.5);
+    gl.ctx.lineTo(b.sx + b.dx * R * 1.5, b.sy + b.dy * R * 1.5);
+    gl.ctx.stroke();
+  }
+  gl.ctx.restore();
+  fade(gl.ctx);
+
+  const map = new THREE.CanvasTexture(col.c);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.minFilter = THREE.LinearFilter;
+  const emissiveMap = new THREE.CanvasTexture(gl.c);
+  emissiveMap.colorSpace = THREE.SRGBColorSpace;
+  emissiveMap.minFilter = THREE.LinearFilter;
+
+  return { map, emissiveMap };
+}
+
 /* ── river ribbon: flat water strip following riverCenterY ── */
 function buildRiverRibbon(
   size: number,
@@ -295,6 +450,80 @@ function buildRiverRibbon(
   return mesh;
 }
 
+/* ── smooth water-sheet textures (replace stacked colored discs) ── */
+/* coast: horizontal gradient along U — transparent over land (left),
+   then shoreline foam → shallow → deep open water; alpha fades at both rims */
+function makeSeaSheetTexture(
+  shoreHex: string,
+  shallowHex: string,
+  deepHex: string
+): THREE.CanvasTexture {
+  const S = 512;
+  const c = document.createElement("canvas");
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, S, 0);
+  // horizontal color ramp: land → shoreline foam → shallow → deep open water
+  g.addColorStop(0.0, "#000000");
+  g.addColorStop(0.32, "#000000");
+  g.addColorStop(0.4, shoreHex);
+  g.addColorStop(0.52, shallowHex);
+  g.addColorStop(0.72, deepHex);
+  g.addColorStop(0.94, deepHex);
+  g.addColorStop(1.0, deepHex);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  // bake alpha channel along U
+  const ag = ctx.createLinearGradient(0, 0, S, 0);
+  ag.addColorStop(0, "rgba(0,0,0,0)");
+  ag.addColorStop(0.32, "rgba(0,0,0,0)");
+  ag.addColorStop(0.4, "rgba(0,0,0,0.2)");
+  ag.addColorStop(0.52, "rgba(0,0,0,0.9)");
+  ag.addColorStop(0.72, "rgba(0,0,0,1)");
+  ag.addColorStop(0.94, "rgba(0,0,0,1)");
+  ag.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = ag;
+  ctx.fillRect(0, 0, S, S);
+  ctx.globalCompositeOperation = "source-over";
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  return tex;
+}
+
+/* marsh: radial lagoon — deep at the middle, murky-shallow + transparent at the rim */
+function makeLagoonTexture(deepHex: string, shallowHex: string): THREE.CanvasTexture {
+  const S = 512;
+  const c = document.createElement("canvas");
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext("2d")!;
+  const r = S * 0.5;
+  const g = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, r);
+  g.addColorStop(0, deepHex);
+  g.addColorStop(0.55, deepHex);
+  g.addColorStop(0.8, shallowHex);
+  g.addColorStop(0.95, shallowHex);
+  g.addColorStop(1, shallowHex);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  // bake alpha: fully opaque core → transparent rim
+  const ag = ctx.createRadialGradient(S / 2, S / 2, r * 0.55, S / 2, S / 2, r);
+  ag.addColorStop(0, "rgba(0,0,0,1)");
+  ag.addColorStop(0.85, "rgba(0,0,0,0.92)");
+  ag.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = ag;
+  ctx.fillRect(0, 0, S, S);
+  ctx.globalCompositeOperation = "source-over";
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  return tex;
+}
+
 /* ── terrain builder: real heightmap with vertex colors ── */
 function buildTerrain(
   marker: UniverseMarker,
@@ -318,14 +547,26 @@ function buildTerrain(
   const v = new THREE.Vector3();
   const nrm = new THREE.Vector3();
   const c = new THREE.Color();
-  // satellite-style palette: forest / grass / dry grass / rock / sand / snow / water
+  // satellite-style palette: forest / grass / dry grass / rock / snow / river
   const snow = new THREE.Color(0xeef3f6);
-  const sand = new THREE.Color(0xc7b083);
   const grass = new THREE.Color(0x6a8a44);        // medium grass green
   const forest = new THREE.Color(0x2f4d2f);       // deep dark forest green
   const dryGrass = new THREE.Color(0xa8975a);     // tan / dry grass
   const rock = new THREE.Color(0x6c6356);         // warm grey-brown rock
   const riverWater = new THREE.Color(0x2a6a75);
+  /* palette-identity tones — coast & marsh & city take their look from the
+     marker's own palette so each world reads as one coherent satellite */
+  // coast sea gradient (shoreline foam → shallow → deep) tinted by water/ridge
+  const seaShore = blendOf(water, ridge, 0.85);
+  const seaShallow = blendOf(water, ridge, 0.5);
+  const seaDeep = shadeOf(water, 0.9);
+  const landLow = shadeOf(ridge, 0.3);            // low dark soil
+  const landHigh = shadeOf(ridge, 0.66);          // higher dry ground
+  // marsh lagoon (deep palette water → minty shallow) + hummock vegetation
+  const lagoonDeep = water.clone();
+  const lagoonShallow = blendOf(water, ridge, 0.5);
+  const hummockLo = blendOf(water, ridge, 0.3);
+  const hummockHi = blendOf(water, ridge, 0.62);
 
   /* per-terrain params */
   type TerrainCfg = {
@@ -415,21 +656,41 @@ function buildTerrain(
     heights[i] = disp;
   }
 
-  /* hydraulic erosion — carve dendritic valleys into mountains / plains */
+  /* hydraulic erosion — carve dendritic valleys into mountains / plains,
+     and soften marsh hummocks + coast gullies (lighter touch) */
   let finalHeights: Float32Array = heights;
-  if (terrain === "mountains" || terrain === "plains") {
+  if (
+    terrain === "mountains" ||
+    terrain === "plains" ||
+    terrain === "marsh" ||
+    terrain === "coast"
+  ) {
+    const gentle = terrain === "marsh" || terrain === "coast";
+    const iters =
+      terrain === "mountains" ? 9000 : terrain === "plains" ? 6000 : terrain === "marsh" ? 2600 : 3600;
     finalHeights = hydraulicErosion(heights, seg + 1, {
       seed,
-      iterations: terrain === "mountains" ? 9000 : 6000,
+      iterations: iters,
       inertia: 0.05,
-      capacity: 2.5,
+      capacity: gentle ? 2.1 : 2.5,
       minSlope: 0.01,
-      erodeRate: 0.18,
+      erodeRate: gentle ? 0.13 : 0.18,
       depositRate: 0.3,
       evaporation: 0.02,
       gravity: 4.0,
       lifetime: 35,
     });
+    // keep the coast silhouette stable after erosion (right side stays below sea level)
+    if (terrain === "coast") {
+      const waterLevel = -size * 0.08;
+      for (let i = 0; i < finalHeights.length; i++) {
+        const tilt = pos.getX(i) / half;
+        if (tilt > 0.05) {
+          const cap = waterLevel + (tilt - 0.05) * size * 0.15;
+          if (finalHeights[i] > cap) finalHeights[i] = cap;
+        }
+      }
+    }
   }
 
   /* pass 2: write (possibly eroded) heights, then carve river on top */
@@ -485,17 +746,30 @@ function buildTerrain(
       // gentle grass/forest mix with tan low-lying patches
       c.copy(dryGrass).lerp(grass, smooth01(moist) * 0.9 + hN * 0.2);
       c.lerp(forest, Math.max(0, moist - 0.6) * 1.5);
+      // lush green corridor hugging the river
+      if (cfg.river) {
+        const cyr = riverCenterY(lx, size, seed);
+        const dRiv = Math.abs(ly - cyr);
+        const corr = cfg.river.width * 4.5;
+        if (dRiv < corr) c.lerp(grass, smooth01(1 - dRiv / corr) * 0.55);
+      }
     } else if (terrain === "marsh") {
-      // dark wet ground with some green
-      c.copy(forest).lerp(grass, 0.5);
-      c.lerp(rock, slope * 0.3);
+      // vegetated hummocks rising from the lagoon; muddy where steep
+      c.copy(hummockLo).lerp(hummockHi, smooth01(moist));
+      c.lerp(shadeOf(hummockLo, 0.55), slope * 0.6);
     } else if (terrain === "coast") {
-      if (v.z < -size * 0.04) c.copy(water);
-      else if (v.z < size * 0.02) c.lerpColors(sand, grass, (v.z + size * 0.04) / (size * 0.06));
-      else c.copy(grass).lerp(ridge, Math.min(1, (v.z - size * 0.02) / (size * 0.2)));
+      if (v.z < -size * 0.04) c.copy(seaDeep);
+      else if (v.z < size * 0.02) {
+        const tB = (v.z + size * 0.04) / (size * 0.06);
+        c.lerpColors(seaShore, seaShallow, smooth01(tB));
+      } else {
+        const tt = Math.min(1, (v.z - size * 0.02) / (size * 0.16));
+        c.copy(landLow).lerp(landHigh, smooth01(tt));
+        c.lerp(ridge, slope * 0.5); // rocky faces catch the ridge light
+      }
     } else {
-      // city: urban ground with some green
-      c.copy(grass).lerp(rock, 0.35);
+      // city: asphalt ground toned to the world palette
+      c.copy(base).lerp(ridge, 0.08);
     }
     // river: tint the submerged channel floor toward water
     if (cfg.river && v.z < cfg.river.level) {
@@ -530,65 +804,38 @@ function buildTerrain(
     g.add(buildRiverRibbon(size, seed, riverWater, cfg.river.level, cfg.river.width));
   }
 
-  /* water plane for marsh / coast */
+  /* water plane for marsh / coast — one smooth palette-tinted sheet */
   if (cfg.water) {
     if (terrain === "marsh") {
-      // murky swamp water (green-brown) with a shallow tan fringe
+      // emerald lagoon: deep palette water, transparent rim; hummocks poke through
       const cx = Math.cos(seed * 6.28) * size * 0.05;
       const cz = Math.sin(seed * 6.28) * size * 0.05;
-      const swamp = new THREE.MeshStandardMaterial({
-        color: 0x3f5a3a,
-        roughness: 0.4,
+      const lagoonMat = new THREE.MeshStandardMaterial({
+        map: makeLagoonTexture(hexOf(lagoonDeep), hexOf(lagoonShallow)),
+        color: 0xffffff,
+        roughness: 0.32,
         metalness: 0.0,
         transparent: true,
-        opacity: 0.85,
         depthWrite: false,
       });
-      const swampDisc = new THREE.Mesh(
-        new THREE.CylinderGeometry(size * 0.55, size * 0.55, size * 0.02, 48),
-        swamp
-      );
-      swampDisc.position.set(cx, -size * 0.02, cz);
-      g.add(swampDisc);
-      // shallow tan fringe (shoreline)
-      const fringe = new THREE.Mesh(
-        new THREE.CylinderGeometry(size * 0.62, size * 0.62, size * 0.015, 48),
-        new THREE.MeshStandardMaterial({
-          color: 0x6d7a4a,
-          roughness: 0.4,
-          metalness: 0.0,
-          transparent: true,
-          opacity: 0.5,
-          depthWrite: false,
-        })
-      );
-      fringe.position.set(cx, -size * 0.018, cz);
-      g.add(fringe);
+      const lagoon = new THREE.Mesh(new THREE.CircleGeometry(size * 0.68, 56), lagoonMat);
+      lagoon.rotation.x = -Math.PI / 2;
+      lagoon.position.set(cx, size * 0.03, cz);
+      g.add(lagoon);
     } else {
-      // coast: layered depth-gradient sea on the +x (low) side — SF Bay look
-      // shore is on -x (land), open ocean on +x → gradient sediment → turquoise → blue → navy
-      const mk = (r: number, hex: number, x: number, y: number, op: number) => {
-        const m = new THREE.MeshStandardMaterial({
-          color: hex,
-          roughness: 0.32,
-          metalness: 0.0,
-          transparent: true,
-          opacity: op,
-          depthWrite: false,
-        });
-        const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, size * 0.02, 64), m);
-        d.position.set(x, y, 0);
-        d.receiveShadow = true;
-        return d;
-      };
-      // sediment band at the shoreline (land meets sea)
-      g.add(mk(size * 0.58, 0x7d8a5a, size * 0.0, -size * 0.072, 0.75));
-      // shallow turquoise
-      g.add(mk(size * 0.78, 0x2f8a8a, size * 0.45, -size * 0.07, 0.85));
-      // mid blue
-      g.add(mk(size * 0.52, 0x165e7a, size * 0.6, -size * 0.071, 0.9));
-      // deep navy
-      g.add(mk(size * 0.3, 0x07273a, size * 0.75, -size * 0.072, 0.95));
+      // coast: smooth shoreline → deep-sea gradient (palette-tinted)
+      const seaMat = new THREE.MeshStandardMaterial({
+        map: makeSeaSheetTexture(hexOf(seaShore), hexOf(seaShallow), hexOf(seaDeep)),
+        color: 0xffffff,
+        roughness: 0.22,
+        metalness: 0.0,
+        transparent: true,
+        depthWrite: false,
+      });
+      const sea = new THREE.Mesh(new THREE.CircleGeometry(size * 0.92, 72), seaMat);
+      sea.rotation.x = -Math.PI / 2;
+      sea.position.set(size * 0.3, -size * 0.052, 0);
+      g.add(sea);
     }
   }
 
@@ -673,6 +920,31 @@ function buildTerrain(
         tower.add(cap);
       }
     }
+  }
+
+  /* satellite street-grid overlay (floats just above the flat ground) */
+  if (terrain === "city") {
+    // urban fabric tinted to the world palette (blocks = base→ridge lift, roads = darker base)
+    const blockTint = blendOf(base, ridge, 0.34).getHexString();
+    const streetTint = shadeOf(base, 0.6).getHexString();
+    const { map, emissiveMap } = makeCityTexture(seed, glow, blockTint, streetTint);
+    const streetMat = new THREE.MeshStandardMaterial({
+      map,
+      emissiveMap,
+      emissive: glow,
+      emissiveIntensity: 0.55,
+      roughness: 0.9,
+      metalness: 0.0,
+      transparent: true,
+      depthWrite: false,
+    });
+    const streets = new THREE.Mesh(
+      new THREE.PlaneGeometry(half * 2, half * 2, 1, 1),
+      streetMat
+    );
+    streets.rotation.x = -Math.PI / 2;
+    streets.position.y = size * 0.026;
+    g.add(streets);
   }
 
   return g;
@@ -770,7 +1042,7 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
@@ -803,9 +1075,9 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     controls.update();
 
     /* ── lights (Google-Earth-ish sun + sky fill + shadow casting) ── */
-    scene.add(new THREE.AmbientLight(0x8a96b0, 0.7));
-    scene.add(new THREE.HemisphereLight(0x90a4c8, 0x3a2c20, 0.85));
-    const key = new THREE.DirectionalLight(0xfff2df, 1.35);
+    scene.add(new THREE.AmbientLight(0x8a96b0, 0.8));
+    scene.add(new THREE.HemisphereLight(0x90a4c8, 0x3a2c20, 1.0));
+    const key = new THREE.DirectionalLight(0xfff2df, 1.5);
     key.position.set(3.5, 14, 4.0);   // more overhead → shorter, softer shadows
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -819,7 +1091,7 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     key.shadow.normalBias = 0.06;
     key.shadow.radius = 4.0;          // softer edges
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x6f8aff, 0.3);
+    const rim = new THREE.DirectionalLight(0x6f8aff, 0.42);
     rim.position.set(-7, 3.5, -5);
     scene.add(rim);
 
