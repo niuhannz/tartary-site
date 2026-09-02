@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-const ease = [0.23, 1, 0.32, 1];
+const ease = [0.23, 1, 0.32, 1] as const;
 
 export default function HomePage() {
   return (

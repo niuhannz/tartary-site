@@ -97,7 +97,6 @@ export default function GlassCurtain() {
               dissolving
                 ? {
                     backdropFilter: "blur(0px)",
-                    WebkitBackdropFilter: "blur(0px)",
                     background: "transparent",
                   }
                 : {}

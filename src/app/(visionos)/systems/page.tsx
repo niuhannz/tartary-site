@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Material, MotionView, Text, WindowControls } from "@/components/vision";
 
-const ease = [0.23, 1, 0.32, 1];
+const ease = [0.23, 1, 0.32, 1] as const;
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -332,7 +332,7 @@ export default function SystemsPage() {
                 >
                   Get in Touch
                 </Link>
-                <Link href="/universe">
+                <Link href="/world">
                   <Material thickness="thin" className="!rounded-full !min-h-0 !min-w-0 inline-flex">
                     <span className="px-7 py-3.5 text-sm font-semibold text-white/60 hover:text-white/90 transition-colors">
                       Explore Universe
