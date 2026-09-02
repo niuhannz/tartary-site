@@ -225,17 +225,32 @@ export const universeLanding = {
 export const worldsContent = {
   eyebrow: "IP Universe — Worlds",
   title: "Worlds",
-  sub: "Original universes, each with its own rules, history, and mythology — built as durable foundations for film, series, and transmedia.",
+  sub: "Original universes, each with its own history, rules, and mythology — built as durable foundations for film, series, and transmedia.",
   worlds: [
     {
       name: "HEAVENFALL",
       description:
-        "A fallen celestial order wages a hidden war beneath the modern sky — where loyalty, prophecy, and the price of divinity collide.",
+        "Part I of the Celestine Cycle: the Spring & Autumn and Warring States reforged as epic Western fantasy — seven realms at war, from Ironhold to Cheros.",
     },
     {
-      name: "MUDFLOOD",
+      name: "BASEBORN",
       description:
-        "A buried civilization resurfaces beneath the contemporary world, forcing two epochs to confront what the past left behind.",
+        "Part II of the Celestine Cycle: the fall of the Iron Throne and the rise of a baseborn hero, Maren Ashford, in the age after the First Emperor.",
+    },
+    {
+      name: "TRIUNE",
+      description:
+        "Part III of the Celestine Cycle: Romance of the Three Kingdoms transfigured — four houses claim Heaven, and only administrative endurance survives.",
+    },
+    {
+      name: "ON THE WATER'S MARGIN",
+      description:
+        "Shui Hu Zhuan transplanted to a broken near-future America: 108 heroes, a swamp stronghold, and the price of righteous violence.",
+    },
+    {
+      name: "SCARLET SOULS",
+      description:
+        "《丹心录》 — after the Battle of Yamen, a rustless sword and a boy-emperor no one wants begin a dark-fantasy reckoning.",
     },
   ],
   more: "More worlds are in development.",
@@ -248,16 +263,40 @@ export const charactersContent = {
   sub: "Original characters built with depth, design, and market-ready visual identity — ready for film, series, and licensing.",
   characters: [
     {
-      name: "MIRA VALE",
+      name: "WHITESLAYER",
       universe: "Heavenfall",
-      role: "Protagonist",
-      oneLine: "A disgraced celestial cartographer who must redraw a broken sky — and answer for what she erased from it.",
+      role: "General",
+      oneLine: "The pale one who kills — Bai Qi's shadow, spoken of with both horror and admiration.",
     },
     {
-      name: "ELIAS KADE",
-      universe: "Mudflood",
+      name: "LORD PIPETRAVELER",
+      universe: "Heavenfall",
+      role: "Minister",
+      oneLine: "Guan Zhong reborn as the pragmatist whose iron counsel shapes — and outlives — an age.",
+    },
+    {
+      name: "MAREN ASHFORD",
+      universe: "Baseborn",
+      role: "Protagonist",
+      oneLine: "A baseborn survivor who reaches for Heaven and learns legitimacy is a weapon, not a birthright.",
+    },
+    {
+      name: "SONNY JAMES",
+      universe: "On the Water's Margin",
+      role: "Protagonist",
+      oneLine: "The 'Timely Rain' — a quiet Greenville court clerk whose rescue network drags him into outlawry.",
+    },
+    {
+      name: "GREGORY J. QUINNS",
+      universe: "On the Water's Margin",
       role: "Antagonist",
-      oneLine: "A collector of buried debts who resurfaces with the city — and intends to collect what the modern world never repaid.",
+      oneLine: "From street thug to Secretary of State — the architect of a recovery built on vengeance.",
+    },
+    {
+      name: "LUCIEN ZUGREN",
+      universe: "Triune",
+      role: "Strategist",
+      oneLine: "The bright mind of the Crane Cloister — who reads sky and insects better than men.",
     },
   ],
   note: "Likeness and rights for every character are managed through DADA.",
@@ -298,18 +337,23 @@ export const licensingContent = {
   cta: "Inquire IP Licensing",
 };
 
-/* ── IP Universe — 3D World Map ──
-   Markers scattered across the interactive universe map.
-   lat: -90..90 (south→north), lng: -180..180 (west→east). */
+/* ── IP Universe — 3D World Dioramas ──
+   Each IP is rendered as a floating sandbox diorama on a shared "shelf".
+   x / z are planar coordinates on the shelf (world units), size scales the island. */
 export type UniverseMarkerKind = "world" | "character" | "story";
+
+export type UniverseTerrain = "mountains" | "marsh" | "plains" | "coast" | "city";
 
 export interface UniverseMarker {
   id: string;
   kind: UniverseMarkerKind;
   name: string;
-  sublabel: string; // e.g. "Realm", "Protagonist", "Feature · In development"
-  lat: number;
-  lng: number;
+  sublabel: string;
+  x: number;
+  z: number;
+  size: number;
+  terrain: UniverseTerrain;
+  palette: { base: string; ridge: string; glow: string; water?: string };
   tagline: string;
   lore: string;
   facts: { label: string; value: string }[];
@@ -320,8 +364,8 @@ export interface UniverseMarker {
 export const universeMapContent = {
   eyebrow: "IP Universe",
   headline: "Explore the TARTARY Universe",
-  sub: "Orbit the worlds, meet the characters, and step into the stories — a living map of everything we own, build, and license.",
-  hint: "Drag to orbit · Scroll to zoom · Select a marker to explore",
+  sub: "Turn the shelf, zoom into each world, and step inside the real universes we own, build, and license.",
+  hint: "Drag to orbit · Scroll to zoom · Select a world to explore",
   hotLinks: [
     { label: "Worlds", href: "/universe/worlds" },
     { label: "Characters", href: "/universe/characters" },
@@ -337,77 +381,112 @@ export const universeMarkers: UniverseMarker[] = [
     id: "heavenfall",
     kind: "world",
     name: "HEAVENFALL",
-    sublabel: "Realm",
-    lat: 38,
-    lng: -74,
-    tagline: "A fallen celestial order wages a hidden war beneath the modern sky.",
-    lore: "Heavenfall is a world where a disgraced celestial order still watches over an unwitting humanity — a hidden war fought between prophecy and price, where the divine is not a comfort but a debt. Its cities are built beneath a sky that remembers what was erased from it.",
+    sublabel: "The Celestine Cycle · Book I",
+    x: -4.8,
+    z: 1.0,
+    size: 2.7,
+    terrain: "mountains",
+    palette: { base: "#2a2514", ridge: "#ff8c3a", glow: "#FF6600" },
+    tagline: "The Spring & Autumn and Warring States, reforged as epic Western fantasy.",
+    lore: "HEAVENFALL opens the Celestine Cycle — a Western high-fantasy reimagining of China's Eastern Zhou, Spring & Autumn, and Warring States eras, told across six volumes and 108 chapters. Seven realms rise and fall: Ironhold (Qin), Cheros (Chu), Seaspray (Qi), Stoneheim (Wei), Northmarch (Zhao), Steelgate (Han), Frosthold (Yan). Names carry meaning — Bai Qi becomes Whiteslayer, Guan Zhong becomes Lord Pipetraveler — while a detached Historian annotates the bloodshed in footnotes.",
     facts: [
-      { label: "Genre", value: "Mythic fantasy / modern" },
-      { label: "Status", value: "In development" },
-      { label: "Core assets", value: "World bible, characters, series bible" },
+      { label: "Genre", value: "Epic historical fantasy" },
+      { label: "Structure", value: "6 volumes · 108 chapters" },
+      { label: "Source", value: "《东周列国志》" },
     ],
     href: "/universe/worlds",
     hrefLabel: "Explore Worlds",
   },
   {
-    id: "mudflood",
+    id: "baseborn",
     kind: "world",
-    name: "MUDFLOOD",
-    sublabel: "Realm",
-    lat: -27,
-    lng: 118,
-    tagline: "A buried civilization resurfaces beneath the contemporary world.",
-    lore: "Mudflood is a world of two epochs forced to reconcile. A civilization buried long ago begins to resurface beneath the modern city, and what the past left behind will not stay buried. History, debt, and memory collide as the two worlds converge.",
+    name: "BASEBORN",
+    sublabel: "The Celestine Cycle · Book II",
+    x: -1.7,
+    z: 2.3,
+    size: 2.2,
+    terrain: "plains",
+    palette: { base: "#1d2430", ridge: "#e7c77a", glow: "#e7c77a" },
+    tagline: "A baseborn survivor reaches for Heaven — the Chu-Han struggle reborn.",
+    lore: "BASEBORN continues the Celestine Cycle into the age of inheritance: the Iron Throne collapses and a common-born hero, Maren Ashford, claims what no baseborn man was meant to hold. It is the myth of Han Gaozu — Liu Bang — told inside the same world, where legitimacy is a weapon rather than a birthright, and the empire remembers its old kingdom names even as it abolishes them.",
     facts: [
-      { label: "Genre", value: "Mystery / speculative" },
-      { label: "Status", value: "In development" },
-      { label: "Core assets", value: "World bible, characters, series bible" },
+      { label: "Genre", value: "Epic historical fantasy" },
+      { label: "Era", value: "After the First Emperor" },
+      { label: "Source", value: "楚汉 · 西汉" },
     ],
     href: "/universe/worlds",
     hrefLabel: "Explore Worlds",
   },
   {
-    id: "mira-vale",
-    kind: "character",
-    name: "MIRA VALE",
-    sublabel: "Protagonist · Heavenfall",
-    lat: 46,
-    lng: -18,
-    tagline: "A disgraced celestial cartographer who must redraw a broken sky.",
-    lore: "Mira Vale was the order's finest cartographer until she erased something from the sky — and was cast out for it. Now she must redraw the heavens she broke, answering for what she removed and for who still hunts her beneath them.",
+    id: "triune",
+    kind: "world",
+    name: "TRIUNE",
+    sublabel: "The Celestine Cycle · Book III",
+    x: 1.8,
+    z: 1.8,
+    size: 2.2,
+    terrain: "city",
+    palette: { base: "#181b2c", ridge: "#b9d0ff", glow: "#5f86ff" },
+    tagline: "Three houses claim Heaven at once — Romance of the Three Kingdoms transfigured.",
+    lore: "TRIUNE closes the Celestine Cycle with a 1:1 transformation of the 120 chapters of Romance of the Three Kingdoms. Four houses contend — Corven (Wei), Ashford (Shu), Tarne (Wu), and the patient Marrow (Sima) — but the thing that wins is not faith, blood, courage, or genius: it is administrative endurance. Five books, from The Saffron Sky to The Last Mandate.",
     facts: [
-      { label: "Universe", value: "Heavenfall" },
-      { label: "Role", value: "Protagonist" },
-      { label: "Rights", value: "Likeness managed via DADA" },
+      { label: "Genre", value: "Epic historical fantasy" },
+      { label: "Structure", value: "120 chapters · 5 books" },
+      { label: "Source", value: "《三国演义》" },
     ],
-    href: "/universe/characters",
-    hrefLabel: "Explore Characters",
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
   },
   {
-    id: "elias-kade",
-    kind: "character",
-    name: "ELIAS KADE",
-    sublabel: "Antagonist · Mudflood",
-    lat: -34,
-    lng: 152,
-    tagline: "A collector of buried debts who resurfaces with the city.",
-    lore: "Elias Kade resurfaces with the city itself, and he intends to collect what the modern world never repaid. A collector of buried debts, he moves through the two epochs of Mudflood with a ledger older than memory — and a patience colder than stone.",
+    id: "water-margin",
+    kind: "world",
+    name: "ON THE WATER'S MARGIN",
+    sublabel: "Near-future American epic",
+    x: 4.5,
+    z: 0.4,
+    size: 2.9,
+    terrain: "marsh",
+    palette: { base: "#0c1a14", ridge: "#3fd0a0", glow: "#1d9e75", water: "#0a3b30" },
+    tagline: "Shui Hu Zhuan, transplanted to a broken near-future America.",
+    lore: "On the Water's Margin remaps all 108 heroes of Shi Naian's Water Margin onto a near-future America after the Ten Dark Years. In 1993 the 108 spirits escaped a Modoc ammo box at Castle Crags; by the 2030s they gather at 'the Margin' — a swamp stronghold in the Atchafalaya basin — while the corrupt Secretary of State Gregory J. Quinns (Gao Qiu) drives ordinary people into outlawry. Six books, from The Ten Good Years to A Grateful Nation: an elegy disguised as an adventure.",
     facts: [
-      { label: "Universe", value: "Mudflood" },
-      { label: "Role", value: "Antagonist" },
-      { label: "Rights", value: "Likeness managed via DADA" },
+      { label: "Genre", value: "Near-future literary epic" },
+      { label: "Structure", value: "6 books · 108 heroes" },
+      { label: "Source", value: "《水浒传》" },
     ],
-    href: "/universe/characters",
-    hrefLabel: "Explore Characters",
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
+  },
+  {
+    id: "scarlet-souls",
+    kind: "world",
+    name: "SCARLET SOULS",
+    sublabel: "丹心录 · Yamen dark fantasy",
+    x: -3.0,
+    z: -2.5,
+    size: 2.2,
+    terrain: "coast",
+    palette: { base: "#1d1012", ridge: "#e24b4a", glow: "#993C1D", water: "#2a1214" },
+    tagline: "After the Battle of Yamen, one man keeps a dying dynasty's ember.",
+    lore: "《丹心录》 (Scarlet Souls) begins at Yamen in 1279, where Lu Xiufu carries the child-emperor into the sea and the Southern Song 'nominally' dies. A coast fisherman — unnamed, low-caste, indifferent to dynasties — salvages a rustless sword and becomes the unwilling escort of a boy-emperor no one wants. Historical wuxia crossed with cultivation horror, in three movements: 崖山余烬 → 尸山行 → 斩汗录.",
+    facts: [
+      { label: "Genre", value: "Historical wuxia × dark fantasy" },
+      { label: "Structure", value: "Trilogy" },
+      { label: "Language", value: "Chinese original" },
+    ],
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
   },
   {
     id: "borrowed-life",
     kind: "story",
     name: "BORROWED LIFE",
-    sublabel: "Feature · In development",
-    lat: 12,
-    lng: 44,
+    sublabel: "借命 · Feature · In development",
+    x: 2.7,
+    z: -2.7,
+    size: 1.9,
+    terrain: "city",
+    palette: { base: "#141019", ridge: "#f0d488", glow: "#e7c77a" },
     tagline: "A man who trades borrowed time must repay what was never his to take.",
     lore: "Borrowed Life follows a man who trades borrowed time and must repay what was never his to take. A company-owned feature inside the TARTARY IP Universe, packaged and positioned for production and partnership — not a personal project.",
     facts: [
@@ -417,40 +496,6 @@ export const universeMarkers: UniverseMarker[] = [
     ],
     href: "/universe/stories",
     hrefLabel: "Explore Stories",
-  },
-  {
-    id: "realm-03",
-    kind: "world",
-    name: "REALM 03",
-    sublabel: "Classified · In development",
-    lat: 61,
-    lng: 96,
-    tagline: "A new world taking shape behind closed doors.",
-    lore: "An undisclosed world currently in the earliest stages of development. Details remain under wraps as the setting, mythology, and cast are assembled — more will be revealed as it enters active production.",
-    facts: [
-      { label: "Genre", value: "Classified" },
-      { label: "Status", value: "In development" },
-      { label: "Access", value: "Under NDA for partners" },
-    ],
-    href: "/universe/worlds",
-    hrefLabel: "Explore Worlds",
-  },
-  {
-    id: "realm-04",
-    kind: "world",
-    name: "REALM 04",
-    sublabel: "Classified · In development",
-    lat: -58,
-    lng: -132,
-    tagline: "A world in incubation — first light still to come.",
-    lore: "An early-stage world incubating inside the TARTARY pipeline. Its geography, history, and characters are being mapped before it is revealed to the public and to co-development partners.",
-    facts: [
-      { label: "Genre", value: "Classified" },
-      { label: "Status", value: "In development" },
-      { label: "Access", value: "Under NDA for partners" },
-    ],
-    href: "/universe/worlds",
-    hrefLabel: "Explore Worlds",
   },
 ];
 

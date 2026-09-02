@@ -3,21 +3,64 @@
 import { useState } from "react";
 import type { UniverseMarker } from "@/lib/siteContent";
 
-const KIND_COLOR: Record<UniverseMarker["kind"], string> = {
-  world: "#FF6600",
-  character: "#b9d0ff",
-  story: "#e7c77a",
-};
+/* Top-down orthographic view of the diorama shelf — no-WebGL fallback. */
 
-/* Equirectangular-ish projection onto a globe disc, for the no-WebGL fallback. */
-function project(m: UniverseMarker, w: number, h: number) {
-  const cx = w / 2;
-  const cy = h / 2;
-  const rx = w * 0.42;
-  const ry = h * 0.42;
-  const x = cx + (m.lng / 180) * rx;
-  const y = cy - (m.lat / 90) * ry;
-  return { x, y };
+const XMIN = -7.5;
+const XMAX = 7.5;
+const ZMIN = -4.5;
+const ZMAX = 4.5;
+const W = 900;
+const H = 640;
+
+function project(m: UniverseMarker) {
+  const px = ((m.x - XMIN) / (XMAX - XMIN)) * W;
+  const py = ((m.z - ZMIN) / (ZMAX - ZMIN)) * H;
+  return { x: px, y: py, r: m.size * 16 };
+}
+
+/* tiny terrain glyph rendered inside each island */
+function TerrainGlyph({ terrain, color }: { terrain: UniverseMarker["terrain"]; color: string }) {
+  if (terrain === "mountains") {
+    return (
+      <g stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round">
+        <path d="M-12 8 L-4 -6 L2 4 L8 -8 L14 8" />
+        <path d="M2 4 L8 -8" stroke="#dfe4ea" strokeWidth="1.2" />
+      </g>
+    );
+  }
+  if (terrain === "plains") {
+    return (
+      <g fill={color}>
+        <ellipse cx={-7} cy={4} rx={6} ry={4} />
+        <ellipse cx={6} cy={2} rx={7} ry={5} />
+      </g>
+    );
+  }
+  if (terrain === "marsh") {
+    return (
+      <g>
+        <ellipse cx={-6} cy={2} rx={7} ry={4} fill={color} opacity={0.55} />
+        <ellipse cx={7} cy={-1} rx={5} ry={3} fill={color} opacity={0.4} />
+        <path d="M-2 2 V-8 M3 4 V-7 M0 3 V-9" stroke={color} strokeWidth="1.1" />
+      </g>
+    );
+  }
+  if (terrain === "coast") {
+    return (
+      <g>
+        <path d="M-14 6 Q-8 -2 0 4 Q6 -1 14 6 Z" fill={color} opacity={0.9} />
+        <path d="M0 -12 Q4 -6 2 0 Q-2 6 0 12" stroke={color} strokeWidth="1.4" fill="none" />
+      </g>
+    );
+  }
+  // city
+  return (
+    <g fill={color}>
+      <rect x={-10} y={-4} width={5} height={10} />
+      <rect x={-3} y={-8} width={6} height={14} />
+      <rect x={5} y={-3} width={4} height={9} />
+    </g>
+  );
 }
 
 export default function StaticMap({
@@ -28,12 +71,6 @@ export default function StaticMap({
   onSelect: (m: UniverseMarker) => void;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 800;
-  const H = 520;
-  const cx = W / 2;
-  const cy = H / 2;
-  const rx = W * 0.42;
-  const ry = H * 0.42;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center">
@@ -42,20 +79,15 @@ export default function StaticMap({
         className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="TARTARY Universe — illustrated map"
+        aria-label="TARTARY Universe — illustrated shelf"
       >
         <defs>
-          <radialGradient id="planetFill" cx="40%" cy="35%" r="70%">
-            <stop offset="0%" stopColor="#141b2e" />
-            <stop offset="70%" stopColor="#0a0f1e" />
-            <stop offset="100%" stopColor="#070a14" />
+          <radialGradient id="shelfFill" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stopColor="#100e0c" />
+            <stop offset="100%" stopColor="#060507" />
           </radialGradient>
-          <radialGradient id="halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FF6600" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#FF6600" stopOpacity="0" />
-          </radialGradient>
-          <filter id="softGlow" x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation="6" result="b" />
+          <filter id="softGlow" x="-150%" y="-150%" width="400%" height="400%">
+            <feGaussianBlur stdDeviation="7" result="b" />
             <feMerge>
               <feMergeNode in="b" />
               <feMergeNode in="SourceGraphic" />
@@ -63,58 +95,26 @@ export default function StaticMap({
           </filter>
         </defs>
 
+        {/* background */}
+        <rect width={W} height={H} fill="#05060c" />
+
         {/* stars */}
         {Array.from({ length: 90 }).map((_, i) => {
           const sx = (i * 137.5) % W;
           const sy = (i * 89.7) % H;
           const r = (i % 3) * 0.5 + 0.5;
-          return <circle key={i} cx={sx} cy={sy} r={r} fill="#8a97bd" opacity={0.5} />;
+          return <circle key={i} cx={sx} cy={sy} r={r} fill="#8a97bd" opacity={0.45} />;
         })}
 
-        {/* halo behind planet */}
-        <ellipse cx={cx} cy={cy} rx={rx * 1.05} ry={ry * 1.05} fill="url(#halo)" opacity={0.5} />
+        {/* shelf */}
+        <ellipse cx={W / 2} cy={H / 2} rx={W * 0.46} ry={H * 0.46} fill="url(#shelfFill)" stroke="#2a2522" strokeOpacity={0.5} />
 
-        {/* planet disc */}
-        <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#planetFill)" stroke="#2a3350" strokeOpacity="0.5" />
-
-        {/* graticule */}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const f = (i + 1) / 6;
-          return (
-            <ellipse
-              key={`par-${i}`}
-              cx={cx}
-              cy={cy}
-              rx={rx * f}
-              ry={ry * f}
-              fill="none"
-              stroke="#3a4668"
-              strokeOpacity="0.3"
-            />
-          );
-        })}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const ang = (i / 6) * Math.PI;
-          const x2 = cx + Math.cos(ang) * rx;
-          const y2 = cy + Math.sin(ang) * ry;
-          return (
-            <line
-              key={`mer-${i}`}
-              x1={cx}
-              y1={cy}
-              x2={x2}
-              y2={y2}
-              stroke="#3a4668"
-              strokeOpacity="0.25"
-            />
-          );
-        })}
-
-        {/* markers */}
+        {/* islands */}
         {markers.map((m) => {
-          const p = project(m, W, H);
+          const p = project(m);
           const isHover = hovered === m.id;
-          const color = KIND_COLOR[m.kind];
+          const glow = m.palette.glow;
+          const rr = isHover ? p.r * 1.15 : p.r;
           return (
             <g
               key={m.id}
@@ -123,21 +123,42 @@ export default function StaticMap({
               onMouseLeave={() => setHovered(null)}
               style={{ cursor: "pointer" }}
             >
-              <circle cx={p.x} cy={p.y} r={isHover ? 22 : 16} fill={color} opacity={0.18} />
-              <circle cx={p.x} cy={p.y} r={isHover ? 6 : 4.5} fill={color} filter="url(#softGlow)" />
-              <circle cx={p.x} cy={p.y} r={2} fill="#fff" />
+              <circle cx={p.x} cy={p.y} r={rr + 10} fill={glow} opacity={0.12} />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={rr}
+                fill={m.palette.base}
+                stroke={glow}
+                strokeWidth={isHover ? 2 : 1.2}
+                filter="url(#softGlow)"
+                strokeOpacity={isHover ? 1 : 0.6}
+              />
+              <circle cx={p.x} cy={p.y} r={rr * 0.82} fill="none" stroke={m.palette.ridge} strokeOpacity={0.35} />
+              <g transform={`translate(${p.x}, ${p.y})`}>
+                <TerrainGlyph terrain={m.terrain} color={m.palette.ridge} />
+              </g>
               <text
                 x={p.x}
-                y={p.y - (isHover ? 16 : 12)}
+                y={p.y - rr - 10}
                 textAnchor="middle"
-                fill={isHover ? color : "#c9c2b2"}
+                fill={isHover ? glow : "#c9c2b2"}
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: isHover ? 14 : 12,
+                  fontSize: isHover ? 15 : 13,
                   letterSpacing: "0.08em",
                 }}
               >
                 {m.name}
+              </text>
+              <text
+                x={p.x}
+                y={p.y + rr + 16}
+                textAnchor="middle"
+                fill="#6b6560"
+                style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.06em" }}
+              >
+                {m.sublabel}
               </text>
             </g>
           );

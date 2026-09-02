@@ -10,12 +10,6 @@ const KIND_LABEL: Record<UniverseMarker["kind"], string> = {
   story: "Story",
 };
 
-const KIND_COLOR: Record<UniverseMarker["kind"], string> = {
-  world: "#FF6600",
-  character: "#b9d0ff",
-  story: "#e7c77a",
-};
-
 export default function InfoPanel({
   marker,
   onClose,
@@ -23,6 +17,8 @@ export default function InfoPanel({
   marker: UniverseMarker;
   onClose: () => void;
 }) {
+  const accent = marker.palette.glow;
+
   return (
     <motion.aside
       key={marker.id}
@@ -41,11 +37,10 @@ export default function InfoPanel({
       {/* header */}
       <div className="px-7 pt-7 pb-5 flex items-start justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
         <div>
-          <div
-            className="t-micro mb-2"
-            style={{ color: KIND_COLOR[marker.kind] }}
-          >
-            {KIND_LABEL[marker.kind]} · {marker.sublabel}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="t-micro" style={{ color: accent }}>
+              {KIND_LABEL[marker.kind]} · {marker.sublabel}
+            </span>
           </div>
           <h2
             className="text-2xl font-bold tracking-tight"
@@ -53,6 +48,12 @@ export default function InfoPanel({
           >
             {marker.name}
           </h2>
+          <span
+            className="inline-block mt-3 t-micro px-2.5 py-1 rounded-full"
+            style={{ border: `1px solid ${accent}55`, color: accent }}
+          >
+            {marker.terrain}
+          </span>
         </div>
         <button
           onClick={onClose}
@@ -109,16 +110,14 @@ export default function InfoPanel({
                 key={i}
                 className="aspect-[4/5] relative overflow-hidden"
                 style={{
-                  background: `linear-gradient(160deg, ${
-                    marker.kind === "world" ? "#1a1208" : marker.kind === "character" ? "#0c1220" : "#16110a"
-                  } 0%, #0a0808 100%)`,
+                  background: `linear-gradient(160deg, ${marker.palette.base} 0%, #0a0808 100%)`,
                   border: "1px solid var(--border)",
                 }}
               >
                 <div
                   className="absolute inset-0 opacity-40"
                   style={{
-                    backgroundImage: `radial-gradient(ellipse 60% 40% at 30% 30%, ${KIND_COLOR[marker.kind]}33, transparent 70%)`,
+                    backgroundImage: `radial-gradient(ellipse 60% 40% at 30% 30%, ${accent}33, transparent 70%)`,
                   }}
                 />
                 <span
@@ -138,7 +137,7 @@ export default function InfoPanel({
         <Link
           href={marker.href}
           className="flex items-center justify-center w-full px-6 py-3.5 rounded-full text-[13px] font-semibold tracking-[0.12em] uppercase transition-opacity hover:opacity-90"
-          style={{ fontFamily: "var(--font-logo)", background: KIND_COLOR[marker.kind], color: "#0A0808" }}
+          style={{ fontFamily: "var(--font-logo)", background: accent, color: "#0A0808" }}
         >
           {marker.hrefLabel} →
         </Link>
