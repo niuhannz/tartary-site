@@ -6,13 +6,28 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
+import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import type { UniverseMarker } from "@/lib/siteContent";
 
 /* ═══════════════════════════════════════════════════════════════════
    ThreeScene — sandbox universe shelf with real heightmap terrain.
-   Each diorama is a noise-displaced heightmap (mountains/plains/marsh/
-   coast/city) with elevation-based vertex colors and proper water.
-   No custom GLSL; no over-bright glow.
+
+   "Satellite-grade" render pipeline (researched, applied):
+   1. Per-world procedural ALBEDO texture (1024²) rasterized from the final
+      eroded heightfield — farmland mosaic / forest clumps / snow breakup /
+      rock strata / wet-sand shore, with baked curvature AO + rim fade.
+      Vertex colours are kept only for the city worlds (which sit under the
+      street-grid overlay).
+   2. Water = glossy low-roughness surfaces with a shared scrolling ripple
+      bump map → moving sun glints instead of flat painted discs.
+   3. Correct colour pipeline for r152+: RenderPass → SSAO → bloom →
+      SMAA (linear-srgb) → OutputPass (ACES tone-map + sRGB). Without
+      OutputPass the frame was never tone-mapped (washed / flat).
+   4. RoomEnvironment PMREM IBL so water + city metal pick up real
+      reflections instead of only punctual lights.
    ═══════════════════════════════════════════════════════════════════ */
 
 interface ThreeSceneProps {
@@ -436,16 +451,28 @@ function buildRiverRibbon(
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  // UVs: u = distance along the river, v = cross-river (for the ripple bump)
+  const uvs = new Float32Array((n + 1) * 2 * 2);
+  for (let i = 0; i <= n; i++) {
+    uvs[i * 4] = i / n;
+    uvs[i * 4 + 1] = 1;
+    uvs[i * 4 + 2] = i / n;
+    uvs[i * 4 + 3] = 0;
+  }
+  geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
   geo.setIndex(indices);
   geo.computeVertexNormals();
   const mat = new THREE.MeshStandardMaterial({
     color: water,
-    roughness: 0.35,
+    roughness: 0.18,
     metalness: 0.05,
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.9,
     emissive: water,
     emissiveIntensity: 0.04,
+    envMapIntensity: 0.9,
+    bumpMap: getRippleBump(),
+    bumpScale: size * 0.012,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
@@ -526,6 +553,56 @@ function makeLagoonTexture(deepHex: string, shallowHex: string): THREE.CanvasTex
   return tex;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   shared scrolling water-ripple bump (module singleton — all water
+   surfaces drift in one wind direction; animated via .offset in loop)
+   ═══════════════════════════════════════════════════════════════════ */
+let rippleBumpTex: THREE.CanvasTexture | null = null;
+function getRippleBump(): THREE.CanvasTexture {
+  if (rippleBumpTex) return rippleBumpTex;
+  const S = 256;
+  const c = document.createElement("canvas");
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext("2d")!;
+  const img = ctx.createImageData(S, S);
+  const d = img.data;
+  const H = new Float32Array(S * S);
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = (x / S) * Math.PI * 2;
+      const v = (y / S) * Math.PI * 2;
+      H[y * S + x] =
+        Math.sin(u * 6.0 + v * 2.3) * 0.5 +
+        Math.sin(v * 11.0 - u * 1.6) * 0.32 +
+        Math.sin((u + v) * 3.1 + 1.7) * 0.18;
+    }
+  }
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const h = H[y * S + x];
+      const x0 = H[y * S + ((x - 1 + S) % S)];
+      const x1 = H[y * S + ((x + 1) % S)];
+      const y0 = H[((y - 1 + S) % S) * S + x];
+      const y1 = H[((y + 1) % S) * S + x];
+      // bump map stores *height* (grayscale); gradient-derived shading happens in the shader
+      const g = 0.5 + ((x1 - x0) + (y1 - y0)) * 0.22 + h * 0.1;
+      const p = (y * S + x) * 4;
+      const vv = Math.max(0, Math.min(1, g));
+      d[p] = vv * 255;
+      d[p + 1] = vv * 255;
+      d[p + 2] = vv * 255;
+      d[p + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(11, 11);
+  rippleBumpTex = t;
+  return t;
+}
+
 /* ── terrain builder: real heightmap with vertex colors ── */
 function buildTerrain(
   marker: UniverseMarker,
@@ -541,13 +618,12 @@ function buildTerrain(
   const ox = seed * 100;
   const oy = seed * 173;
 
-  const seg = 56;
+  const seg = terrain === "city" ? 64 : 96;
   const half = size * 0.88; // terrain radius (within plinth r = 0.95*size)
   const plane = new THREE.PlaneGeometry(half * 2, half * 2, seg, seg);
   const pos = plane.attributes.position as THREE.BufferAttribute;
   const colors = new Float32Array(pos.count * 3);
   const v = new THREE.Vector3();
-  const nrm = new THREE.Vector3();
   const c = new THREE.Color();
   // satellite-style palette: forest / grass / dry grass / rock / snow / river
   const snow = new THREE.Color(0xeef3f6);
@@ -717,84 +793,225 @@ function buildTerrain(
     }
   }
 
-  /* compute normals AFTER all vertices are displaced so the second color pass can use slope */
+  /* compute normals AFTER displacement — lighting + raster slope both use them */
   plane.computeVertexNormals();
-  const normalAttr = plane.attributes.normal as THREE.BufferAttribute;
 
-  /* color by (elevation, slope, moisture) — satellite-style biome mix */
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    nrm.fromBufferAttribute(normalAttr, i);
-    const lx = v.x;
-    const ly = v.y;
-    const r = Math.sqrt(lx * lx + ly * ly);
-    const rNorm = r / half;
-    const slope = 1 - Math.min(1, Math.abs(nrm.y));           // 0 = flat, 1 = vertical
-    const moist = moisture2(lx + ox, ly + oy, seed);           // 0..1
-    const heightT = (v.z + Math.abs(cfg.tilt ? size * cfg.tilt : 0)) / Math.max(0.001, cfg.amp + size);
-    const hN = THREE.MathUtils.clamp(heightT, 0, 1);
+  const edgeDark = new THREE.Color(0x0a0908);
+  const NATURAL =
+    terrain === "mountains" ||
+    terrain === "plains" ||
+    terrain === "marsh" ||
+    terrain === "coast";
 
-    if (terrain === "mountains") {
-      // steep = rock, flat = grass/forest (driven by moisture)
-      if (slope > 0.35) {
-        c.copy(rock).lerp(ridge, smooth01((slope - 0.35) / 0.5));
-      } else {
-        c.copy(grass).lerp(forest, smooth01(moist) * 0.85);
-        c.lerp(ridge, hN * 0.35); // higher up -> browner
+  /* ── satellite albedo raster (natural worlds, 1024²) ──────────────
+     Re-evaluates the biome rules per-pixel (instead of per low-res
+     vertex) and layers the micro landcover that sells "satellite":
+     farmland mosaic w/ crop rows (plains), rock strata + snow breakup
+     (mountains), reed speckle (marsh), wet-sand + scrub + seafloor
+     (coast). Baked curvature AO darkens gullies; rim fades to plinth.
+     Output bytes are DISPLAY sRGB (encoded from the linear palette). */
+  let mapTex: THREE.CanvasTexture | null = null;
+  if (NATURAL) {
+    const S = 1024;
+    const GRID = seg + 1; // height grid stride
+    const n1 = GRID - 1; // last grid index
+    const gW = 2 * half; // world width of the map
+    const rampE = (gW / n1) * 1.2; // world units between slope samples
+    const waterLvl = terrain === "coast" ? -size * 0.08 : 0;
+    const aoR = gW / 30; // AO neighbourhood radius
+    const pc = new THREE.Color();
+    const mud = shadeOf(hummockLo, 0.55);
+    const cWheat = new THREE.Color(0xc3a86c);
+    const cFieldGreen = new THREE.Color(0x7e9051);
+    const cFallow = new THREE.Color(0x8f7d54);
+    const cPasture = new THREE.Color(0x6e7a48);
+    const srgb = (v: number) =>
+      v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+
+    const cnv = document.createElement("canvas");
+    cnv.width = S;
+    cnv.height = S;
+    const cctx = cnv.getContext("2d")!;
+    const img = cctx.createImageData(S, S);
+    const px = img.data;
+    const Z = pos.array as Float32Array;
+
+    const zAt = (gx: number, gy: number) => {
+      const xi = gx < 0 ? 0 : gx > n1 ? n1 : gx;
+      const yi = gy < 0 ? 0 : gy > n1 ? n1 : gy;
+      return Z[(yi * GRID + xi) * 3 + 2];
+    };
+    const hAt = (wx: number, wy: number) => {
+      const gx = ((wx + half) / gW) * n1;
+      const gy = ((wy + half) / gW) * n1;
+      const fx = gx - Math.floor(gx);
+      const fy = gy - Math.floor(gy);
+      const xi = fx === 0 && gx >= n1 ? n1 - 1 : Math.floor(gx);
+      const yi = fy === 0 && gy >= n1 ? n1 - 1 : Math.floor(gy);
+      const h00 = zAt(xi, yi);
+      const h10 = zAt(xi + 1, yi);
+      const h01 = zAt(xi, yi + 1);
+      const h11 = zAt(xi + 1, yi + 1);
+      return (h00 * (1 - fx) + h10 * fx) * (1 - fy) + (h01 * (1 - fx) + h11 * fx) * fy;
+    };
+    const slopeAt = (wx: number, wy: number) => {
+      const sx = (hAt(wx + rampE, wy) - hAt(wx - rampE, wy)) / (2 * rampE);
+      const sy = (hAt(wx, wy + rampE) - hAt(wx, wy - rampE)) / (2 * rampE);
+      return 1 - 1 / Math.sqrt(1 + sx * sx + sy * sy);
+    };
+
+    for (let py = 0; py < S; py++) {
+      for (let qx = 0; qx < S; qx++) {
+        const u = (qx + 0.5) / S;
+        const vv = (py + 0.5) / S;
+        const lx = (u - 0.5) * gW;
+        const ly = (0.5 - vv) * gW;
+        const rNorm = Math.hypot(lx, ly) / half;
+        const h = hAt(lx, ly);
+        const slope = slopeAt(lx, ly);
+        const moist = moisture2(lx + ox, ly + oy, seed);
+        const hN = THREE.MathUtils.clamp(
+          (h + Math.abs(cfg.tilt ? size * cfg.tilt : 0)) / Math.max(0.001, cfg.amp + size),
+          0,
+          1
+        );
+
+        if (terrain === "mountains") {
+          if (slope > 0.35) pc.copy(rock).lerp(ridge, smooth01((slope - 0.35) / 0.5));
+          else {
+            pc.copy(grass).lerp(forest, smooth01(moist) * 0.85);
+            pc.lerp(ridge, hN * 0.35);
+          }
+          // rock strata — irregular high-frequency rock patches (not contour lines)
+          if (slope > 0.22) {
+            const sBand = valueNoise2(lx * 1.6 + oy * 3, ly * 1.6 + ox * 5);
+            const sBand2 = valueNoise2(lx * 0.55 + ox, ly * 0.55 + oy);
+            const blob = Math.max(0, sBand * 0.6 + sBand2 * 0.55 - 0.38);
+            pc.lerp(rock, smooth01((slope - 0.22) / 0.4) * blob * 0.32);
+          }
+          // snow caps with breakup — never a flat white hat
+          if (hN > 0.5) {
+            const snowA = smooth01((hN - 0.5) / 0.36);
+            const patch = valueNoise2(lx * 5.0 + ox * 11, ly * 5.0 + oy * 7);
+            pc.lerp(snow, snowA * (patch > 0.42 ? 1 : Math.max(0, patch * 1.9)));
+          }
+        } else if (terrain === "plains") {
+          pc.copy(dryGrass).lerp(grass, smooth01(moist) * 0.9 + hN * 0.2);
+          pc.lerp(forest, Math.max(0, moist - 0.6) * 1.5);
+          // lush green corridor hugging the river
+          if (cfg.river) {
+            const cyr = riverCenterY(lx, size, seed);
+            const dRiv = Math.abs(ly - cyr);
+            const corr = cfg.river.width * 4.5;
+            if (dRiv < corr) pc.lerp(grass, smooth01(1 - dRiv / corr) * 0.55);
+          }
+          // farmland mosaic on the drier flats — finer cells + four crop tones + speckle
+          if (moist < 0.62 && hN < 0.4) {
+            const cw = size * 0.06;
+            const fx2 = Math.floor(lx / cw);
+            const fy2 = Math.floor(ly / cw);
+            const fid = hash2(fx2 + Math.floor(seed * 97), fy2 + Math.floor(seed * 131));
+            const fid2 = hash2(fx2 * 3 + 17, fy2 * 3 + 41);
+            const fracx = lx / cw - fx2;
+            const fracy = ly / cw - fy2;
+            const edge = Math.min(fracx, 1 - fracx, fracy, 1 - fracy);
+            if (edge < 0.045) pc.multiplyScalar(0.86); // dark field boundaries
+            const crop =
+              fid < 0.25
+                ? cWheat
+                : fid < 0.5
+                ? cFieldGreen
+                : fid < 0.75
+                ? cFallow
+                : cPasture;
+            pc.lerp(crop, 0.34);
+            const sRow = (fx2 + fy2) & 1 ? ly : lx;
+            const row = Math.sin(sRow * (95 + (fid % 1) * 40) + fid2 * 47);
+            pc.multiplyScalar(1 + row * 0.045);
+            const speck = valueNoise2(lx * 14 + ox * 13, ly * 14 + oy * 17);
+            pc.multiplyScalar(0.94 + speck * 0.12);
+          }
+        } else if (terrain === "marsh") {
+          pc.copy(hummockLo).lerp(hummockHi, smooth01(moist));
+          pc.lerp(mud, slope * 0.6);
+          // reed / sedge speckle rising from the hummocks
+          const reed = valueNoise2(lx * 9.0 + ox * 7, ly * 9.0 + oy * 11);
+          if (reed > 0.54) pc.lerp(mud, (reed - 0.54) * 1.8);
+        } else {
+          // coast: seafloor → wet sand → dry scrub
+          if (h < waterLvl + size * 0.01) pc.copy(seaDeep);
+          else if (h < waterLvl + size * 0.05) {
+            const tB = (h - (waterLvl + size * 0.01)) / (size * 0.04);
+            pc.lerpColors(seaShallow, seaShore, smooth01(tB));
+          } else if (h < size * 0.02) {
+            const tt2 = Math.min(1, Math.max(0, (h - waterLvl - size * 0.05) / (size * 0.1)));
+            pc.copy(seaShore).lerp(landLow, tt2);
+          } else {
+            const tt = Math.min(1, (h - size * 0.02) / (size * 0.16));
+            pc.copy(landLow).lerp(landHigh, smooth01(tt));
+            pc.lerp(ridge, slope * 0.5);
+          }
+          // scrub speckle inland; brighter sand glints right at the waterline
+          const veg = valueNoise2(lx * 7.5 + ox * 5, ly * 7.5 + oy * 9);
+          if (h > waterLvl + size * 0.02 && veg > 0.56) pc.lerp(landHigh, (veg - 0.56) * 0.9);
+          if (Math.abs(h - waterLvl) < size * 0.012 && veg < 0.4) pc.lerp(seaShore, 0.4);
+        }
+        // river floor tint
+        if (cfg.river && h < cfg.river.level) pc.lerp(riverWater, 0.62);
+
+        // baked curvature AO — valley floors & gullies read as recessed
+        const avg =
+          (hAt(lx - aoR, ly) + hAt(lx + aoR, ly) + hAt(lx, ly - aoR) + hAt(lx, ly + aoR)) * 0.25;
+        const ao = Math.min(1, Math.max(0, (avg - h) / Math.max(size * 0.015, 1e-4)));
+        pc.lerp(edgeDark, ao * 0.55);
+        // rim fade toward the plinth shadow
+        pc.lerp(edgeDark, Math.max(0, (rNorm - 0.7) / 0.3) * 0.85);
+
+        const o = (py * S + qx) * 4;
+        px[o] = Math.round(srgb(pc.r) * 255);
+        px[o + 1] = Math.round(srgb(pc.g) * 255);
+        px[o + 2] = Math.round(srgb(pc.b) * 255);
+        px[o + 3] = 255;
       }
-      // snow caps
-      if (hN > 0.6) c.lerp(snow, smooth01((hN - 0.6) / 0.32));
-    } else if (terrain === "plains") {
-      // gentle grass/forest mix with tan low-lying patches
-      c.copy(dryGrass).lerp(grass, smooth01(moist) * 0.9 + hN * 0.2);
-      c.lerp(forest, Math.max(0, moist - 0.6) * 1.5);
-      // lush green corridor hugging the river
-      if (cfg.river) {
-        const cyr = riverCenterY(lx, size, seed);
-        const dRiv = Math.abs(ly - cyr);
-        const corr = cfg.river.width * 4.5;
-        if (dRiv < corr) c.lerp(grass, smooth01(1 - dRiv / corr) * 0.55);
-      }
-    } else if (terrain === "marsh") {
-      // vegetated hummocks rising from the lagoon; muddy where steep
-      c.copy(hummockLo).lerp(hummockHi, smooth01(moist));
-      c.lerp(shadeOf(hummockLo, 0.55), slope * 0.6);
-    } else if (terrain === "coast") {
-      if (v.z < -size * 0.04) c.copy(seaDeep);
-      else if (v.z < size * 0.02) {
-        const tB = (v.z + size * 0.04) / (size * 0.06);
-        c.lerpColors(seaShore, seaShallow, smooth01(tB));
-      } else {
-        const tt = Math.min(1, (v.z - size * 0.02) / (size * 0.16));
-        c.copy(landLow).lerp(landHigh, smooth01(tt));
-        c.lerp(ridge, slope * 0.5); // rocky faces catch the ridge light
-      }
-    } else {
-      // city: asphalt ground toned to the world palette
+    }
+    cctx.putImageData(img, 0, 0);
+    mapTex = new THREE.CanvasTexture(cnv);
+    mapTex.colorSpace = THREE.SRGBColorSpace;
+    mapTex.anisotropy = 8;
+  } else {
+    // city: flat asphalt base — the street-grid overlay supplies the fabric
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const rNorm = Math.hypot(v.x, v.y) / half;
       c.copy(base).lerp(ridge, 0.08);
+      c.lerp(edgeDark, Math.max(0, (rNorm - 0.7) / 0.3) * 0.7);
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
     }
-    // river: tint the submerged channel floor toward water
-    if (cfg.river && v.z < cfg.river.level) {
-      c.lerp(riverWater, 0.6);
-    }
-
-    // edge tint toward plinth dark
-    c.lerp(new THREE.Color(0x0a0908), Math.max(0, (rNorm - 0.7) / 0.3) * 0.7);
-
-    colors[i * 3] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
+    plane.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   }
-  plane.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-  const mat = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.95,
-    metalness: 0.0,
-    flatShading: cfg.flat,
-    emissive: new THREE.Color(0x000000),
-    emissiveIntensity: 0.0,
-  });
+  const mat = new THREE.MeshStandardMaterial(
+    mapTex
+      ? {
+          map: mapTex,
+          vertexColors: false,
+          roughness: 0.97,
+          metalness: 0.0,
+          emissive: 0x000000,
+          emissiveIntensity: 0.0,
+          envMapIntensity: 0.5,
+        }
+      : {
+          vertexColors: true,
+          roughness: 0.95,
+          metalness: 0.0,
+          flatShading: cfg.flat,
+          emissive: 0x000000,
+          emissiveIntensity: 0.0,
+        }
+  );
   const terrainMesh = new THREE.Mesh(plane, mat);
   terrainMesh.rotation.x = -Math.PI / 2; // lie flat in XZ
   terrainMesh.castShadow = true;
@@ -815,10 +1032,13 @@ function buildTerrain(
       const lagoonMat = new THREE.MeshStandardMaterial({
         map: makeLagoonTexture(hexOf(lagoonDeep), hexOf(lagoonShallow)),
         color: 0xffffff,
-        roughness: 0.32,
+        roughness: 0.18,
         metalness: 0.0,
         transparent: true,
         depthWrite: false,
+        envMapIntensity: 0.55,
+        bumpMap: getRippleBump(),
+        bumpScale: size * 0.014,
       });
       const lagoon = new THREE.Mesh(new THREE.CircleGeometry(size * 0.68, 56), lagoonMat);
       lagoon.rotation.x = -Math.PI / 2;
@@ -829,10 +1049,13 @@ function buildTerrain(
       const seaMat = new THREE.MeshStandardMaterial({
         map: makeSeaSheetTexture(hexOf(seaShore), hexOf(seaShallow), hexOf(seaDeep)),
         color: 0xffffff,
-        roughness: 0.22,
+        roughness: 0.11,
         metalness: 0.0,
         transparent: true,
         depthWrite: false,
+        envMapIntensity: 0.75,
+        bumpMap: getRippleBump(),
+        bumpScale: size * 0.018,
       });
       const sea = new THREE.Mesh(new THREE.CircleGeometry(size * 0.92, 72), seaMat);
       sea.rotation.x = -Math.PI / 2;
@@ -1081,6 +1304,7 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = true;
@@ -1134,6 +1358,20 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     const rim = new THREE.DirectionalLight(0x6f8aff, 0.42);
     rim.position.set(-7, 3.5, -5);
     scene.add(rim);
+
+    /* ── shared studio IBL: real reflections for water / city metal ── */
+    let pmrem: THREE.PMREMGenerator | null = null;
+    let envRT: THREE.WebGLRenderTarget | null = null;
+    try {
+      pmrem = new THREE.PMREMGenerator(renderer);
+      envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRT.texture;
+      scene.environmentIntensity = 0.4;
+    } catch {
+      pmrem?.dispose?.();
+      pmrem = null;
+      envRT = null;
+    }
 
     /* ── starfield ── */
     const starCount = 1400;
@@ -1200,18 +1438,35 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       labelTextures.push(d.labelTex);
     });
 
-    /* ── post-processing: bloom is now subtle, only the brightest accents bleed ── */
+    /* ── post chain (r152+ colour pipeline) ─────────────────────────
+       RenderPass → SSAO (crevice/contact AO) → subtle bloom → SMAA
+       (linear-srgb) → OutputPass (ACES tone-map + sRGB encode). The
+       OutputPass is what actually grades the frame — without it the
+       whole scene is exported untone-mapped and looks flat/washed. */
     let composer: EffectComposer | null = null;
     try {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
+      const ssaoPass = new SSAOPass(
+        scene,
+        camera,
+        container.clientWidth,
+        container.clientHeight
+      );
+      ssaoPass.kernelRadius = 0.35;
+      ssaoPass.minDistance = 0.02;
+      ssaoPass.maxDistance = 1.6;
+      ssaoPass.output = SSAOPass.OUTPUT.Default;
+      composer.addPass(ssaoPass);
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(container.clientWidth, container.clientHeight),
-        0.35, // strength (was 0.9)
-        0.45, // radius
-        0.72  // threshold (was 0.22) — only really hot pixels bloom
+        0.3, // strength (was 0.35)
+        0.5, // radius
+        0.78 // threshold — only the hottest emissives bleed
       );
       composer.addPass(bloom);
+      composer.addPass(new SMAAPass());
+      composer.addPass(new OutputPass());
     } catch {
       composer = null;
     }
@@ -1296,6 +1551,12 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       raf = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
+      // drift the shared water-ripple bump → moving sun glints on every sea
+      if (rippleBumpTex) {
+        rippleBumpTex.offset.x = -((t * 0.045) % 1);
+        rippleBumpTex.offset.y = (t * 0.03) % 1;
+      }
+
       // gentle float + beacon pulse
       dioramas.forEach((d) => {
         const u = d.group.userData;
@@ -1350,7 +1611,12 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       rimMat.dispose();
       labelTextures.forEach((tex) => tex.dispose());
 
-      if (composer) composer.dispose();
+      if (composer) {
+        composer.passes.forEach((p) => p.dispose?.());
+        composer.dispose();
+      }
+      envRT?.dispose();
+      pmrem?.dispose();
       renderer.dispose();
       if (renderer.domElement.parentElement === container) {
         container.removeChild(renderer.domElement);
