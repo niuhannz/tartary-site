@@ -1157,8 +1157,8 @@ function buildTerrain(
       metalness: 0.55,
       emissive: glow,
       emissiveMap: winTex,
-      emissiveIntensity: 1.45,
-      envMapIntensity: 0.9,
+      emissiveIntensity: 0.9,
+      envMapIntensity: 0.7,
     });
     const roofMat = new THREE.MeshStandardMaterial({
       color: shadeOf(base, 0.55),
@@ -1508,9 +1508,9 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       composer.addPass(ssaoPass);
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(container.clientWidth, container.clientHeight),
-        0.3, // strength (was 0.35)
-        0.5, // radius
-        0.78 // threshold — only the hottest emissives bleed
+        0.32, // strength
+        0.55, // radius
+        0.92 // threshold — only caps, street lights, and the brightest windows bloom
       );
       composer.addPass(bloom);
       composer.addPass(new SMAAPass());
