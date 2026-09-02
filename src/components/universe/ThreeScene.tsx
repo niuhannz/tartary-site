@@ -557,6 +557,46 @@ function makeLagoonTexture(deepHex: string, shallowHex: string): THREE.CanvasTex
    shared scrolling water-ripple bump (module singleton — all water
    surfaces drift in one wind direction; animated via .offset in loop)
    ═══════════════════════════════════════════════════════════════════ */
+/* ── city window emissive map ────────────────────────────────────────────
+   Grayscale canvas (light = on) with a procedural lit window grid. When
+   plugged into MeshStandardMaterial.emissiveMap with emissive = world
+   glow colour, the building's sides read as a satellite-night city. */
+function makeWindowEmissive(seed: number): THREE.CanvasTexture {
+  const S = 256;
+  const c = document.createElement("canvas");
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext("2d")!;
+  const img = ctx.createImageData(S, S);
+  const d = img.data;
+  const rand = mulberry32((seed * 2654435761) >>> 0);
+  for (let y = 4; y < S - 4; y += 7) {
+    const row = (y / 7) | 0;
+    for (let x = 4; x < S - 4; x += 5 + ((row * 3 + Math.floor(rand() * 3)) % 3)) {
+      if (rand() < 0.18) continue;
+      const r = rand();
+      const br = r < 0.12 ? 1.0 : r < 0.5 ? 0.55 + rand() * 0.25 : 0.18 + rand() * 0.18;
+      for (let dy = 0; dy < 3; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          const p = ((y + dy) * S + (x + dx)) * 4;
+          const v = br * 255;
+          d[p] = v;
+          d[p + 1] = v;
+          d[p + 2] = v;
+          d[p + 3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.NearestFilter;
+  tex.anisotropy = 8;
+  return tex;
+}
+
 let rippleBumpTex: THREE.CanvasTexture | null = null;
 function getRippleBump(): THREE.CanvasTexture {
   if (rippleBumpTex) return rippleBumpTex;
@@ -1106,33 +1146,41 @@ function buildTerrain(
     }
   }
 
-  /* city towers — three tiers for a varied skyline */
+  /* city towers — three tiers for a varied satellite-night skyline */
   if (terrain === "city") {
-    const towerColor = blendOf(base, ridge, 0.18); // mid-tone, pops against dark ground
-    const towerMat = new THREE.MeshStandardMaterial({
-      color: towerColor,
-      roughness: 0.55,
-      metalness: 0.3,
+    const winTex = makeWindowEmissive(seed);
+    // side faces (px, nx, pz, nz) get a dark glass with the lit window grid
+    // + world glow as emissive colour. Top/bottom (py, ny) get a roof material.
+    const winMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0f17,
+      roughness: 0.45,
+      metalness: 0.55,
+      emissive: glow,
+      emissiveMap: winTex,
+      emissiveIntensity: 1.45,
+      envMapIntensity: 0.9,
+    });
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: shadeOf(base, 0.55),
+      roughness: 0.6,
+      metalness: 0.45,
       emissive: base,
       emissiveIntensity: 0.08,
+      envMapIntensity: 0.7,
     });
+    // BoxGeometry group order: 0=+x, 1=-x, 2=+y(top), 3=-y(bottom), 4=+z, 5=-z
+    const facadeMats = [winMat, winMat, roofMat, roofMat, winMat, winMat];
     const capMat = new THREE.MeshStandardMaterial({
       color: ridge,
       emissive: glow,
       emissiveIntensity: 0.7,
       roughness: 0.4,
     });
-    const windowMat = new THREE.MeshStandardMaterial({
-      color: ridge,
-      emissive: glow,
-      emissiveIntensity: 0.3,
-      roughness: 0.4,
-    });
     // — downtown skyscrapers (tall thin cluster) —
     for (let i = 0; i < 2; i++) {
       const h = size * (0.9 + ((i * 7) % 100) / 100 * 0.3);
       const w = size * 0.07;
-      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), facadeMats);
       const ang = (i / 2) * Math.PI + seed * 1.5;
       const dist = size * 0.18;
       t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
@@ -1152,7 +1200,7 @@ function buildTerrain(
     for (let i = 0; i < mid; i++) {
       const h = size * (0.28 + ((i * 47) % 100) / 100 * 0.55);
       const w = size * (0.07 + ((i * 31) % 100) / 100 * 0.07);
-      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), facadeMats);
       const ang = (i / mid) * Math.PI * 2 + (seed % 1) * 0.7;
       const dist = size * (0.22 + ((i * 19) % 100) / 100 * 0.45);
       t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
@@ -1163,7 +1211,7 @@ function buildTerrain(
       if (i % 2 === 0) {
         const cap = new THREE.Mesh(
           new THREE.BoxGeometry(w * 0.5, size * 0.04, w * 0.5),
-          windowMat
+          capMat
         );
         cap.position.y = h / 2 + size * 0.022;
         t.add(cap);
@@ -1174,7 +1222,7 @@ function buildTerrain(
     for (let i = 0; i < low; i++) {
       const w = size * (0.1 + ((i * 13) % 100) / 100 * 0.07);
       const h = size * (0.08 + ((i * 23) % 100) / 100 * 0.1);
-      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), facadeMats);
       const ang = ((i + 3) / low) * Math.PI * 2 + (seed % 1) * 1.3;
       const dist = size * (0.32 + ((i * 37) % 100) / 100 * 0.4);
       t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
@@ -1195,7 +1243,7 @@ function buildTerrain(
       map,
       emissiveMap,
       emissive: glow,
-      emissiveIntensity: 0.55,
+      emissiveIntensity: 0.7,
       roughness: 0.9,
       metalness: 0.0,
       transparent: true,
