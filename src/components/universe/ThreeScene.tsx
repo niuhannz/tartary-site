@@ -43,6 +43,8 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 /* tiny THREE.Color helpers (non-mutating) */
 const shadeOf = (c: THREE.Color, f: number) => new THREE.Color(c.r * f, c.g * f, c.b * f);
 const blendOf = (a: THREE.Color, b: THREE.Color, t: number) => new THREE.Color().lerpColors(a, b, t);
+const brightenOf = (c: THREE.Color, f: number) =>
+  new THREE.Color(Math.min(1, c.r * f), Math.min(1, c.g * f), Math.min(1, c.b * f));
 const hexOf = (c: THREE.Color) => `#${c.getHexString()}`;
 function valueNoise2(x: number, y: number): number {
   const xi = Math.floor(x);
@@ -557,16 +559,16 @@ function buildTerrain(
   /* palette-identity tones — coast & marsh & city take their look from the
      marker's own palette so each world reads as one coherent satellite */
   // coast sea gradient (shoreline foam → shallow → deep) tinted by water/ridge
-  const seaShore = blendOf(water, ridge, 0.85);
-  const seaShallow = blendOf(water, ridge, 0.5);
-  const seaDeep = shadeOf(water, 0.9);
-  const landLow = shadeOf(ridge, 0.3);            // low dark soil
-  const landHigh = shadeOf(ridge, 0.66);          // higher dry ground
+  const seaShore = brightenOf(ridge, 1.5);             // bright foam tinted by world ridge
+  const seaShallow = blendOf(water, ridge, 0.55);
+  const seaDeep = shadeOf(water, 0.88);
+  const landLow = shadeOf(ridge, 0.32);                // low dark soil
+  const landHigh = shadeOf(ridge, 0.7);                // higher dry ground
   // marsh lagoon (deep palette water → minty shallow) + hummock vegetation
-  const lagoonDeep = water.clone();
-  const lagoonShallow = blendOf(water, ridge, 0.5);
+  const lagoonDeep = shadeOf(water, 0.85);
+  const lagoonShallow = blendOf(water, ridge, 0.22);   // darker, less neon
   const hummockLo = blendOf(water, ridge, 0.3);
-  const hummockHi = blendOf(water, ridge, 0.62);
+  const hummockHi = blendOf(water, ridge, 0.55);
 
   /* per-terrain params */
   type TerrainCfg = {
@@ -593,11 +595,11 @@ function buildTerrain(
         };
       case "plains":
         return {
-          amp: size * 0.1,
-          freq: 0.9,
+          amp: size * 0.18,
+          freq: 0.85,
           flat: false,
           water: false,
-          contrast: 1.0,
+          contrast: 1.15,
           dome: 0.0,
           river: { width: size * 0.09, level: -size * 0.02 },
         };
@@ -607,7 +609,7 @@ function buildTerrain(
         return {
           amp: size * 0.26,
           freq: 1.0,
-          flat: true,
+          flat: false,
           water: true,
           contrast: 1.1,
           dome: 0.0,
@@ -839,23 +841,22 @@ function buildTerrain(
     }
   }
 
-  /* reeds for marsh */
+  /* reeds for marsh — less neon, lower height range, more density */
   if (terrain === "marsh") {
     const reedMat = new THREE.MeshStandardMaterial({
-      color: ridge,
-      roughness: 0.8,
-      emissive: glow,
-      emissiveIntensity: 0.05,
+      color: shadeOf(ridge, 0.7),
+      roughness: 0.85,
+      metalness: 0.0,
     });
-    for (let i = 0; i < 11; i++) {
-      const rh = size * (0.18 + ((i * 37) % 100) / 100 * 0.22);
+    for (let i = 0; i < 16; i++) {
+      const rh = size * (0.1 + ((i * 37) % 100) / 100 * 0.18);
       const reed = new THREE.Mesh(
-        new THREE.CylinderGeometry(size * 0.007, size * 0.011, rh, 5),
+        new THREE.CylinderGeometry(size * 0.005, size * 0.009, rh, 5),
         reedMat
       );
-      const ang = (i / 11) * Math.PI * 2 + (seed % 1);
-      const dist = size * (0.15 + ((i * 53) % 100) / 100 * 0.5);
-      reed.position.set(Math.cos(ang) * dist, rh / 2 + size * 0.02, Math.sin(ang) * dist);
+      const ang = (i / 16) * Math.PI * 2 + (seed % 1);
+      const dist = size * (0.12 + ((i * 53) % 100) / 100 * 0.55);
+      reed.position.set(Math.cos(ang) * dist, rh / 2 + size * 0.025, Math.sin(ang) * dist);
       reed.rotation.z = (((i * 17) % 20) - 10) / 100;
       reed.rotation.x = (((i * 23) % 20) - 10) / 100;
       g.add(reed);
@@ -865,18 +866,16 @@ function buildTerrain(
   /* rocks for coast */
   if (terrain === "coast") {
     const rockMat = new THREE.MeshStandardMaterial({
-      color: ridge,
-      roughness: 0.85,
-      emissive: glow,
-      emissiveIntensity: 0.04,
-      flatShading: true,
+      color: blendOf(ridge, base, 0.25),
+      roughness: 0.9,
+      metalness: 0.0,
     });
-    for (let i = 0; i < 5; i++) {
-      const r = size * (0.06 + ((i * 41) % 100) / 100 * 0.08);
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), rockMat);
-      const ang = (i / 5) * Math.PI * 1.2 + seed;
-      const dist = size * (0.25 + ((i * 29) % 100) / 100 * 0.45);
-      rock.position.set(Math.cos(ang) * dist - size * 0.1, r * 0.5, Math.sin(ang) * dist);
+    for (let i = 0; i < 3; i++) {
+      const r = size * (0.03 + ((i * 41) % 100) / 100 * 0.04);
+      const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), rockMat);
+      const ang = (i / 3) * Math.PI * 0.9 + seed * 1.5;
+      const dist = size * (0.2 + ((i * 29) % 100) / 100 * 0.35);
+      rock.position.set(Math.cos(ang) * dist - size * 0.05, r * 0.6, Math.sin(ang) * dist);
       rock.rotation.set(((i * 7) % 10) / 10, ((i * 11) % 10) / 10, 0);
       rock.castShadow = true;
       rock.receiveShadow = true;
@@ -884,41 +883,82 @@ function buildTerrain(
     }
   }
 
-  /* city towers */
+  /* city towers — three tiers for a varied skyline */
   if (terrain === "city") {
+    const towerColor = blendOf(base, ridge, 0.18); // mid-tone, pops against dark ground
     const towerMat = new THREE.MeshStandardMaterial({
-      color: base,
-      roughness: 0.6,
-      metalness: 0.35,
+      color: towerColor,
+      roughness: 0.55,
+      metalness: 0.3,
       emissive: base,
-      emissiveIntensity: 0.06,
+      emissiveIntensity: 0.08,
+    });
+    const capMat = new THREE.MeshStandardMaterial({
+      color: ridge,
+      emissive: glow,
+      emissiveIntensity: 0.7,
+      roughness: 0.4,
     });
     const windowMat = new THREE.MeshStandardMaterial({
       color: ridge,
       emissive: glow,
-      emissiveIntensity: 0.4,
+      emissiveIntensity: 0.3,
       roughness: 0.4,
     });
-    const towers = 9;
-    for (let i = 0; i < towers; i++) {
-      const h = size * (0.22 + ((i * 47) % 100) / 100 * 0.55);
-      const w = size * (0.08 + ((i * 31) % 100) / 100 * 0.08);
-      const tower = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
-      const ang = (i / towers) * Math.PI * 2 + (seed % 1) * 0.6;
-      const dist = size * (0.12 + ((i * 19) % 100) / 100 * 0.5);
-      tower.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
-      tower.rotation.y = ((i * 13) % 10) / 10 * Math.PI;
-      tower.castShadow = true;
-      tower.receiveShadow = true;
-      g.add(tower);
+    // — downtown skyscrapers (tall thin cluster) —
+    for (let i = 0; i < 2; i++) {
+      const h = size * (0.9 + ((i * 7) % 100) / 100 * 0.3);
+      const w = size * 0.07;
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const ang = (i / 2) * Math.PI + seed * 1.5;
+      const dist = size * 0.18;
+      t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
+      t.rotation.y = (seed * 13 + i * 0.6) % Math.PI;
+      t.castShadow = true;
+      t.receiveShadow = true;
+      g.add(t);
+      const cap = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 0.6, size * 0.05, w * 0.6),
+        capMat
+      );
+      cap.position.y = h / 2 + size * 0.028;
+      t.add(cap);
+    }
+    // — mid-rise towers (varied) —
+    const mid = 11;
+    for (let i = 0; i < mid; i++) {
+      const h = size * (0.28 + ((i * 47) % 100) / 100 * 0.55);
+      const w = size * (0.07 + ((i * 31) % 100) / 100 * 0.07);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const ang = (i / mid) * Math.PI * 2 + (seed % 1) * 0.7;
+      const dist = size * (0.22 + ((i * 19) % 100) / 100 * 0.45);
+      t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
+      t.rotation.y = ((i * 13) % 10) / 10 * Math.PI;
+      t.castShadow = true;
+      t.receiveShadow = true;
+      g.add(t);
       if (i % 2 === 0) {
         const cap = new THREE.Mesh(
-          new THREE.BoxGeometry(w * 0.5, size * 0.05, w * 0.5),
+          new THREE.BoxGeometry(w * 0.5, size * 0.04, w * 0.5),
           windowMat
         );
-        cap.position.y = h / 2 + size * 0.025;
-        tower.add(cap);
+        cap.position.y = h / 2 + size * 0.022;
+        t.add(cap);
       }
+    }
+    // — short low-rise blocks scattered on the outskirts —
+    const low = 9;
+    for (let i = 0; i < low; i++) {
+      const w = size * (0.1 + ((i * 13) % 100) / 100 * 0.07);
+      const h = size * (0.08 + ((i * 23) % 100) / 100 * 0.1);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      const ang = ((i + 3) / low) * Math.PI * 2 + (seed % 1) * 1.3;
+      const dist = size * (0.32 + ((i * 37) % 100) / 100 * 0.4);
+      t.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
+      t.rotation.y = ((i * 17) % 10) / 10 * Math.PI;
+      t.castShadow = true;
+      t.receiveShadow = true;
+      g.add(t);
     }
   }
 
