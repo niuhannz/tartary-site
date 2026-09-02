@@ -69,13 +69,13 @@ export default function StudioPageShell({
             className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
             style={{ color: "var(--color-ash)" }}
           >
-            <span>© 2026 Tartary LLC. All rights reserved.</span>
+            <span>© 2026 TARTARY. All rights reserved.</span>
             <div className="flex items-center gap-6">
               <Link
-                href="/contact"
+                href="/book-demo"
                 className="hover:text-white/60 transition-colors"
               >
-                Contact
+                Book Demo
               </Link>
             </div>
           </div>

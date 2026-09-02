@@ -1,64 +1,65 @@
-/* ── Tartary Design System — Pillar Data ─────────────────── */
+/* ── Tartary Design System — Navigation Data ─────────────────── */
 
-export interface SubProduct {
+export interface NavChild {
   label: string;
   href: string;
   description?: string;
 }
 
-export interface Pillar {
-  index: string;        // "01" – "04"
-  label: string;        // e.g. "WORLD"
-  cmdPrefix: string;    // e.g. "wld"
-  href: string;
-  subProducts: SubProduct[];
+export interface NavItem {
+  id: string; // unique id for dropdown state
+  label: string; // top-level label (rendered uppercase)
+  href: string; // top-level href
+  children?: NavChild[];
 }
 
-export const pillars: Pillar[] = [
+export const navItems: NavItem[] = [
   {
-    index: "01",
-    label: "WORLD",
-    cmdPrefix: "wld",
-    href: "/world",
-    subProducts: [
-      { label: "Heavenfall", href: "/world/heavenfall", description: "The World of Heavenfall" },
-      { label: "On the Water's Margin", href: "/world/waters-margin", description: "The World of On the Water's Margin" },
+    id: "technology",
+    label: "Technology",
+    href: "/technology",
+    children: [
+      {
+        label: "DADA",
+        href: "/technology/dada",
+        description: "AI Likeness Authorization Platform",
+      },
+      {
+        label: "AI Film Festival Submission Tool",
+        href: "/technology/festival-submission",
+        description: "Submit everywhere. Track everything.",
+      },
+      {
+        label: "Short-Drama Platform",
+        href: "/technology/short-drama",
+        description: "Distribution & financing",
+      },
     ],
   },
   {
-    index: "02",
-    label: "FILMS",
-    cmdPrefix: "flm",
-    href: "/films",
-    subProducts: [
-      { label: "Gelatin Silver", href: "/films/gelatin-silver", description: "Film production arm" },
-      { label: "Swing Gang", href: "/films/swing-gang", description: "Virtual production unit" },
-      { label: "Niji", href: "/films/niji", description: "Animation studio" },
-      { label: "Cineschool", href: "/films/cineschool", description: "Film education" },
+    id: "universe",
+    label: "IP Universe",
+    href: "/universe",
+    children: [
+      { label: "Worlds", href: "/universe/worlds", description: "Original universes" },
+      { label: "Characters", href: "/universe/characters", description: "Original character library" },
+      { label: "Stories & Projects", href: "/universe/stories", description: "Film & series in development" },
+      { label: "IP Licensing", href: "/universe/licensing", description: "License & co-develop" },
     ],
   },
   {
-    index: "03",
-    label: "ARTIFACTS",
-    cmdPrefix: "art",
-    href: "/artifacts",
-    subProducts: [
-      { label: "Tartary OS", href: "/artifacts/tartary-os", description: "Cinematic spatial operating system" },
-      { label: "Mudflood", href: "/artifacts/mudflood", description: "Game creation engine for Vision Pro" },
-      { label: "Readen", href: "/artifacts/readen", description: "Reading platform" },
-      { label: "Tartary Publishing", href: "/artifacts/publishing", description: "Books & print" },
-    ],
+    id: "compliance",
+    label: "IP & Compliance",
+    href: "/compliance",
   },
   {
-    index: "04",
-    label: "LAB",
-    cmdPrefix: "lab",
-    href: "/lab",
-    subProducts: [
-      { label: "Lucas", href: "/lab/lucas", description: "Personal AI companion" },
-      { label: "Fatestack", href: "/lab/fatestack", description: "Narrative decision engine" },
-      { label: "Invisible Friend", href: "/lab/invisible-friend", description: "Ambient intelligence" },
-      { label: "Game Studio", href: "/lab/games", description: "Interactive experiences R&D" },
+    id: "about",
+    label: "About",
+    href: "/about",
+    children: [
+      { label: "Team", href: "/about/team", description: "The people behind the worlds" },
     ],
   },
 ];
+
+export const bookDemoHref = "/book-demo";
