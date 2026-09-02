@@ -293,12 +293,12 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     const glowTex = makeGlowTexture();
     const markerGroups: THREE.Group[] = [];
     const hitMeshes: THREE.Mesh[] = [];
-    const markerByHit = new Map<THREE.Object3D, UniverseMarker>();
 
     markers.forEach((marker) => {
       const pos = latLngToVector3(marker.lat, marker.lng, PLANET_RADIUS);
       const normal = pos.clone().normalize();
       const group = new THREE.Group();
+      group.userData.marker = marker;
 
       // core dot
       const coreMat = new THREE.MeshBasicMaterial({
@@ -366,7 +366,6 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       scene.add(group);
       markerGroups.push(group);
       hitMeshes.push(hit);
-      markerByHit.set(hit, marker);
     });
 
     /* ── post-processing (guarded) ── */
@@ -398,8 +397,7 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
       markerGroups.forEach((g) => {
         const core = g.children[0] as THREE.Mesh;
         const glow = g.children[1] as THREE.Sprite;
-        const hit = g.children[3] as THREE.Mesh;
-        const isThis = hit.userData.marker === m;
+        const isThis = g.userData.marker === m;
         core.scale.setScalar(isThis ? 1.9 : 1);
         glow.scale.setScalar(isThis ? 0.85 : 0.55);
         (glow.material as THREE.SpriteMaterial).opacity = isThis ? 1 : 0.9;
