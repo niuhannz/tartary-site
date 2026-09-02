@@ -66,6 +66,10 @@ function fbm2(x: number, y: number, oct = 5): number {
   }
   return v;
 }
+/* moisture = low-frequency fbm used to drive forest vs dry-grass blending */
+function moisture2(x: number, y: number, seed: number): number {
+  return fbm2(x * 0.45 + seed * 23, y * 0.45 + seed * 41, 3);
+}
 function seedFromId(id: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < id.length; i++) {
@@ -155,12 +159,12 @@ function buildRiverRibbon(
   geo.computeVertexNormals();
   const mat = new THREE.MeshStandardMaterial({
     color: water,
-    roughness: 0.06,
-    metalness: 0.55,
+    roughness: 0.35,
+    metalness: 0.05,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.88,
     emissive: water,
-    emissiveIntensity: 0.08,
+    emissiveIntensity: 0.04,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.rotation.x = -Math.PI / 2;
@@ -188,12 +192,17 @@ function buildTerrain(
   const pos = plane.attributes.position as THREE.BufferAttribute;
   const colors = new Float32Array(pos.count * 3);
   const v = new THREE.Vector3();
+  const nrm = new THREE.Vector3();
   const c = new THREE.Color();
-  const snow = new THREE.Color(0xe8eef4);
-  const sand = new THREE.Color(0xc2a877);
-  const grass = new THREE.Color(0x3a5a3a);
-  const deepWater = new THREE.Color(0x06141a);
-  const riverWater = new THREE.Color(0x2a6a75); // teal river water for mountains / plains
+  // satellite-style palette: forest / grass / dry grass / rock / sand / snow / water
+  const snow = new THREE.Color(0xeef3f6);
+  const sand = new THREE.Color(0xc7b083);
+  const grass = new THREE.Color(0x6a8a44);        // medium grass green
+  const forest = new THREE.Color(0x2f4d2f);       // deep dark forest green
+  const dryGrass = new THREE.Color(0xa8975a);     // tan / dry grass
+  const rock = new THREE.Color(0x6c6356);         // warm grey-brown rock
+  const deepWater = new THREE.Color(0x04111a);
+  const riverWater = new THREE.Color(0x2a6a75);
 
   /* per-terrain params */
   type TerrainCfg = {
@@ -293,31 +302,53 @@ function buildTerrain(
     }
 
     pos.setZ(i, disp);
+  }
 
-    /* color by elevation + position */
-    const heightT = (disp + Math.abs(cfg.tilt ? size * cfg.tilt : 0)) / Math.max(0.001, cfg.amp + size);
+  /* compute normals AFTER all vertices are displaced so the second color pass can use slope */
+  plane.computeVertexNormals();
+  const normalAttr = plane.attributes.normal as THREE.BufferAttribute;
+
+  /* color by (elevation, slope, moisture) — satellite-style biome mix */
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    nrm.fromBufferAttribute(normalAttr, i);
+    const lx = v.x;
+    const ly = v.y;
+    const r = Math.sqrt(lx * lx + ly * ly);
+    const rNorm = r / half;
+    const slope = 1 - Math.min(1, Math.abs(nrm.y));           // 0 = flat, 1 = vertical
+    const moist = moisture2(lx + ox, ly + oy, seed);           // 0..1
+    const heightT = (v.z + Math.abs(cfg.tilt ? size * cfg.tilt : 0)) / Math.max(0.001, cfg.amp + size);
     const hN = THREE.MathUtils.clamp(heightT, 0, 1);
 
     if (terrain === "mountains") {
-      // base rock -> ridge -> snow
-      c.copy(base).multiplyScalar(0.6);
-      c.lerp(ridge, smooth01(hN * 1.15));
-      if (hN > 0.62) c.lerp(snow, Math.min(1, (hN - 0.62) / 0.35));
+      // steep = rock, flat = grass/forest (driven by moisture)
+      if (slope > 0.35) {
+        c.copy(rock).lerp(ridge, smooth01((slope - 0.35) / 0.5));
+      } else {
+        c.copy(grass).lerp(forest, smooth01(moist) * 0.85);
+        c.lerp(ridge, hN * 0.35); // higher up -> browner
+      }
+      // snow caps
+      if (hN > 0.6) c.lerp(snow, smooth01((hN - 0.6) / 0.32));
     } else if (terrain === "plains") {
-      c.copy(base).lerp(grass, 0.5 + hN * 0.5);
-      c.lerp(ridge, hN * 0.3);
+      // gentle grass/forest mix with tan low-lying patches
+      c.copy(dryGrass).lerp(grass, smooth01(moist) * 0.9 + hN * 0.2);
+      c.lerp(forest, Math.max(0, moist - 0.6) * 1.5);
     } else if (terrain === "marsh") {
-      c.copy(base).lerp(grass, 0.3);
+      // dark wet ground with some green
+      c.copy(forest).lerp(grass, 0.5);
+      c.lerp(rock, slope * 0.3);
     } else if (terrain === "coast") {
-      if (disp < -size * 0.04) c.copy(water);
-      else if (disp < size * 0.02) c.lerpColors(sand, grass, (disp + size * 0.04) / (size * 0.06));
-      else c.copy(grass).lerp(ridge, Math.min(1, (disp - size * 0.02) / (size * 0.2)));
+      if (v.z < -size * 0.04) c.copy(water);
+      else if (v.z < size * 0.02) c.lerpColors(sand, grass, (v.z + size * 0.04) / (size * 0.06));
+      else c.copy(grass).lerp(ridge, Math.min(1, (v.z - size * 0.02) / (size * 0.2)));
     } else {
-      // city ground
-      c.copy(base).lerp(ridge, 0.25);
+      // city: urban ground with some green
+      c.copy(grass).lerp(rock, 0.35);
     }
     // river: tint the submerged channel floor toward water
-    if (cfg.river && disp < cfg.river.level) {
+    if (cfg.river && v.z < cfg.river.level) {
       c.lerp(riverWater, 0.6);
     }
 
@@ -329,18 +360,19 @@ function buildTerrain(
     colors[i * 3 + 2] = c.b;
   }
   plane.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  plane.computeVertexNormals();
 
   const mat = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.92,
-    metalness: 0.05,
+    roughness: 0.95,
+    metalness: 0.0,
     flatShading: cfg.flat,
-    emissive: ridge,
-    emissiveIntensity: 0.025,
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0.0,
   });
   const terrainMesh = new THREE.Mesh(plane, mat);
   terrainMesh.rotation.x = -Math.PI / 2; // lie flat in XZ
+  terrainMesh.castShadow = true;
+  terrainMesh.receiveShadow = true;
   g.add(terrainMesh);
 
   /* winding river (mountains / plains) */
@@ -352,12 +384,12 @@ function buildTerrain(
   if (cfg.water) {
     const waterMat = new THREE.MeshStandardMaterial({
       color: water,
-      roughness: 0.08,
-      metalness: 0.55,
+      roughness: 0.3,
+      metalness: 0.0,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.88,
       emissive: water,
-      emissiveIntensity: 0.08,
+      emissiveIntensity: 0.04,
     });
     if (terrain === "marsh") {
       // a winding water body following the lowest noise
@@ -385,10 +417,10 @@ function buildTerrain(
         new THREE.CylinderGeometry(size * 0.4, size * 0.4, size * 0.01, 40),
         new THREE.MeshStandardMaterial({
           color: deepWater,
-          roughness: 0.1,
-          metalness: 0.5,
+          roughness: 0.45,
+          metalness: 0.0,
           transparent: true,
-          opacity: 0.7,
+          opacity: 0.78,
         })
       );
       deep.position.set(size * 0.65, -size * 0.085, 0);
@@ -435,6 +467,8 @@ function buildTerrain(
       const dist = size * (0.25 + ((i * 29) % 100) / 100 * 0.45);
       rock.position.set(Math.cos(ang) * dist - size * 0.1, r * 0.5, Math.sin(ang) * dist);
       rock.rotation.set(((i * 7) % 10) / 10, ((i * 11) % 10) / 10, 0);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
       g.add(rock);
     }
   }
@@ -463,6 +497,8 @@ function buildTerrain(
       const dist = size * (0.12 + ((i * 19) % 100) / 100 * 0.5);
       tower.position.set(Math.cos(ang) * dist, h / 2, Math.sin(ang) * dist);
       tower.rotation.y = ((i * 13) % 10) / 10 * Math.PI;
+      tower.castShadow = true;
+      tower.receiveShadow = true;
       g.add(tower);
       if (i % 2 === 0) {
         const cap = new THREE.Mesh(
@@ -505,6 +541,7 @@ function buildDiorama(marker: UniverseMarker) {
     plinthMat
   );
   plinth.position.y = -plinthH / 2;
+  plinth.receiveShadow = true;
   group.add(plinth);
 
   // heightmap terrain on top
@@ -569,13 +606,15 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.05;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = null;
-    // (no fog — the previous FogExp2 was darkening the lower shelf and creating a
-    // harsh horizontal "cutoff" between bright islands and dark base)
+    // gentle atmospheric haze (low density, scene-matching color so no harsh cutoff)
+    scene.fog = new THREE.FogExp2(0x141a26, 0.012);
 
     const camera = new THREE.PerspectiveCamera(
       45,
@@ -599,14 +638,25 @@ export default function ThreeScene({ markers, focusId, onSelect, onHover }: Thre
     controls.rotateSpeed = 0.6;
     controls.update();
 
-    /* ── lights (calm, balanced — no over-bright key) ── */
-    scene.add(new THREE.AmbientLight(0x8a96b0, 0.55));
-    scene.add(new THREE.HemisphereLight(0x6b7a90, 0x1a1612, 0.45));
-    const key = new THREE.DirectionalLight(0xfff2df, 1.25);
-    key.position.set(6, 9, 5);
+    /* ── lights (Google-Earth-ish sun + sky fill + shadow casting) ── */
+    scene.add(new THREE.AmbientLight(0x8a96b0, 0.7));
+    scene.add(new THREE.HemisphereLight(0x90a4c8, 0x3a2c20, 0.85));
+    const key = new THREE.DirectionalLight(0xfff2df, 1.35);
+    key.position.set(3.5, 14, 4.0);   // more overhead → shorter, softer shadows
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 40;
+    key.shadow.camera.left = -13;
+    key.shadow.camera.right = 13;
+    key.shadow.camera.top = 13;
+    key.shadow.camera.bottom = -13;
+    key.shadow.bias = -0.0006;
+    key.shadow.normalBias = 0.06;
+    key.shadow.radius = 4.0;          // softer edges
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x5f86ff, 0.7);
-    rim.position.set(-7, 3, -5);
+    const rim = new THREE.DirectionalLight(0x6f8aff, 0.3);
+    rim.position.set(-7, 3.5, -5);
     scene.add(rim);
 
     /* ── starfield ── */
