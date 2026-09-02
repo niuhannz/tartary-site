@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TARTARY — Sovereign AI Conglomerate",
+  title: "TARTARY — Building Cinematic Universes",
   description:
-    "World. Films. Artifacts. Lab.",
+    "Building original cinematic universes — and the AI infrastructure to create & operate them.",
 };
 
 export default function RootLayout({
