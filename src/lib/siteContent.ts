@@ -298,6 +298,162 @@ export const licensingContent = {
   cta: "Inquire IP Licensing",
 };
 
+/* ── IP Universe — 3D World Map ──
+   Markers scattered across the interactive universe map.
+   lat: -90..90 (south→north), lng: -180..180 (west→east). */
+export type UniverseMarkerKind = "world" | "character" | "story";
+
+export interface UniverseMarker {
+  id: string;
+  kind: UniverseMarkerKind;
+  name: string;
+  sublabel: string; // e.g. "Realm", "Protagonist", "Feature · In development"
+  lat: number;
+  lng: number;
+  tagline: string;
+  lore: string;
+  facts: { label: string; value: string }[];
+  href: string;
+  hrefLabel: string;
+}
+
+export const universeMapContent = {
+  eyebrow: "IP Universe",
+  headline: "Explore the TARTARY Universe",
+  sub: "Orbit the worlds, meet the characters, and step into the stories — a living map of everything we own, build, and license.",
+  hint: "Drag to orbit · Scroll to zoom · Select a marker to explore",
+  hotLinks: [
+    { label: "Worlds", href: "/universe/worlds" },
+    { label: "Characters", href: "/universe/characters" },
+    { label: "Stories & Projects", href: "/universe/stories" },
+    { label: "IP Licensing", href: "/universe/licensing" },
+  ],
+  cta: "Inquire IP Licensing",
+  ctaHref: "/universe/licensing",
+};
+
+export const universeMarkers: UniverseMarker[] = [
+  {
+    id: "heavenfall",
+    kind: "world",
+    name: "HEAVENFALL",
+    sublabel: "Realm",
+    lat: 38,
+    lng: -74,
+    tagline: "A fallen celestial order wages a hidden war beneath the modern sky.",
+    lore: "Heavenfall is a world where a disgraced celestial order still watches over an unwitting humanity — a hidden war fought between prophecy and price, where the divine is not a comfort but a debt. Its cities are built beneath a sky that remembers what was erased from it.",
+    facts: [
+      { label: "Genre", value: "Mythic fantasy / modern" },
+      { label: "Status", value: "In development" },
+      { label: "Core assets", value: "World bible, characters, series bible" },
+    ],
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
+  },
+  {
+    id: "mudflood",
+    kind: "world",
+    name: "MUDFLOOD",
+    sublabel: "Realm",
+    lat: -27,
+    lng: 118,
+    tagline: "A buried civilization resurfaces beneath the contemporary world.",
+    lore: "Mudflood is a world of two epochs forced to reconcile. A civilization buried long ago begins to resurface beneath the modern city, and what the past left behind will not stay buried. History, debt, and memory collide as the two worlds converge.",
+    facts: [
+      { label: "Genre", value: "Mystery / speculative" },
+      { label: "Status", value: "In development" },
+      { label: "Core assets", value: "World bible, characters, series bible" },
+    ],
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
+  },
+  {
+    id: "mira-vale",
+    kind: "character",
+    name: "MIRA VALE",
+    sublabel: "Protagonist · Heavenfall",
+    lat: 46,
+    lng: -18,
+    tagline: "A disgraced celestial cartographer who must redraw a broken sky.",
+    lore: "Mira Vale was the order's finest cartographer until she erased something from the sky — and was cast out for it. Now she must redraw the heavens she broke, answering for what she removed and for who still hunts her beneath them.",
+    facts: [
+      { label: "Universe", value: "Heavenfall" },
+      { label: "Role", value: "Protagonist" },
+      { label: "Rights", value: "Likeness managed via DADA" },
+    ],
+    href: "/universe/characters",
+    hrefLabel: "Explore Characters",
+  },
+  {
+    id: "elias-kade",
+    kind: "character",
+    name: "ELIAS KADE",
+    sublabel: "Antagonist · Mudflood",
+    lat: -34,
+    lng: 152,
+    tagline: "A collector of buried debts who resurfaces with the city.",
+    lore: "Elias Kade resurfaces with the city itself, and he intends to collect what the modern world never repaid. A collector of buried debts, he moves through the two epochs of Mudflood with a ledger older than memory — and a patience colder than stone.",
+    facts: [
+      { label: "Universe", value: "Mudflood" },
+      { label: "Role", value: "Antagonist" },
+      { label: "Rights", value: "Likeness managed via DADA" },
+    ],
+    href: "/universe/characters",
+    hrefLabel: "Explore Characters",
+  },
+  {
+    id: "borrowed-life",
+    kind: "story",
+    name: "BORROWED LIFE",
+    sublabel: "Feature · In development",
+    lat: 12,
+    lng: 44,
+    tagline: "A man who trades borrowed time must repay what was never his to take.",
+    lore: "Borrowed Life follows a man who trades borrowed time and must repay what was never his to take. A company-owned feature inside the TARTARY IP Universe, packaged and positioned for production and partnership — not a personal project.",
+    facts: [
+      { label: "Format", value: "Feature" },
+      { label: "Status", value: "In development" },
+      { label: "Positioning", value: "Company-owned IP asset" },
+    ],
+    href: "/universe/stories",
+    hrefLabel: "Explore Stories",
+  },
+  {
+    id: "realm-03",
+    kind: "world",
+    name: "REALM 03",
+    sublabel: "Classified · In development",
+    lat: 61,
+    lng: 96,
+    tagline: "A new world taking shape behind closed doors.",
+    lore: "An undisclosed world currently in the earliest stages of development. Details remain under wraps as the setting, mythology, and cast are assembled — more will be revealed as it enters active production.",
+    facts: [
+      { label: "Genre", value: "Classified" },
+      { label: "Status", value: "In development" },
+      { label: "Access", value: "Under NDA for partners" },
+    ],
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
+  },
+  {
+    id: "realm-04",
+    kind: "world",
+    name: "REALM 04",
+    sublabel: "Classified · In development",
+    lat: -58,
+    lng: -132,
+    tagline: "A world in incubation — first light still to come.",
+    lore: "An early-stage world incubating inside the TARTARY pipeline. Its geography, history, and characters are being mapped before it is revealed to the public and to co-development partners.",
+    facts: [
+      { label: "Genre", value: "Classified" },
+      { label: "Status", value: "In development" },
+      { label: "Access", value: "Under NDA for partners" },
+    ],
+    href: "/universe/worlds",
+    hrefLabel: "Explore Worlds",
+  },
+];
+
 /* ── IP & Compliance ── */
 export const complianceContent = {
   eyebrow: "IP & Compliance",
