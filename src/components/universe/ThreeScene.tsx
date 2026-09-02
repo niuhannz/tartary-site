@@ -70,6 +70,130 @@ function fbm2(x: number, y: number, oct = 5): number {
 function moisture2(x: number, y: number, seed: number): number {
   return fbm2(x * 0.45 + seed * 23, y * 0.45 + seed * 41, 3);
 }
+
+/* seeded PRNG (mulberry32) — deterministic erosion per world */
+function mulberry32(a: number): () => number {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* droplet-based hydraulic erosion — carves dendritic valleys into a heightmap.
+   heights: Float32Array of size n*n (n = seg+1), row-major [y*n + x].
+   Returns a NEW array (input untouched). */
+function hydraulicErosion(
+  heights: Float32Array,
+  n: number,
+  opts: {
+    seed: number;
+    iterations: number;
+    inertia: number;
+    capacity: number;
+    minSlope: number;
+    erodeRate: number;
+    depositRate: number;
+    evaporation: number;
+    gravity: number;
+    lifetime: number;
+  }
+): Float32Array {
+  const h = new Float32Array(heights);
+  const rand = mulberry32((opts.seed * 2654435761) >>> 0);
+
+  const sample = (x: number, y: number) => {
+    const xi = Math.floor(x);
+    const yi = Math.floor(y);
+    const fx = x - xi;
+    const fy = y - yi;
+    const h00 = h[yi * n + xi];
+    const h10 = h[yi * n + xi + 1];
+    const h01 = h[(yi + 1) * n + xi];
+    const h11 = h[(yi + 1) * n + xi + 1];
+    return {
+      height: (h00 * (1 - fx) + h10 * fx) * (1 - fy) + (h01 * (1 - fx) + h11 * fx) * fy,
+      gx: (h10 - h00) * (1 - fy) + (h11 - h01) * fy,
+      gy: (h01 - h00) * (1 - fx) + (h11 - h10) * fx,
+      xi,
+      yi,
+      fx,
+      fy,
+    };
+  };
+
+  const deposit = (xi: number, yi: number, fx: number, fy: number, amt: number) => {
+    h[yi * n + xi] += amt * (1 - fx) * (1 - fy);
+    h[yi * n + xi + 1] += amt * fx * (1 - fy);
+    h[(yi + 1) * n + xi] += amt * (1 - fx) * fy;
+    h[(yi + 1) * n + xi + 1] += amt * fx * fy;
+  };
+
+  const last = n - 1;
+  for (let i = 0; i < opts.iterations; i++) {
+    let x = 1 + rand() * (n - 3);
+    let y = 1 + rand() * (n - 3);
+    let vx = 0;
+    let vy = 0;
+    let water = 1;
+    let sediment = 0;
+    let px = x;
+    let py = y;
+
+    for (let step = 0; step < opts.lifetime; step++) {
+      const cur = sample(x, y);
+      if (cur.xi < 1 || cur.xi >= last || cur.yi < 1 || cur.yi >= last) break;
+
+      vx = vx * opts.inertia - cur.gx * opts.gravity;
+      vy = vy * opts.inertia - cur.gy * opts.gravity;
+      const speed = Math.hypot(vx, vy);
+      if (speed < 0.01) break;
+
+      const nx = vx / speed;
+      const ny = vy / speed;
+      const next = sample(x + nx, y + ny);
+      if (next.xi < 1 || next.xi >= last || next.yi < 1 || next.yi >= last) break;
+
+      const dh = cur.height - next.height; // >0 = flowing downhill
+      const cap = Math.max(0.001, speed * water * opts.capacity);
+
+      if (dh > 0) {
+        if (sediment > cap) {
+          const d = (sediment - cap) * opts.depositRate;
+          sediment -= d;
+          deposit(cur.xi, cur.yi, cur.fx, cur.fy, d);
+        } else if (dh > opts.minSlope) {
+          const e = Math.min(dh, cap - sediment) * opts.erodeRate;
+          sediment += e;
+          deposit(cur.xi, cur.yi, cur.fx, cur.fy, -e);
+        }
+      } else {
+        const d = sediment * opts.depositRate;
+        sediment -= d;
+        deposit(cur.xi, cur.yi, cur.fx, cur.fy, d);
+      }
+
+      water *= 1 - opts.evaporation;
+      px = x;
+      py = y;
+      x += nx;
+      y += ny;
+    }
+
+    // conserve mass: deposit the droplet's remaining sediment at its final cell
+    if (sediment > 0) {
+      const xi = Math.floor(px);
+      const yi = Math.floor(py);
+      if (xi >= 0 && xi < last && yi >= 0 && yi < last) {
+        deposit(xi, yi, 0.5, 0.5, sediment * 0.6);
+      }
+    }
+  }
+
+  return h;
+}
 function seedFromId(id: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < id.length; i++) {
@@ -254,7 +378,8 @@ function buildTerrain(
     }
   })();
 
-  /* displace + color per vertex */
+  /* pass 1: base heightmap (river is carved AFTER erosion, so it stays clean) */
+  const heights = new Float32Array(pos.count);
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
     const lx = v.x;
@@ -288,8 +413,36 @@ function buildTerrain(
     // city: keep very flat
     if (terrain === "city") disp *= 0.6;
 
-    // carve the winding river channel into mountains / plains
-    if (cfg.river) {
+    heights[i] = disp;
+  }
+
+  /* hydraulic erosion — carve dendritic valleys into mountains / plains */
+  let finalHeights: Float32Array = heights;
+  if (terrain === "mountains" || terrain === "plains") {
+    finalHeights = hydraulicErosion(heights, seg + 1, {
+      seed,
+      iterations: terrain === "mountains" ? 9000 : 6000,
+      inertia: 0.05,
+      capacity: 2.5,
+      minSlope: 0.01,
+      erodeRate: 0.18,
+      depositRate: 0.3,
+      evaporation: 0.02,
+      gravity: 4.0,
+      lifetime: 35,
+    });
+  }
+
+  /* pass 2: write (possibly eroded) heights, then carve river on top */
+  for (let i = 0; i < pos.count; i++) {
+    pos.setZ(i, finalHeights[i]);
+  }
+  if (cfg.river) {
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const lx = v.x;
+      const ly = v.y;
+      const disp = pos.getZ(i);
       const cy = riverCenterY(lx, size, seed);
       const distRiver = Math.abs(ly - cy);
       const rim = cfg.river.width * 1.8;
@@ -297,11 +450,9 @@ function buildTerrain(
         const t = THREE.MathUtils.clamp(distRiver / rim, 0, 1);
         const floor = cfg.river.level - size * 0.014; // slightly below the water plane
         const valley = mix(floor, disp, smooth01(t));
-        disp = Math.min(disp, valley);
+        pos.setZ(i, Math.min(disp, valley));
       }
     }
-
-    pos.setZ(i, disp);
   }
 
   /* compute normals AFTER all vertices are displaced so the second color pass can use slope */
