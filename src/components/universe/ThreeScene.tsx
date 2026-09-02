@@ -325,7 +325,6 @@ function buildTerrain(
   const forest = new THREE.Color(0x2f4d2f);       // deep dark forest green
   const dryGrass = new THREE.Color(0xa8975a);     // tan / dry grass
   const rock = new THREE.Color(0x6c6356);         // warm grey-brown rock
-  const deepWater = new THREE.Color(0x04111a);
   const riverWater = new THREE.Color(0x2a6a75);
 
   /* per-terrain params */
@@ -533,49 +532,63 @@ function buildTerrain(
 
   /* water plane for marsh / coast */
   if (cfg.water) {
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: water,
-      roughness: 0.3,
-      metalness: 0.0,
-      transparent: true,
-      opacity: 0.88,
-      emissive: water,
-      emissiveIntensity: 0.04,
-    });
     if (terrain === "marsh") {
-      // a winding water body following the lowest noise
-      const wr = size * 0.55;
-      const waterDisc = new THREE.Mesh(
-        new THREE.CylinderGeometry(wr, wr, size * 0.02, 48),
-        waterMat
+      // murky swamp water (green-brown) with a shallow tan fringe
+      const cx = Math.cos(seed * 6.28) * size * 0.05;
+      const cz = Math.sin(seed * 6.28) * size * 0.05;
+      const swamp = new THREE.MeshStandardMaterial({
+        color: 0x3f5a3a,
+        roughness: 0.4,
+        metalness: 0.0,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+      });
+      const swampDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(size * 0.55, size * 0.55, size * 0.02, 48),
+        swamp
       );
-      waterDisc.position.set(
-        Math.cos(seed * 6.28) * size * 0.05,
-        -size * 0.02,
-        Math.sin(seed * 6.28) * size * 0.05
-      );
-      g.add(waterDisc);
-    } else {
-      // coast: a sea on the +x (low) side
-      const sea = new THREE.Mesh(
-        new THREE.CylinderGeometry(size * 0.78, size * 0.78, size * 0.02, 56),
-        waterMat
-      );
-      sea.position.set(size * 0.5, -size * 0.07, 0);
-      g.add(sea);
-      // a deeper patch
-      const deep = new THREE.Mesh(
-        new THREE.CylinderGeometry(size * 0.4, size * 0.4, size * 0.01, 40),
+      swampDisc.position.set(cx, -size * 0.02, cz);
+      g.add(swampDisc);
+      // shallow tan fringe (shoreline)
+      const fringe = new THREE.Mesh(
+        new THREE.CylinderGeometry(size * 0.62, size * 0.62, size * 0.015, 48),
         new THREE.MeshStandardMaterial({
-          color: deepWater,
-          roughness: 0.45,
+          color: 0x6d7a4a,
+          roughness: 0.4,
           metalness: 0.0,
           transparent: true,
-          opacity: 0.78,
+          opacity: 0.5,
+          depthWrite: false,
         })
       );
-      deep.position.set(size * 0.65, -size * 0.085, 0);
-      g.add(deep);
+      fringe.position.set(cx, -size * 0.018, cz);
+      g.add(fringe);
+    } else {
+      // coast: layered depth-gradient sea on the +x (low) side — SF Bay look
+      // shore is on -x (land), open ocean on +x → gradient sediment → turquoise → blue → navy
+      const mk = (r: number, hex: number, x: number, y: number, op: number) => {
+        const m = new THREE.MeshStandardMaterial({
+          color: hex,
+          roughness: 0.32,
+          metalness: 0.0,
+          transparent: true,
+          opacity: op,
+          depthWrite: false,
+        });
+        const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, size * 0.02, 64), m);
+        d.position.set(x, y, 0);
+        d.receiveShadow = true;
+        return d;
+      };
+      // sediment band at the shoreline (land meets sea)
+      g.add(mk(size * 0.58, 0x7d8a5a, size * 0.0, -size * 0.072, 0.75));
+      // shallow turquoise
+      g.add(mk(size * 0.78, 0x2f8a8a, size * 0.45, -size * 0.07, 0.85));
+      // mid blue
+      g.add(mk(size * 0.52, 0x165e7a, size * 0.6, -size * 0.071, 0.9));
+      // deep navy
+      g.add(mk(size * 0.3, 0x07273a, size * 0.75, -size * 0.072, 0.95));
     }
   }
 
